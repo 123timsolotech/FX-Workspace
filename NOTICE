@@ -1,0 +1,13 @@
+FX Workspace
+Copyright 2026 Fuxion (fuxion64@gmail.com)
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+If you redistribute it or a modified version, keep this NOTICE file with it.
+
+Created by Fuxion. If you want to support the project or have suggestions,
+email me: fuxion64@gmail.com
+
+The engines and AI models this app can download (llama.cpp, whisper.cpp,
+stable-diffusion.cpp, Kokoro, Parakeet, Piper, the image, video and sound
+models and others) are separate works under their own licenses. They are not
+part of this repository. See THIRD_PARTY.md.

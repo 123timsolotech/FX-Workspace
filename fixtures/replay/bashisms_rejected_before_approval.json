@@ -1,0 +1,72 @@
+{
+  "format": "agentic-replay/1",
+  "meta": {
+    "name": "POSIX command sent to Windows PowerShell is rejected before approval, then corrected",
+    "provenance": "reconstructed",
+    "model": "unrecorded",
+    "evidence": "The Snake-game screenshots show a local model issuing a POSIX command (printf ... > file) on Windows, which cmd.exe rejects only after the user approved it. This fixture uses the other constructs named in the reliability brief (rm -rf, &&, mkdir -p) in the same position.",
+    "notes": "Reconstructed: the exact commands and the model's corrected second call.",
+    "model_note": "The model that produced the evidence is not known; 'unrecorded' is a placeholder name for the replay."
+  },
+  "setup": {
+    "mode": "local",
+    "entry": "loop",
+    "turn_policy": "action",
+    "settings": {
+      "effort": "normal"
+    }
+  },
+  "request": "Clean out my build folder and recreate it",
+  "responses": [
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "b1",
+          "name": "run_powershell",
+          "arguments": "{\"command\": \"rm -rf {sandbox_json}\\\\build && mkdir -p {sandbox_json}\\\\build\", \"justification\": \"Recreate the build folder\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "b2",
+          "name": "run_powershell",
+          "arguments": "{\"command\": \"Remove-Item -Recurse -Force '{sandbox_json}\\\\build'; New-Item -ItemType Directory '{sandbox_json}\\\\build' | Out-Null\", \"justification\": \"Recreate the build folder\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "stop",
+      "content": "The build folder has been emptied and recreated."
+    }
+  ],
+  "approvals": [
+    true
+  ],
+  "tools": {
+    "mode": "stub",
+    "results": {
+      "run_powershell": [
+        {
+          "ok": true,
+          "message": "Exit Code: 0\nOutput:\n"
+        }
+      ]
+    }
+  },
+  "expect": {
+    "status": "success",
+    "approval_cards": 1,
+    "executed": [
+      "run_powershell"
+    ],
+    "tool_results_contain": [
+      "rm -rf",
+      "Remove-Item -Recurse -Force",
+      "no && or ||"
+    ]
+  }
+}

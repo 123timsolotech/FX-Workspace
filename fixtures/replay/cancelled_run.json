@@ -1,0 +1,63 @@
+{
+  "format": "agentic-replay/1",
+  "meta": {
+    "name": "User presses Stop while the model is writing its second reply",
+    "provenance": "reconstructed",
+    "model": "unrecorded",
+    "evidence": "run_control.py / run_agent_loop checkpoint after call_model: 'Stopped while the model was thinking: discard its reply, run nothing.' This fixture drives that path through the whole pipeline.",
+    "notes": "Reconstructed: the calls. setup.stop_at_response=1 makes the harness press Stop while reply #2 is being produced.",
+    "model_note": "The model that produced the evidence is not known; 'unrecorded' is a placeholder name for the replay."
+  },
+  "setup": {
+    "mode": "local",
+    "entry": "agent",
+    "stop_at_response": 1,
+    "settings": {
+      "effort": "normal",
+      "prompt_enhancement": "off"
+    }
+  },
+  "request": "Create a folder called Reports on my desktop and write a summary file in it",
+  "responses": [
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "s1",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"{sandbox_json}\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "s2",
+          "name": "make_dir",
+          "arguments": "{\"path\": \"{sandbox_json}\\\\Reports\", \"justification\": \"Create the folder\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "stop",
+      "content": "Done."
+    }
+  ],
+  "approvals": [
+    true
+  ],
+  "tools": {
+    "mode": "stub"
+  },
+  "expect": {
+    "status": "stopped",
+    "executed": [
+      "list_dir"
+    ],
+    "approval_cards": 0,
+    "never_executed": [
+      "make_dir"
+    ]
+  }
+}

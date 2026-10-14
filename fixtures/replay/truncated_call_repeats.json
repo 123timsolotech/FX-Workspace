@@ -1,0 +1,97 @@
+{
+  "format": "agentic-replay/1",
+  "meta": {
+    "name": "Every reply is cut off mid tool call (worst case of the Snake-game failure)",
+    "provenance": "reconstructed",
+    "model": "unrecorded",
+    "evidence": "Same screenshots as snake_game_cutoff: popup 2 showed execute_command with '(no arguments)' after a cut-off reply. This fixture repeats that cut-off reply for every request, including the automatic retries, to prove nothing unreadable ever reaches approval or execution.",
+    "notes": "Reconstructed: the repetition itself (a single cut-off call is what the evidence shows).",
+    "model_note": "The model that produced the evidence is not known; 'unrecorded' is a placeholder name for the replay."
+  },
+  "setup": {
+    "mode": "local",
+    "entry": "loop",
+    "turn_policy": "action",
+    "settings": {
+      "effort": "high"
+    }
+  },
+  "request": "Make a Snake game HTML file on my desktop",
+  "responses": [
+    {
+      "finish_reason": "length",
+      "tool_calls": [
+        {
+          "id": "t1",
+          "name": "execute_command",
+          "arguments": "{\"command\": \"printf '%s' '<!DOCTYPE html><html><head><style>body{margin:0} body{marg"
+        }
+      ]
+    },
+    {
+      "finish_reason": "length",
+      "tool_calls": [
+        {
+          "id": "t2",
+          "name": "execute_command",
+          "arguments": "{\"command\": \"printf '%s' '<!DOCTYPE html><html><head><style>body{margin:0} body{marg"
+        }
+      ]
+    },
+    {
+      "finish_reason": "length",
+      "tool_calls": [
+        {
+          "id": "t3",
+          "name": "execute_command",
+          "arguments": "{\"command\": \"printf '%s' '<!DOCTYPE html><html><head><style>body{margin:0} body{marg"
+        }
+      ]
+    },
+    {
+      "finish_reason": "length",
+      "tool_calls": [
+        {
+          "id": "t4",
+          "name": "execute_command",
+          "arguments": "{\"command\": \"printf '%s' '<!DOCTYPE html><html><head><style>body{margin:0} body{marg"
+        }
+      ]
+    },
+    {
+      "finish_reason": "length",
+      "tool_calls": [
+        {
+          "id": "t5",
+          "name": "execute_command",
+          "arguments": "{\"command\": \"printf '%s' '<!DOCTYPE html><html><head><style>body{margin:0} body{marg"
+        }
+      ]
+    },
+    {
+      "finish_reason": "length",
+      "tool_calls": [
+        {
+          "id": "t6",
+          "name": "execute_command",
+          "arguments": "{\"command\": \"printf '%s' '<!DOCTYPE html><html><head><style>body{margin:0} body{marg"
+        }
+      ]
+    }
+  ],
+  "approvals": [],
+  "tools": {
+    "mode": "stub"
+  },
+  "expect": {
+    "status": "error",
+    "message_contains": [
+      "nothing was run"
+    ],
+    "approval_cards": 0,
+    "executed": [],
+    "tool_results_contain": [
+      "cut off by the output length limit"
+    ]
+  }
+}

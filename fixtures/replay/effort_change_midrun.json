@@ -1,0 +1,78 @@
+{
+  "format": "agentic-replay/1",
+  "meta": {
+    "name": "Effort raised while the model is writing; applied at the next step, never mid-call",
+    "provenance": "reconstructed",
+    "model": "unrecorded",
+    "evidence": "The effort menu can be changed while a run is going (the composer stays usable). settings_at_response['1'] applies the change while reply #2 is being streamed, the way POST /api/settings would.",
+    "notes": "Reconstructed: the calls.",
+    "model_note": "The model that produced the evidence is not known; 'unrecorded' is a placeholder name for the replay."
+  },
+  "setup": {
+    "mode": "local",
+    "entry": "agent",
+    "settings": {
+      "effort": "normal",
+      "prompt_enhancement": "off"
+    },
+    "settings_at_response": {
+      "1": {
+        "effort": "high"
+      }
+    }
+  },
+  "request": "Check folders A, B and C for text files",
+  "responses": [
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "m1",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"{sandbox_json}\\\\A\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "m2",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"{sandbox_json}\\\\B\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "m3",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"{sandbox_json}\\\\C\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "stop",
+      "content": "Each folder has one text file."
+    }
+  ],
+  "tools": {
+    "mode": "stub"
+  },
+  "expect": {
+    "status": "success",
+    "executed": [
+      "list_dir",
+      "list_dir",
+      "list_dir"
+    ],
+    "events_contain": [
+      [
+        "activity",
+        "Effort changed to Thorough"
+      ]
+    ]
+  }
+}

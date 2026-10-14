@@ -1,0 +1,19 @@
+{
+  "motionStart": {
+    "fill": 284,
+    "thumb": 333
+  },
+  "motionDuring": {
+    "direction": "down",
+    "energy": "max",
+    "fill": 275.125,
+    "thumb": 324.125,
+    "transform": "matrix(1, 0, 0, 1, 71.166, 0)",
+    "travel": "lv-travel-down-b"
+  },
+  "motionAfter": {
+    "fill": 235.984375,
+    "thumb": 284.984375,
+    "transform": "matrix(1, 0, 0, 1, 72.8353, 0)"
+  }
+}

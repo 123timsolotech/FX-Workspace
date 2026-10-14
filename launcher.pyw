@@ -1,0 +1,283 @@
+"""
+launcher.pyw
+============
+Agentic Workspace without console windows. `Agentic Workspace.vbs` (or run.bat, which hands over to this
+file) runs it with the project's pythonw.exe, so no console opens at any point. It does what run.bat does -
+dependency sync, keys.local.bat, llama-server, the page copy - serves the app in this process and opens the
+app window. Closing the app window stops the server, and llama-server too when this launcher started it, so
+nothing keeps running unseen (or holding the GPU).
+
+Logs, since there is no console: data/logs/server.log and data/logs/llama-server.log (the run before is kept
+as *.prev.log). Problems show as a message box. `run.bat console` still runs everything in a console window.
+"""
+from __future__ import annotations
+
+import hashlib
+import os
+import subprocess
+import sys
+import threading
+import time
+import traceback
+import urllib.request
+
+BASE = os.path.dirname(os.path.abspath(__file__))
+if BASE not in sys.path:
+    sys.path.insert(0, BASE)
+LOGS = os.path.join(BASE, "data", "logs")
+NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+TITLE = "FX Workspace"
+APP_URL = "http://127.0.0.1:8000"
+CLOSE_GRACE = 4.0                     # seconds without the app window before the server stops (a reload is quicker)
+
+
+def message(text: str, error: bool = True) -> None:
+    import ctypes
+    ctypes.windll.user32.MessageBoxW(None, text, TITLE, 0x10 if error else 0x40)
+
+
+def log_file(name: str):
+    os.makedirs(LOGS, exist_ok=True)
+    path = os.path.join(LOGS, f"{name}.log")
+    if os.path.exists(path):
+        os.replace(path, os.path.join(LOGS, f"{name}.prev.log"))
+    return open(path, "w", encoding="utf-8", errors="replace", buffering=1)
+
+
+def answers(url: str, timeout: float = 2.0) -> bool:
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))     # loopback: never a proxy
+    try:
+        with opener.open(url, timeout=timeout) as r:
+            return r.status == 200
+    except Exception:
+        return False
+
+
+def sync_dependencies(log) -> bool:
+    """pip install -r requirements.txt, as run.bat does - but only when requirements.txt changed since the last sync."""
+    req = os.path.join(BASE, "requirements.txt")
+    stamp = os.path.join(BASE, ".venv", "requirements.sha256")
+    with open(req, "rb") as f:
+        digest = hashlib.sha256(f.read()).hexdigest()
+    try:
+        with open(stamp, encoding="ascii") as f:
+            if f.read().strip() == digest:
+                return True
+    except OSError:
+        pass
+    print("Syncing pinned dependencies...", flush=True)
+    python = os.path.join(BASE, ".venv", "Scripts", "python.exe")
+    done = subprocess.run([python, "-m", "pip", "install", "--disable-pip-version-check", "-r", req],
+                          stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, creationflags=NO_WINDOW)
+    if done.returncode:
+        return False
+    with open(stamp, "w", encoding="ascii") as f:
+        f.write(digest)
+    return True
+
+
+def load_keys() -> None:
+    """keys.local.bat's `set NAME=value` lines (made with placeholders when missing, like run.bat)."""
+    path = os.path.join(BASE, "keys.local.bat")
+    if not os.path.exists(path):
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("@echo off\nset GEMINI_API_KEYS=YOUR_GEMINI_KEY_HERE\nset GROQ_API_KEY=YOUR_GROQ_KEY_HERE\n"
+                    "set OPENAI_API_KEY=YOUR_OPENAI_KEY_HERE\n")
+    with open(path, encoding="utf-8", errors="replace") as f:
+        for line in f:
+            line = line.strip()
+            if not line.lower().startswith("set "):
+                continue
+            body = line[4:].strip()
+            if len(body) > 1 and body[0] == body[-1] == '"':
+                body = body[1:-1]
+            name, eq, value = body.partition("=")
+            if eq and name.strip():
+                os.environ[name.strip()] = value.strip()
+
+
+def llama_dir() -> str:
+    # The newest stock llama.cpp first, PrismML's fork last - as in run.bat. The app moves the router to the
+    # fork when a model needs it (Ternary Bonsai 2) and back (llama_builds.py).
+    import paths
+    for d in (*paths.llama_dirs(), *paths.prism_dirs()):
+        if os.path.exists(os.path.join(d, "llama-server.exe")):
+            return d
+    return paths.llama_dirs()[0]
+
+
+def environment() -> None:
+    env = os.environ
+    env.setdefault("LLAMA_HOST", "127.0.0.1")
+    env.setdefault("LLAMA_PORT", "8090")
+    env.setdefault("MODELS_INI", os.path.join(BASE, "models.ini"))
+    import model_scan
+    model_scan.ensure_ini()                       # a fresh install: models.ini from models.example.ini, plus local\models
+    env.setdefault("LLAMA_CTX", "65536")          # a fallback only; the real window is models.ini's ([*] ctx-size)
+    env.setdefault("AUTOSTART_LLAMA", "1")
+    env["NO_PROXY"] = env["no_proxy"] = "127.0.0.1,localhost,::1"
+    env["LLAMA_SERVER_BASE"] = f"http://{env['LLAMA_HOST']}:{env['LLAMA_PORT']}/v1"
+    # No console windows: a llama-server the app restarts on the other build is windowless too, and stops with
+    # the app as this launcher's own would (llama_builds.py).
+    env["AGENTIC_WINDOWLESS"] = "1"
+
+
+def start_llama() -> subprocess.Popen | None:
+    """llama-server's router, windowless, when it isn't already answering; waits up to 45 s for it."""
+    env = os.environ
+    models = f"{env['LLAMA_SERVER_BASE']}/models"
+    if answers(models, 3) or env.get("AUTOSTART_LLAMA") != "1":
+        return None
+    exe = os.path.join(llama_dir(), "llama-server.exe")
+    if not os.path.exists(exe):
+        print(f"[WARNING] llama-server.exe was not found at {exe}. Cloud mode can still be used.", flush=True)
+        return None
+    print("Starting llama-server with a strict one-model VRAM limit...", flush=True)
+    proc = subprocess.Popen([exe, "--host", env["LLAMA_HOST"], "--port", env["LLAMA_PORT"], "--models-preset", env["MODELS_INI"],
+                             "--models-max", "1", "--jinja", "--parallel", "1"],
+                            stdin=subprocess.DEVNULL, stdout=log_file("llama-server"), stderr=subprocess.STDOUT,
+                            creationflags=NO_WINDOW)
+    for _ in range(45):
+        if answers(models, 2):
+            break
+        if proc.poll() is not None:
+            print("[WARNING] llama-server stopped right away - see data/logs/llama-server.log.", flush=True)
+            return None
+        time.sleep(1)
+    else:
+        print("[WARNING] llama-server did not become ready. Cloud mode can still be used.", flush=True)
+    return proc
+
+
+def stop_tree(proc: subprocess.Popen | None) -> None:
+    """llama-server's router and the model servers it started."""
+    if proc and proc.poll() is None:
+        subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True, timeout=15, creationflags=NO_WINDOW)
+
+
+def app_windows(browser_name: str) -> int:
+    """How many app windows are open: the page's title ends in "FX Workspace" (a chat's title comes first),
+    in the browser that shows it. The Studio overlay ("FX Workspace - HUD") doesn't count."""
+    import app_window
+    try:
+        import psutil
+    except ImportError:
+        psutil = None
+    n = 0
+    for hwnd, title in app_window._windows():
+        if "HUD" in title or not (title == TITLE or title.startswith(TITLE + " ") or f" - {TITLE}" in title):
+            continue
+        if psutil and browser_name:
+            try:
+                if psutil.Process(app_window._pid(hwnd)).name().lower() != browser_name:
+                    continue
+            except Exception:
+                continue
+        n += 1
+    return n
+
+
+def watch(server) -> None:
+    """Open the app window once the server answers; stop the server once the window has been closed."""
+    import app_window
+    if not app_window.wait_for_server(APP_URL, timeout=120):
+        return
+    if os.environ.get("APP_WINDOW", "1") == "0" or app_window.open_app(APP_URL) != "app":
+        import webbrowser
+        if os.environ.get("APP_WINDOW") == "0":
+            webbrowser.open(APP_URL)
+        return                        # a browser tab: there's no telling when it closes, so the server stays up
+    exe = app_window.find_browser() or ""
+    name = os.path.basename(exe).lower()
+    started, seen, gone = time.time(), False, None
+    while not server.should_exit:
+        if app_windows(name):
+            seen, gone = True, None
+        elif seen:
+            gone = gone or time.time()
+            if time.time() - gone >= CLOSE_GRACE:
+                print("The app window was closed - stopping.", flush=True)
+                server.should_exit = True
+                return
+        elif time.time() - started > 120:
+            print("[WARNING] The app window never appeared; the server keeps running at " + APP_URL, flush=True)
+            return
+        time.sleep(1)
+
+
+def quiet_children() -> None:
+    """Under run.bat every console program the app runs (PowerShell for the clipboard and the app list,
+    tasklist, the assistant's shell commands...) shared run.bat's console. Under pythonw there is no console to
+    share, so each would open a window of its own: here they get none instead - as before, minus the window.
+    (Windowed programs ignore the flag; launches that ask for their own console or none at all keep theirs.)"""
+    own = getattr(subprocess, "CREATE_NEW_CONSOLE", 0x10) | getattr(subprocess, "DETACHED_PROCESS", 0x8)
+    original = subprocess.Popen.__init__
+
+    def init(self, *args, **kwargs):
+        if len(args) <= 13 and not kwargs.get("creationflags", 0) & own:          # creationflags is the 14th
+            kwargs["creationflags"] = kwargs.get("creationflags", 0) | NO_WINDOW
+        original(self, *args, **kwargs)
+
+    subprocess.Popen.__init__ = init
+
+
+def single_instance() -> bool:
+    import ctypes
+    ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\AgenticWorkspaceLauncher")
+    return ctypes.windll.kernel32.GetLastError() != 183            # ERROR_ALREADY_EXISTS
+
+
+def main() -> int:
+    os.chdir(BASE)
+    if not single_instance():
+        # Already starting or running: show its window (when it's still starting, its own window is coming).
+        # No logging here - the running launcher has the log open.
+        sys.stdout = sys.stderr = open(os.devnull, "w")
+        if answers(f"{APP_URL}/api/settings"):
+            import app_window
+            app_window.open_app(APP_URL)
+        return 0
+    out = log_file("server")
+    sys.stdout = sys.stderr = out
+    print(f"FX Workspace - {time.strftime('%Y-%m-%d %H:%M:%S')}", flush=True)
+    quiet_children()
+    if answers(f"{APP_URL}/api/settings"):              # a server started some other way (run.bat console)
+        import app_window
+        app_window.open_app(APP_URL)
+        return 0
+    if not sync_dependencies(out):
+        message("Installing the Python dependencies failed.\n\nDetails: data\\logs\\server.log\n"
+                "Run run.bat console to see it happen.")
+        return 1
+    environment()
+    load_keys()
+    import shutil
+    os.makedirs(os.path.join(BASE, "static"), exist_ok=True)
+    shutil.copyfile(os.path.join(BASE, "index.html"), os.path.join(BASE, "static", "index.html"))
+    llama = start_llama()
+    try:
+        import uvicorn
+        # A stream still open (the Studio overlay's, say) must not hold the shutdown up.
+        server = uvicorn.Server(uvicorn.Config("main:app", host="127.0.0.1", port=8000, timeout_graceful_shutdown=5))
+        threading.Thread(target=watch, args=(server,), daemon=True, name="app-window-watch").start()
+        print(f"Starting the API at {APP_URL} ...", flush=True)
+        try:
+            server.run()
+        except SystemExit:
+            pass
+        if not server.started:
+            message("FX Workspace could not start (is port 8000 taken?).\n\nDetails: data\\logs\\server.log")
+            return 1
+        print("FX Workspace stopped.", flush=True)
+        return 0
+    except Exception:
+        traceback.print_exc()
+        message("FX Workspace stopped with an error.\n\nDetails: data\\logs\\server.log")
+        return 1
+    finally:
+        stop_tree(llama)
+
+
+if __name__ == "__main__":
+    code = main()
+    os._exit(code)                    # leftover worker threads must not keep a windowless process alive

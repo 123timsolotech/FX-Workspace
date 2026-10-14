@@ -1,0 +1,209 @@
+{
+  "format": "agentic-replay/1",
+  "meta": {
+    "name": "Two tool calls streamed as interleaved fragments, split mid-name and mid-escape",
+    "provenance": "reconstructed",
+    "model": "unrecorded",
+    "evidence": "llama-server streams tool calls as OpenAI-style deltas: the first delta of a call carries index, id and (part of) the name; later deltas carry argument fragments that may split anywhere, including inside an escape sequence; with parallel calls the indexes interleave. This fixture reproduces those splits explicitly.",
+    "notes": "Reconstructed: the exact split points. Local mode keeps only the first call per reply, so the second is deferred.",
+    "model_note": "The model that produced the evidence is not known; 'unrecorded' is a placeholder name for the replay."
+  },
+  "setup": {
+    "mode": "local",
+    "entry": "loop",
+    "turn_policy": "action",
+    "settings": {
+      "effort": "normal"
+    }
+  },
+  "request": "Make a notes file and list the folder",
+  "responses": [
+    {
+      "chunks": [
+        {
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "role": "assistant",
+                "content": null
+              }
+            }
+          ]
+        },
+        {
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 0,
+                    "id": "f1",
+                    "type": "function",
+                    "function": {
+                      "name": "write_",
+                      "arguments": ""
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 0,
+                    "function": {
+                      "name": "file"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 0,
+                    "function": {
+                      "arguments": "{\"filena"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 1,
+                    "id": "f2",
+                    "type": "function",
+                    "function": {
+                      "name": "list_dir",
+                      "arguments": "{\"direc"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 0,
+                    "function": {
+                      "arguments": "me\": \"{sandbox_json}\\\\notes.txt\", \"content\": \"line 1\\"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 0,
+                    "function": {
+                      "arguments": "nline 2 \\u00e9\"}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "choices": [
+            {
+              "index": 0,
+              "delta": {
+                "tool_calls": [
+                  {
+                    "index": 1,
+                    "function": {
+                      "arguments": "tory\": \"{sandbox_json}\"}"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "choices": [
+            {
+              "index": 0,
+              "delta": {},
+              "finish_reason": "tool_calls"
+            }
+          ]
+        },
+        {
+          "choices": [],
+          "usage": {
+            "prompt_tokens": 900,
+            "completion_tokens": 61
+          }
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "f3",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"{sandbox_json}\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "stop",
+      "content": "Created notes.txt; the folder now holds it."
+    }
+  ],
+  "approvals": [
+    true
+  ],
+  "tools": {
+    "mode": "real"
+  },
+  "expect": {
+    "status": "success",
+    "executed": [
+      "write_file",
+      "list_dir"
+    ],
+    "approval_cards": 1,
+    "tool_results_contain": [
+      "notes.txt"
+    ]
+  }
+}

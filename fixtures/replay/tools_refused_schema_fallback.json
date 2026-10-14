@@ -1,0 +1,59 @@
+{
+  "format": "agentic-replay/1",
+  "meta": {
+    "name": "llama-server refuses native tools; replies are constrained with a JSON schema instead",
+    "provenance": "reconstructed",
+    "model": "unrecorded",
+    "evidence": "llama.cpp server rejects a request carrying `tools` with the error 'tools param requires --jinja flag' when the server was started without --jinja (llama.cpp tools/server utils). run.bat starts it with --jinja, but a user-started server may not; this fixture replays that refusal.",
+    "notes": "Reconstructed: the model's two schema-shaped replies.",
+    "model_note": "The model that produced the evidence is not known; 'unrecorded' is a placeholder name for the replay."
+  },
+  "setup": {
+    "mode": "local",
+    "entry": "loop",
+    "turn_policy": "action",
+    "settings": {
+      "effort": "normal"
+    }
+  },
+  "request": "List the files in my projects folder",
+  "responses": [
+    {
+      "raise": "Error code: 500 - {'error': {'code': 500, 'message': 'tools param requires --jinja flag', 'type': 'server_error'}}"
+    },
+    {
+      "finish_reason": "stop",
+      "content": "{\"tool\": \"list_dir\", \"arguments\": {\"directory\": \"{sandbox_json}\"}}"
+    },
+    {
+      "finish_reason": "stop",
+      "content": "{\"answer\": \"The folder is empty.\"}"
+    }
+  ],
+  "tools": {
+    "mode": "stub",
+    "results": {
+      "list_dir": [
+        {
+          "ok": true,
+          "message": "(empty)"
+        }
+      ]
+    }
+  },
+  "expect": {
+    "status": "success",
+    "message_contains": [
+      "The folder is empty."
+    ],
+    "executed": [
+      "list_dir"
+    ],
+    "events_contain": [
+      [
+        "activity",
+        "JSON schema"
+      ]
+    ]
+  }
+}

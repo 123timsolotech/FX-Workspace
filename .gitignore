@@ -1,0 +1,53 @@
+# Secrets - never commit (run.bat recreates keys.local.bat with placeholders)
+keys.local.bat
+keys_local.bat
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+
+# Local Python environment and caches
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Runtime data: chats, projects, memory, undo backups, indexes, recordings,
+# routines, MCP state, benchmarks (see ARCHITECTURE.md "Data directories").
+# Files committed under data/ before this file existed were untracked in 3.5
+# (awareness.json held personal app-usage data).
+data/
+
+# Downloaded engines and models (paths.py): llama.cpp, .gguf models, the image /
+# video / voice engines. install.bat and each feature's setup fill this folder.
+local/
+*.gguf
+
+# This PC's own configuration - made on the first start:
+#   models.ini from models.example.ini (model_scan.py), settings.json by the app
+models.ini
+models.ini.bak*
+settings.json
+settings.json.bak*
+*.bak-*
+
+# Logs and leftovers
+*.log
+*.part
+*.tmp
+
+# Development leftovers - not part of the app
+.checkpoints/
+_backup_*/
+Claude outputs/
+benchmarks/
+HANDOFF.md
+
+# Notes and scratch outputs from development sessions
+CLAUDE.md
+UI_UX_AUDIT.md
+snake.html
+snake-game-34.html
+solar-system.html
+stud_trunk.png

@@ -1,0 +1,135 @@
+{
+  "format": "agentic-replay/1",
+  "meta": {
+    "name": "Snake game: printf through cmd.exe, then a cut-off execute_command",
+    "provenance": "reconstructed",
+    "model": "unrecorded",
+    "evidence": "User screenshots (2026-09-23): approval popup 1 = execute_command, command \"printf '%s\\n' '<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><title>Snake Game</title><style>body{display:flex;justify-content:center;...\", justification 'Create Snake game HTML file on desktop', context 'Step 1 of 3: Create a comprehensive HTML file with embedded CSS and JavaScript for a polished Snake game'. Popup 2 = same step, execute_command '(no arguments)', 'No justification given.' Settings at the time: Effort Deep (max), Prompt preparation Detailed, Local mode.",
+    "notes": "Reconstructed parts: plan steps 2-3 (only step 1 text is visible), the command text after the '...' shown in popup 1, the cmd.exe error text (the real cmd.exe message for an unknown command), and replies 4-7 (the model's recovery after the fix). Replies 1-3 reproduce the screenshots; reply 3 is the cut-off call that became the empty card.",
+    "model_note": "The model that produced the evidence is not known; 'unrecorded' is a placeholder name for the replay."
+  },
+  "setup": {
+    "mode": "local",
+    "entry": "agent",
+    "settings": {
+      "effort": "max",
+      "prompt_enhancement": "detailed"
+    }
+  },
+  "request": "Make a polished Snake game as an HTML file on my desktop",
+  "responses": [
+    {
+      "finish_reason": "tool_calls",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "c1",
+          "name": "set_plan",
+          "arguments": "{\"goal\": \"Create a polished Snake game HTML file on the desktop\", \"steps\": [\"Create a comprehensive HTML file with embedded CSS and JavaScript for a polished Snake game\", \"Save it to the desktop\", \"Open it to check it works\"]}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "c2",
+          "name": "execute_command",
+          "arguments": "{\"command\": \"printf '%s\\\\n' '<!DOCTYPE html><html><head><meta charset=\\\"UTF-8\\\"><title>Snake Game</title><style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#111}</style></head><body><canvas id=\\\"c\\\" width=\\\"400\\\" height=\\\"400\\\"></canvas></body></html>' > \\\"%USERPROFILE%\\\\Desktop\\\\snake.html\\\"\", \"justification\": \"Create Snake game HTML file on desktop\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "length",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "c3",
+          "name": "execute_command",
+          "arguments": "{\"command\": \"printf '%s\\\\n' '<!DOCTYPE html><html><head><meta charset=\\\"UTF-8\\\"><title>Snake Game</title><style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#111}canvas{border:2px solid #0f0}#score{color:#0f0;font:20px monospace}</style></head><body><div id=\\\"score\\\">0</div><canvas id=\\\"c\\\" width=\\\"400\\\" height=\\\"400\\\"></canvas><script>const c=document.getElementById('c'),x=c.getContext('2d');let s=[{x:10,y:10}],d={x:1,y:0},f={x:5,y:5},sc=0;function step(){const h={x:s[0].x+d.x,y:s[0].y+d.y};s.unshift(h);if(h.x===f.x&&h.y===f.y){sc++;"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "content": "I'll write the page in two parts so each call stays short.",
+      "tool_calls": [
+        {
+          "id": "c4",
+          "name": "write_file",
+          "arguments": "{\"filename\": \"{sandbox_json}\\\\snake.html\", \"content\": \"<!DOCTYPE html><html><head><meta charset=\\\"UTF-8\\\"><title>Snake Game</title><style>body{display:flex;justify-content:center;align-items:center;height:100vh;margin:0;background:#111}</style></head><body><canvas id=\\\"c\\\" width=\\\"400\\\" height=\\\"400\\\"></canvas>\", \"justification\": \"Write the page markup and styles\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "c5",
+          "name": "write_file",
+          "arguments": "{\"filename\": \"{sandbox_json}\\\\snake.html\", \"content\": \"<script>/* game loop */</script></body></html>\", \"append\": true, \"justification\": \"Add the game script\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "c6",
+          "name": "update_plan",
+          "arguments": "{\"step\": 1, \"status\": \"done\", \"note\": \"written in two parts\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "stop",
+      "content": "The Snake game is saved as snake.html on your desktop.",
+      "tool_calls": []
+    }
+  ],
+  "approvals": [
+    true,
+    true,
+    true
+  ],
+  "tools": {
+    "mode": "stub",
+    "results": {
+      "execute_command": [
+        {
+          "ok": false,
+          "message": "Exit Code: 1\nOutput:\n\n[stderr]\n'printf' is not recognized as an internal or external command,\noperable program or batch file.\n"
+        }
+      ],
+      "write_file": [
+        {
+          "ok": true,
+          "message": "Wrote 239 chars to snake.html"
+        },
+        {
+          "ok": true,
+          "message": "Appended 46 chars to snake.html"
+        }
+      ]
+    }
+  },
+  "expect": {
+    "status": "success",
+    "no_empty_approvals": true,
+    "never_executed": [
+      "execute_command"
+    ],
+    "tool_results_contain": [
+      "printf"
+    ],
+    "events_contain": [
+      [
+        "note",
+        "cut off by the length limit"
+      ]
+    ]
+  }
+}

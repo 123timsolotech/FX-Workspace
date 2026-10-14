@@ -1,0 +1,90 @@
+[
+  {
+    "type": "pointerdown",
+    "trusted": true,
+    "key": "effort",
+    "value": 0,
+    "dragging": true,
+    "confirmed": "low"
+  },
+  {
+    "type": "input",
+    "trusted": true,
+    "key": "effort",
+    "value": 0.323741007194245,
+    "dragging": true,
+    "confirmed": "low"
+  },
+  {
+    "type": "input",
+    "trusted": true,
+    "key": "effort",
+    "value": 0.665467625899281,
+    "dragging": true,
+    "confirmed": "low"
+  },
+  {
+    "type": "input",
+    "trusted": true,
+    "key": "effort",
+    "value": 0.989208633093525,
+    "dragging": true,
+    "confirmed": "low"
+  },
+  {
+    "type": "input",
+    "trusted": true,
+    "key": "effort",
+    "value": 1.31294964028777,
+    "dragging": true,
+    "confirmed": "low"
+  },
+  {
+    "type": "input",
+    "trusted": true,
+    "key": "effort",
+    "value": 1.63669064748201,
+    "dragging": true,
+    "confirmed": "low"
+  },
+  {
+    "type": "input",
+    "trusted": true,
+    "key": "effort",
+    "value": 1.97841726618705,
+    "dragging": true,
+    "confirmed": "low"
+  },
+  {
+    "type": "input",
+    "trusted": true,
+    "key": "effort",
+    "value": 2.3021582733813,
+    "dragging": true,
+    "confirmed": "low"
+  },
+  {
+    "type": "input",
+    "trusted": true,
+    "key": "effort",
+    "value": 2.62589928057554,
+    "dragging": true,
+    "confirmed": "low"
+  },
+  {
+    "type": "pointerup",
+    "trusted": true,
+    "key": "effort",
+    "value": 2.62589928057554,
+    "dragging": false,
+    "confirmed": "low"
+  },
+  {
+    "type": "change",
+    "trusted": true,
+    "key": "effort",
+    "value": 3,
+    "dragging": false,
+    "confirmed": "extra"
+  }
+]

@@ -1,0 +1,47 @@
+{
+  "first": [
+    {
+      "opacity": "0.35355",
+      "transform": "none"
+    },
+    {
+      "opacity": "0.946813",
+      "transform": "none"
+    },
+    {
+      "opacity": "0.241787",
+      "transform": "none"
+    },
+    {
+      "opacity": "0.413964",
+      "transform": "none"
+    },
+    {
+      "opacity": "0.453611",
+      "transform": "none"
+    }
+  ],
+  "second": [
+    {
+      "opacity": "0.389845",
+      "transform": "none"
+    },
+    {
+      "opacity": "0.49061",
+      "transform": "none"
+    },
+    {
+      "opacity": "0.807264",
+      "transform": "none"
+    },
+    {
+      "opacity": "0.356374",
+      "transform": "none"
+    },
+    {
+      "opacity": "0.936614",
+      "transform": "none"
+    }
+  ],
+  "changed": true
+}

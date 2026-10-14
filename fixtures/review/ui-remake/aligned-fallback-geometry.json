@@ -1,0 +1,12 @@
+{
+  "fallbackGeometry": {
+    "head": 37,
+    "label": "ReviewedRuns as Thorough",
+    "top": 274.09375
+  },
+  "regularGeometry": {
+    "head": 37,
+    "label": "Quick",
+    "top": 274.09375
+  }
+}

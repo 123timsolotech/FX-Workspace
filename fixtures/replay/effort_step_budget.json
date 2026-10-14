@@ -1,0 +1,116 @@
+{
+  "format": "agentic-replay/1",
+  "meta": {
+    "name": "A run stops cleanly at its effort level's step budget",
+    "provenance": "reconstructed",
+    "model": "unrecorded",
+    "evidence": "Local models regularly keep exploring (one folder after another) instead of answering; run_agent_loop used to cap this with a fixed MAX_LOCAL_ITERATIONS. The effort profile now owns the step budget; this fixture tunes Quick's step limit to 3 (effort_overrides) so the cap is reached quickly.",
+    "notes": "Reconstructed: the folder sequence.",
+    "model_note": "The model that produced the evidence is not known; 'unrecorded' is a placeholder name for the replay."
+  },
+  "setup": {
+    "mode": "local",
+    "entry": "agent",
+    "settings": {
+      "effort": "low",
+      "prompt_enhancement": "off",
+      "effort_overrides": {
+        "unrecorded": {
+          "low": {
+            "local_iterations": 3
+          }
+        }
+      }
+    }
+  },
+  "request": "List the files in my folders A, B, C, D and E",
+  "responses": [
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "e1",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"{sandbox_json}\\\\A\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "e2",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"{sandbox_json}\\\\B\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "e3",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"{sandbox_json}\\\\C\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "e4",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"{sandbox_json}\\\\D\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "e5",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"{sandbox_json}\\\\E\"}"
+        }
+      ]
+    }
+  ],
+  "tools": {
+    "mode": "stub",
+    "results": {
+      "list_dir": [
+        {
+          "ok": true,
+          "message": "a.txt"
+        },
+        {
+          "ok": true,
+          "message": "b.txt"
+        },
+        {
+          "ok": true,
+          "message": "c.txt"
+        }
+      ]
+    }
+  },
+  "expect": {
+    "status": "success",
+    "message_contains": [
+      "step limit"
+    ],
+    "executed": [
+      "list_dir",
+      "list_dir",
+      "list_dir"
+    ],
+    "events_contain": [
+      [
+        "activity",
+        "Reached the step limit"
+      ]
+    ],
+    "max_model_requests": 3
+  }
+}

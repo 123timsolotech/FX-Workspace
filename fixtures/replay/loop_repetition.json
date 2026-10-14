@@ -1,0 +1,95 @@
+{
+  "format": "agentic-replay/1",
+  "meta": {
+    "name": "Model repeats the same read call with the same arguments",
+    "provenance": "reconstructed",
+    "model": "unrecorded",
+    "evidence": "run_agent_loop's loop breaker (main.py) and its comments document small local models re-issuing a byte-identical tool batch after they already have the result; test_grounding/test_architecture cover the single-repeat case. This fixture extends it to four identical calls.",
+    "notes": "Reconstructed: the exact call and folder.",
+    "model_note": "The model that produced the evidence is not known; 'unrecorded' is a placeholder name for the replay."
+  },
+  "setup": {
+    "mode": "local",
+    "entry": "loop",
+    "turn_policy": "action",
+    "settings": {
+      "effort": "normal"
+    }
+  },
+  "request": "What is in my Downloads folder?",
+  "responses": [
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "l1",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"C:\\\\Users\\\\me\\\\Downloads\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "l2",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"C:\\\\Users\\\\me\\\\Downloads\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "l3",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"C:\\\\Users\\\\me\\\\Downloads\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "l4",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"C:\\\\Users\\\\me\\\\Downloads\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "tool_calls",
+      "tool_calls": [
+        {
+          "id": "l5",
+          "name": "list_dir",
+          "arguments": "{\"directory\": \"C:\\\\Users\\\\me\\\\Downloads\"}"
+        }
+      ]
+    },
+    {
+      "finish_reason": "stop",
+      "content": "Your Downloads folder has setup.exe and notes.txt."
+    }
+  ],
+  "tools": {
+    "mode": "stub",
+    "results": {
+      "list_dir": [
+        {
+          "ok": true,
+          "message": "setup.exe\nnotes.txt"
+        }
+      ]
+    }
+  },
+  "expect": {
+    "executed_once": [
+      "list_dir"
+    ],
+    "tool_results_contain": [
+      "NOT EXECUTED"
+    ]
+  }
+}

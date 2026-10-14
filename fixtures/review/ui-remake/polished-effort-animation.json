@@ -1,0 +1,14 @@
+{
+  "phaseA": {
+    "name": "lv-pixel-wave",
+    "opacity": "0.501687",
+    "transform": "matrix(1, 0, 0, 1, -2.31084, 0)"
+  },
+  "phaseB": {
+    "name": "lv-pixel-wave",
+    "opacity": "0.539845",
+    "transform": "matrix(1, 0, 0, 1, -1.80206, 0)"
+  },
+  "moving": true,
+  "cssLoopsOnly": true
+}

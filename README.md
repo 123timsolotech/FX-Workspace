@@ -1,0 +1,90 @@
+# FX Workspace
+
+A private, local-first AI assistant for Windows. It chats with models running on your own PC (or cloud models,
+if you add a key), works with your apps and files, and asks before it changes anything. It can also make images
+and videos, talk with you by voice, and connect to Roblox Studio.
+
+Everything runs on this PC by default. Nothing is sent anywhere unless you use a cloud model or the web tools.
+
+## Features
+
+- **Chat with local models.** Any llama.cpp `.gguf` model. Effort levels from Quick to Ultra, Prompt Prep,
+  plans you approve first, a context meter with automatic compression, projects and routines.
+- **It acts, carefully.** It works with files, apps and the browser through their real controls, asks before
+  changes, and can undo them. Incognito chats keep nothing.
+- **Voice.** Talk to it hands-free. Live conversation mode answers in about a second, waits through your
+  pauses and lets you cut in. English out of the box; Hebrew, Russian and more with the GPU listener.
+- **Images and video.** FLUX.2 klein, Z-Image-Turbo, Krea 2, SDXL anime models and Wan 2.2 video, all running
+  on your GPU, with a gallery, favourites and trash.
+- **Many themes**, from Light and Dark to Terminal and Aurora.
+
+## Requirements
+
+- Windows 10 or 11 (64-bit).
+- Python 3.11 or 3.12. The installer offers to install it if it's missing.
+- For local models: an NVIDIA GPU with 6 GB or more of VRAM is best (8 GB+ for images and video). AMD and Intel
+  GPUs work through Vulkan, and a CPU-only PC can still use small models or cloud models.
+- Disk space: about 1 GB for the app, plus your models (a small chat model is 2-5 GB).
+
+## Install
+
+1. Download this repository (green **Code** button > **Download ZIP**) and unzip it, or `git clone` it.
+2. Double-click **`install.bat`**. It:
+   - sets up Python and the app's packages,
+   - downloads the right [llama.cpp](https://github.com/ggml-org/llama.cpp) build for your GPU,
+   - offers a starter chat model (Qwen3 4B, 2.4 GB),
+   - can put a shortcut on your desktop.
+
+   Every download comes from its official source and is checked against its published SHA-256.
+3. Start the app with **`run.bat`** (or the shortcut). It opens in its own window at http://127.0.0.1:8000.
+
+Want the models and engines on another drive? Set the `AGENTIC_HOME` environment variable (for example
+`D:\AgenticWorkspace`) before you run the installer. Otherwise they go in the `local\` folder next to the app.
+
+## Adding models
+
+Put any `.gguf` chat model into **`local\models`** and press **Settings > Models > Scan for models**. Or paste a
+model file's path into **Add a model file**. The app adds it to `models.ini` and restarts llama.cpp so it shows up
+right away. For a vision model, put its `mmproj` file in the same folder and it's attached for you.
+
+Where to find models: search Hugging Face for "GGUF". A `Q4_K_M` file a bit smaller than your VRAM is a good start.
+Each model's load settings (GPU layers, context size) can be changed in Settings > Models; `models.ini` is a plain
+text file if you prefer editing by hand (see `models.example.ini`).
+
+**Cloud models** (Gemini, OpenAI, Groq and others) are optional: add your API keys to `keys.local.bat`, which is
+created on the first start and never committed.
+
+## Optional features
+
+| Feature | How to set it up |
+|---|---|
+| Voice | Settings > Voice > **Download and set up** (about 1 GB). Turn on **GPU listener** there for fast Hebrew, Russian and Auto. |
+| Images | `.venv\Scripts\python.exe image_setup.py` (about 22 GB, NVIDIA). The installer can do this for you. |
+| Video, video sound, music | Advanced, manual setup for now. See `docs/FEATURES.md` and the notes at the top of `video_gen.py`, `video_audio.py` and `music_gen.py`. |
+
+## Privacy
+
+Chats, memory, settings and everything you make stay in the `data\` folder on your PC. Incognito chats aren't
+saved at all. The web tools and cloud models only run when you use them, and the network page in Settings shows
+what was sent where.
+
+## Project layout
+
+| Path | What it is |
+|---|---|
+| `run.bat`, `launcher.pyw` | start the app |
+| `install.bat`, `install.ps1` | first-time setup |
+| `main.py`, `api/`, `agent/` | the server and the assistant |
+| `index.html` | the whole interface (copied to `static/` on start) |
+| `models.example.ini` | template for `models.ini` (your model list) |
+| `paths.py`, `model_scan.py` | where models and engines live, and adding models |
+| `docs/FEATURES.md`, `ARCHITECTURE.md` | detailed features and design notes |
+| `test_*.py` | tests: `.venv\Scripts\python.exe -m unittest` |
+
+## License and credits
+
+The app's code is licensed under the **Apache License 2.0** (see [`LICENSE`](LICENSE) and [`NOTICE`](NOTICE)).
+The engines and models it downloads have their own licenses, listed in [`THIRD_PARTY.md`](THIRD_PARTY.md). Some
+of them (for example the MMAudio weights) are for non-commercial use only.
+
+Created by **Fuxion** - fuxion64@gmail.com. If you want to support the project or have suggestions, email me.
