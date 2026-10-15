@@ -259,7 +259,7 @@ class EngineTests(unittest.TestCase):
         busy = iter([True, True, False])
         said = []
         image_gen.generate("a cat", wait_while=lambda: next(busy), progress=said.append)
-        self.assertIn("Waiting for the GPU - the chat model is busy", said)
+        self.assertIn("Waiting for the GPU - the chat model or a Labs run is using it", said)
         with self.assertRaises(image_gen.ImageError) as e:
             image_gen.generate("a cat", wait_while=lambda: True, should_cancel=lambda: True)
         self.assertEqual(e.exception.code, "stopped")

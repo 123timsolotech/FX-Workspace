@@ -383,6 +383,46 @@ class AgentBrowser:
                             return
         threading.Thread(target=watch, daemon=True, name="browser-network-watch").start()
 
+    def _leftover_pids(self) -> list:
+        """The app's own browser left by an earlier run (the app was closed without its shutdown - run.bat's window
+        closed, a crash): a browser process on this control port with this profile folder. Its proxy flags can't be
+        read back, so it is never reused - only closed. Any other browser on the port is not ours to touch."""
+        try:
+            import psutil
+        except ImportError:
+            return []
+        profile = os.path.normcase(os.path.abspath(self.profile_dir))
+        pids = []
+        for p in psutil.process_iter(["pid", "cmdline"]):
+            try:
+                cmd = p.info["cmdline"] or []
+                if any(a.startswith("--type=") for a in cmd) or f"--remote-debugging-port={self.port}" not in cmd:
+                    continue                                  # a helper process, or another port
+                dirs = [a.split("=", 1)[1].strip('"') for a in cmd if a.startswith("--user-data-dir=")]
+                if dirs and os.path.normcase(os.path.abspath(dirs[0])) == profile:
+                    pids.append(p.pid)
+            except (psutil.Error, OSError):
+                continue
+        return pids
+
+    def close_leftover(self) -> bool:
+        """Close the app's own browser from an earlier run (see _leftover_pids). True when the port is free after."""
+        pids = self._leftover_pids()
+        if not pids:
+            return False
+        import psutil
+        for pid in pids:
+            try:
+                main = psutil.Process(pid)
+                for proc in main.children(recursive=True) + [main]:
+                    proc.kill()
+            except psutil.Error:
+                pass
+        deadline = time.time() + 5
+        while self._alive() and time.time() < deadline:
+            time.sleep(0.2)
+        return not self._alive()
+
     def _refuse_unowned_browser(self):
         """Do not reuse or close a browser whose process/profile we do not own."""
         raise BrowserError("A browser already uses the assistant's control port. Close that browser and try again; "
@@ -450,7 +490,7 @@ class AgentBrowser:
                 except Exception:
                     self._cdp.close()
                     self._cdp = None
-            if self._route is None and self._alive():
+            if self._route is None and self._alive() and not self.close_leftover():
                 self._refuse_unowned_browser()
             if not self._alive():
                 exe = self.executable or self.find_executable()

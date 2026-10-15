@@ -358,6 +358,134 @@ html.temp-chat #chat-title { color: var(--incog); }
   .mz-lib { position: static; max-height: 300px; }
   .mz { padding: 0 12px 32px; }
 }
+/* Workspace | Labs: the logo is the switch; in Labs the sidebar shows Labs' own pages */
+:root { --viz-1: #2a78d6; --viz-2: #eb6834; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --viz-1: #3987e5; --viz-2: #d95926; } }
+:root[data-theme="dark"] { --viz-1: #3987e5; --viz-2: #d95926; }
+.brand-chev { width: 14px; height: 14px; color: var(--muted); margin-left: 2px; transition: transform .15s ease; }
+.brand:hover .brand-chev { color: var(--text); }
+body:has(.mode-pop) .brand-by { opacity: 0 !important; }
+body:has(.mode-pop) .brand-chev { transform: rotate(180deg); }
+.mode-pop { min-width: 290px; }
+.mode-item.on { background: var(--accent-soft); }
+.mode-item > .icon:last-child { margin-left: auto; color: var(--accent-text, var(--accent)); }
+:root[data-app="labs"] .sb-ws { display: none !important; }
+:root:not([data-app="labs"]) :is(.sb-labs, .sb-lab-live) { display: none !important; }
+.sb-lab-live { padding: 4px 8px 0; }
+.sb-labs .lab-dot { margin-left: auto; }
+:root[data-app="labs"] .sb-pc { margin-top: auto; }
+.lab-runs.empty { grid-template-columns: 1fr; }
+.lab-runs.empty .lab-list { position: static; max-height: none; }
+.lab-runs.empty .lab-detail { display: none; }
+.sb-lab-card { width: 100%; display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+.sb-lab-card b { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-lab-card small { color: var(--muted); font-size: 11.5px; }
+.sb-lab-card .bar { margin-top: 4px; }
+.sb-lab-card .bar > i, .lab-prog .bar > i, .lab-barrow .bar > i { background: var(--accent); opacity: 1; }
+/* Labs pages */
+.lab { max-width: 1240px; margin: 0 auto; padding: 0 20px 40px; display: flex; flex-direction: column; gap: 14px; }
+.lab .grow { flex: 1; min-width: 0; }
+.lab-banner { margin: 0; }
+.lab-card { border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
+#lab-page > .lab-card + .lab-card { margin-top: 14px; }
+.lab-h { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.lab-h3 { margin: 6px 0 0; font-size: 12.5px; font-weight: 600; color: var(--text-2); }
+.lab-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.lab-facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: 13px; }
+.lab-facts dt { color: var(--muted); }
+.lab-facts dd { margin: 0; }
+.lab-setup { display: flex; gap: 12px; align-items: flex-start; }
+.lab-log { margin: 8px 0 0; max-height: 160px; overflow: auto; font-size: 11.5px; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; white-space: pre-wrap; color: var(--text-2); }
+.lab-add { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.lab-add-b { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px; border-radius: 10px; border: 1px dashed var(--border-strong); background: var(--surface-2); color: var(--text); cursor: pointer; text-align: left; }
+.lab-add-b:hover { border-color: var(--accent); }
+.lab-add-b .icon { color: var(--accent-text, var(--accent)); }
+.lab-add-b small { color: var(--muted); font-size: 11.5px; }
+.lab-folder { display: flex; gap: 8px; flex-wrap: wrap; }
+.lab-folder .input { height: 34px; }
+.lab-ds-list { display: flex; flex-direction: column; gap: 6px; }
+.lab-ds { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); }
+.lab-ds > .icon { color: var(--muted); }
+.lab-ds b { display: block; font-size: 13.5px; }
+.lab-ds small { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lab-tpls { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.lab-tpl { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; text-align: left; }
+.lab-tpl.on { border-color: var(--accent); background: var(--accent-soft); }
+.lab-tpl .icon { color: var(--accent-text, var(--accent)); }
+.lab-tpl small { color: var(--muted); font-size: 12px; }
+.lab-set { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px dashed var(--border); flex-wrap: wrap; }
+.lab-set-l { display: flex; flex-direction: column; min-width: 180px; }
+.lab-set-l b { font-size: 13px; font-weight: 600; }
+.lab-set-l small { color: var(--muted); font-size: 11.5px; }
+.lab-set-c { display: flex; align-items: center; gap: 8px; }
+.lab-set-c select.input, .lab-set-c input.input { height: 32px; width: auto; min-width: 200px; }
+.lab-set-c .lab-num { min-width: 0; width: 110px; }
+.lab-adv summary { cursor: pointer; color: var(--muted); font-size: 12.5px; padding: 6px 0; }
+.lab-go { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding-top: 4px; font-size: 12.5px; }
+.lab-runs { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; align-items: start; }
+.lab-list { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 2px; max-height: calc(100vh - 160px); overflow-y: auto; border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); background: var(--surface); padding: 8px; }
+.lab-run { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 10px; border-radius: 10px; border: 0; background: none; color: var(--text); cursor: pointer; }
+.lab-run:hover { background: var(--surface-2); }
+.lab-run.on { background: var(--accent-soft); }
+.lab-run b { display: block; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lab-run small { display: block; color: var(--muted); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lab-state { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--faint); }
+.lab-state.s-running { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); animation: halo-breathe 1.4s ease-in-out infinite; }
+.lab-state.s-done { background: var(--ok); }
+.lab-state.s-failed { background: var(--danger); }
+.lab-empty { text-align: center; padding: 26px 10px; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.lab-empty b { color: var(--text); }
+.lab-empty p { margin: 0; font-size: 12.5px; }
+.lab-detail { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.lab-d-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.lab-title { flex: 1; min-width: 200px; font: inherit; font-size: 20px; font-weight: 650; color: var(--text); background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 4px 8px; margin-left: -8px; }
+.lab-title:hover { border-color: var(--border); }
+.lab-title:focus { outline: none; border-color: var(--accent); background: var(--surface-2); }
+.lab-d-acts { display: flex; gap: 6px; align-items: center; }
+.lab-prog { display: flex; align-items: center; gap: 12px; font-size: 12.5px; flex-wrap: wrap; }
+.lab-prog .bar { min-width: 140px; height: 6px; }
+.lab-pill { padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--surface-3); color: var(--text-2); }
+.lab-pill.s-running { background: var(--accent-soft); color: var(--accent-text, var(--accent)); }
+.lab-pill.s-done { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok-text, var(--ok)); }
+.lab-pill.s-failed { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger-text, var(--danger)); }
+.lab-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+.lab-tile { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.lab-tile small { color: var(--muted); font-size: 11.5px; }
+.lab-tile b { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.lab-chart-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.lab-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-2); }
+.lab-key { display: inline-flex; align-items: center; gap: 6px; }
+.lab-cmp { height: 30px; width: auto; max-width: 240px; }
+.lab-chart { position: relative; height: 260px; }
+.lab-chart canvas { position: absolute; inset: 0; display: block; cursor: crosshair; }
+.lab-tip { position: absolute; top: 8px; pointer-events: none; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px; box-shadow: var(--shadow); padding: 7px 10px; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 3px; min-width: 180px; }
+.lab-tip div { display: flex; align-items: center; gap: 6px; color: var(--text-2); }
+.lab-tip .mono { margin-left: auto; color: var(--text); padding-left: 12px; }
+.lab-table summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+.lab-tbl { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
+.lab-tbl th, .lab-tbl td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border); }
+.lab-tbl th { color: var(--muted); font-weight: 500; }
+.lab-text { margin: 0; white-space: pre-wrap; font-family: var(--mono, ui-monospace, monospace); font-size: 12.5px; line-height: 1.55; background: var(--surface-2); border-radius: 10px; padding: 12px 14px; max-height: 320px; overflow: auto; }
+.lab-prompt { color: var(--accent-text, var(--accent)); font-weight: 600; }
+.lab-slide { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--muted); }
+.lab-slide input { flex: 1; max-width: 360px; accent-color: var(--accent); }
+.lab-try { display: flex; flex-direction: column; gap: 8px; }
+.lab-try textarea { resize: vertical; font-family: var(--mono, ui-monospace, monospace); font-size: 12.5px; }
+.lab-pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+.lab-pics figure { margin: 0; border-radius: 10px; overflow: hidden; background: var(--surface-2); border: 2px solid transparent; }
+.lab-pics figure.hit { border-color: color-mix(in srgb, var(--ok) 55%, transparent); }
+.lab-pics figure.miss { border-color: color-mix(in srgb, var(--danger) 60%, transparent); }
+.lab-pics img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: auto; }
+.lab-pics figcaption { display: flex; gap: 5px; align-items: flex-start; padding: 6px 8px; font-size: 12px; }
+.lab-pics figure.hit .icon { color: var(--ok); }
+.lab-pics figure.miss .icon { color: var(--danger); }
+.lab-pics small { display: block; color: var(--muted); }
+.lab-bars { display: flex; flex-direction: column; gap: 6px; }
+.lab-barrow { display: grid; grid-template-columns: minmax(80px, 160px) 1fr 56px; gap: 10px; align-items: center; font-size: 12.5px; }
+.lab-barrow .bar { height: 8px; }
+.lab-notes { min-height: 70px; resize: vertical; }
+.lab-meta { margin: 0; font-size: 12px; }
+@media (max-width: 900px) { .lab-runs { grid-template-columns: 1fr; } .lab-list { position: static; max-height: 260px; } .lab { padding: 0 12px 32px; } }
 .peek-bar { position: sticky; top: 8px; z-index: 3; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0 8px; padding: 9px 12px;
   border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface, var(--bg)); box-shadow: 0 4px 16px rgba(0,0,0,.12); font-size: 13px; }
 #composer-dock.peeking { display: none; }
@@ -845,7 +973,12 @@ html.chat-locked .composer { opacity: .6; }
 .viewer.comparing .vw-panes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .vw-pane { margin: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
 .vw-img { flex: 1; min-height: 0; overflow: auto; border-radius: 10px; background: #151514; display: flex; }
-.vw-img img { margin: auto; display: block; }
+.vw-img img { margin: auto; display: block; transform-origin: center; transition: transform .07s linear; user-select: none; -webkit-user-drag: none; }
+.vw-img { cursor: zoom-in; touch-action: none; }
+.viewer.zoomed .vw-img { cursor: grab; }
+.viewer.panning .vw-img { cursor: grabbing; }
+.viewer.panning .vw-img img { transition: none; }
+.vw-pct { font-size: 12px; color: #a3a097; font-variant-numeric: tabular-nums; min-width: 40px; text-align: right; }
 .vw-pane.fit .vw-img { overflow: hidden; }
 .vw-pane.fit .vw-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
 .vw-pane figcaption { display: flex; align-items: center; gap: 8px; min-height: 28px; font-size: 12px; color: #a3a097; }
@@ -4022,6 +4155,8 @@ html.voice-on .idle-screen { display: none !important; }
     <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z"/></symbol>
     <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></symbol>
     <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5.5 9.2A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.8L14 9V3"/><path d="M7.5 15h9"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
     <symbol id="i-play" viewBox="0 0 24 24"><path class="ip-push" d="M7 5l12 7-12 7V5z"/></symbol>
     <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></symbol>
     <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
@@ -4060,18 +4195,18 @@ html.voice-on .idle-screen { display: none !important; }
   <!-- ================= Sidebar: start a chat, see connections, open settings ================= -->
   <aside class="sidebar" id="sidebar" aria-label="Navigation">
     <div class="sb-top">
-      <button type="button" class="brand" onclick="openSettings('about')" aria-label="FX Workspace by Fuxion - about"><svg class="brand-mark" aria-hidden="true"><use href="#mark"/></svg><span class="brand-name">workspace</span><span class="brand-by" aria-hidden="true">by Fuxion</span></button>
+      <button type="button" class="brand" onclick="AppMode.menu(this)" aria-haspopup="menu" aria-label="FX Workspace by Fuxion - switch between Workspace and Labs" title="Workspace or Labs"><svg class="brand-mark" aria-hidden="true"><use href="#mark"/></svg><span class="brand-name" id="brand-name">workspace</span><svg class="icon brand-chev" aria-hidden="true"><use href="#i-chev"/></svg><span class="brand-by" aria-hidden="true">by Fuxion</span></button>
       <button class="icon-btn sb-collapse" onclick="toggleSidebar()" aria-label="Collapse sidebar" title="Collapse sidebar"><svg class="icon"><use href="#i-sidebar"/></svg></button>
     </div>
     <!-- The revamp: New chat (with a temporary one beside it), then places - Home, Images, Projects,
          Routines - then your chats by date, and This PC: what is running here. -->
-    <nav class="sb-nav">
+    <nav class="sb-nav sb-ws">
       <div class="sb-newrow">
         <button class="sb-item sb-new" onclick="newChat()" title="New chat (Ctrl+Shift+O)"><span class="sb-plus"><svg class="icon xs"><use href="#i-plus"/></svg></span><span class="sb-label">New chat</span></button>
         <button class="icon-btn sb-temp" id="sb-temp" onclick="newTemporaryChat()" title="Temporary chat - not saved to history or memory (Ctrl+Alt+T)" aria-label="New temporary chat - not saved"><svg class="icon"><use href="#i-ghost"/></svg></button>
       </div>
     </nav>
-    <nav class="sb-nav sb-places" aria-label="Places">
+    <nav class="sb-nav sb-places sb-ws" aria-label="Places">
       <button class="sb-item" id="sb-home" onclick="goHome()" title="Home (Alt+1)"><svg class="icon"><use href="#i-home"/></svg><span class="sb-label">Home</span></button>
       <button class="sb-item" id="sb-images" onclick="showPlace('images')" title="Images made on this PC (Alt+2)"><svg class="icon"><use href="#i-image"/></svg><span class="sb-label">Images</span><span class="sb-count" id="sb-images-n"></span></button>
       <button class="sb-item" id="sb-videos" onclick="showPlace('videos')" title="Videos made on this PC"><svg class="icon"><use href="#i-film"/></svg><span class="sb-label">Videos</span><span class="sb-count" id="sb-videos-n"></span></button>
@@ -4080,9 +4215,16 @@ html.voice-on .idle-screen { display: none !important; }
       <button class="sb-item" id="sb-routines" onclick="showPlace('routines')" title="Routines (Alt+4)"><svg class="icon"><use href="#i-clock"/></svg><span class="sb-label">Routines</span><span class="sb-count" id="sb-routines-n"></span></button>
       <button class="sb-item" id="sb-browser" onclick="BrowserPanel.toggle()" title="The assistant's browser, beside the chat"><svg class="icon"><use href="#i-globe"/></svg><span class="sb-label">Browser</span></button>
     </nav>
-    <div class="sb-proj hidden" id="sb-proj"></div>
-    <div class="sb-search"><input class="input" id="sb-q" type="search" placeholder="Search chats" aria-label="Search chats and projects (Ctrl+Shift+F)" autocomplete="off" oninput="sbSearch(this.value)"></div>
-    <div class="sb-list" id="sb-list" aria-label="Chats"></div>
+    <nav class="sb-nav sb-labs" id="sb-labs" aria-label="Labs">
+      <button class="sb-item" id="sb-lab-new" onclick="LabsView.go('new')" title="Train a model"><svg class="icon"><use href="#i-plus"/></svg><span class="sb-label">New run</span></button>
+      <button class="sb-item" id="sb-lab-runs" onclick="LabsView.go('runs')" title="Every run, with its curves and samples"><svg class="icon"><use href="#i-trend"/></svg><span class="sb-label">Runs</span><span class="sb-count" id="sb-lab-runs-n"></span></button>
+      <button class="sb-item" id="sb-lab-data" onclick="LabsView.go('data')" title="Texts and picture folders to train on"><svg class="icon"><use href="#i-layers"/></svg><span class="sb-label">Datasets</span></button>
+      <button class="sb-item" id="sb-lab-engine" onclick="LabsView.go('engine')" title="PyTorch, in Labs' own Python"><svg class="icon"><use href="#i-cpu"/></svg><span class="sb-label">Engine</span><span class="dot lab-dot" id="lab-dot"></span></button>
+    </nav>
+    <div class="sb-lab-live" id="sb-lab-live" hidden></div>
+    <div class="sb-proj sb-ws hidden" id="sb-proj"></div>
+    <div class="sb-search sb-ws"><input class="input" id="sb-q" type="search" placeholder="Search chats" aria-label="Search chats and projects (Ctrl+Shift+F)" autocomplete="off" oninput="sbSearch(this.value)"></div>
+    <div class="sb-list sb-ws" id="sb-list" aria-label="Chats"></div>
     <!-- This PC (D48): the chat model always - one place for its state; the image engine and Roblox
          Studio only while they are doing something. Everything else about the PC is in the panel's This PC tab. -->
     <div class="sb-pc" aria-label="This PC">
@@ -4288,7 +4430,7 @@ html.voice-on .idle-screen { display: none !important; }
     </div>
     <div class="bp-view" id="bp-view" tabindex="0" aria-label="The page - click, scroll and type here">
       <img id="bp-img" alt="The page in the assistant's browser" draggable="false" hidden>
-      <div class="bp-empty" id="bp-empty"><svg class="icon"><use href="#i-globe"/></svg><b>The assistant's browser</b><span>It opens here when it browses for you - with its own profile, none of your passwords or cookies.</span><button class="btn" onclick="BrowserPanel.nav('open')">Open it</button></div>
+      <div class="bp-empty" id="bp-empty" aria-live="polite"><svg class="icon"><use href="#i-globe"/></svg><b>The assistant's browser</b><span>It opens here when it browses for you - with its own profile, none of your passwords or cookies.</span><button type="button" class="btn" onclick="BrowserPanel.nav('open')">Open it</button></div>
     </div>
     <div class="bp-foot"><span id="bp-title">Browser</span><span class="muted">Click and type here yourself - to sign in, say. Its own clicks still ask you first.</span></div>
   </aside>
@@ -5036,6 +5178,7 @@ function showThread(show) {
   document.querySelectorAll('.chat-only').forEach(b => { if (b.id !== 'pins-btn') b.hidden = !show; });
   if (typeof renderPins === 'function') renderPins();
   markPlace(show ? null : 'home');
+  syncAppMode();
   leavePlace();
   if (!show) renderHome();
 }
@@ -5049,7 +5192,7 @@ function leavePlace() {
    Pages of their own in the main column, opened from the sidebar (or Alt+2/3/4). The
    chat and Home are untouched by them: Back to chat is one click (the sidebar's chat,
    or Ctrl+Shift+O for a new one). */
-const PLACES = { images: 'Images', videos: 'Videos', music: 'Music', projects: 'Projects', routines: 'Routines' };
+const PLACES = { images: 'Images', videos: 'Videos', music: 'Music', projects: 'Projects', routines: 'Routines', labs: 'Labs' };
 function markPlace(name) {
   [['home', 'sb-home'], ['images', 'sb-images'], ['videos', 'sb-videos'], ['music', 'sb-music'], ['projects', 'sb-projects'], ['routines', 'sb-routines']]
     .forEach(([p, id]) => { const b = $(id); if (b) { b.classList.toggle('on', p === name); b.setAttribute('aria-current', p === name ? 'page' : 'false'); } });
@@ -5067,6 +5210,7 @@ function showPlace(name) {
   $('chat-title').textContent = PLACES[name];
   document.querySelectorAll('.chat-only').forEach(b => { b.hidden = true; });
   markPlace(name);
+  syncAppMode();
   Reader.schedule();
   renderPlace();
 }
@@ -5075,6 +5219,7 @@ function renderPlace() {
   if (name === 'images') ImagesView.render();
   else if (name === 'videos') VideosView.render();
   else if (name === 'music') MusicView.render();
+  else if (name === 'labs') LabsView.render();
   else if (name === 'projects') renderProjectsPlace();
   else renderRoutinesPlace();
 }
@@ -5549,7 +5694,11 @@ const ImagesView = (() => {
     toast('Attached to your next message.');
   }
   function select(id) { st.sel = id; paintGallery(); paintInspector(); }
-  function view(id) { const list = st.list || [], i = list.findIndex(x => x.id === id); if (i >= 0) Viewer.open(list, i); }
+  // The viewer's ← → move the gallery's selection (and its details) along with it.
+  function view(id) {
+    const list = st.list || [], i = list.findIndex(x => x.id === id); if (i < 0) return;
+    Viewer.open(list, i, { onMove: it => { if (!it.id || !find(it.id)) return; select(it.id); $('iv-grid')?.querySelector(`[data-id="${CSS.escape(it.id)}"]`)?.scrollIntoView({ block: 'nearest' }); } });
+  }
   function filterBy(f) { st.filter = f; st.sel = null; st.list = null; st.openSeq = null; paintGallery(); load(); }
   function search(q) { st.q = q.trim(); clearTimeout(qT); qT = setTimeout(load, 220); }
   async function stop() { try { await api('/api/images/stop', {}); toast('Stopping…'); } catch (e) { toast(e.message); } poll(); }
@@ -6281,30 +6430,497 @@ const MusicView = (() => {
 })();
 setTimeout(() => MusicView.poll(), 3000);          // the sidebar's Music count from the start
 
+/* ---- Workspace | Labs: the logo is the switch -------------------------------------------------------------
+   Workspace is everything made for using models (chats, pictures, video, music); Labs is for making them (labs.py).
+   The mode follows the view: Labs is a place of its own, every other view is Workspace. */
+const AppMode = {
+  menu(anchor) {
+    if (popEl && popEl._anchor === anchor) { closePopover(); return; }
+    const labs = S.view === 'labs';
+    const item = (on, ic, name, about, run) => `<button type="button" class="pop-item mode-item${on ? ' on' : ''}" role="menuitemradio" aria-checked="${on}" onclick="${run}">${icon(ic)}<span class="pop-main"><b>${name}</b><small>${about}</small></span>${on ? icon('i-check', 'sm') : ''}</button>`;
+    openPopover(anchor, `<div role="menu" aria-label="Mode">
+      ${item(!labs, 'i-home', 'Workspace', 'Chat, pictures, video and music with your models', "AppMode.set('workspace')")}
+      ${item(labs, 'i-flask', 'Labs', 'Train, fine-tune and test your own models', "AppMode.set('labs')")}
+      <div class="pop-sep"></div>
+      <button type="button" class="pop-item" role="menuitem" onclick="closePopover();openSettings('about')">${icon('i-info')}<span class="pop-main"><b>About FX Workspace</b><small>by Fuxion</small></span></button></div>`, 'mode-pop');
+  },
+  set(mode) {
+    closePopover();
+    if (mode === 'labs') { if (S.view !== 'labs') showPlace('labs'); }
+    else if (S.view === 'labs') goHome();
+  },
+};
+function syncAppMode() {
+  const labs = S.view === 'labs';
+  document.documentElement.dataset.app = labs ? 'labs' : 'workspace';
+  const n = $('brand-name'); if (n) n.textContent = labs ? 'labs' : 'workspace';
+}
+
+/* ---- Fx Labs (labs.py) ------------------------------------------------------------------------------------
+   Pages: Runs (every run, its live loss chart and what it makes), New run, Datasets, Engine (PyTorch). One run
+   trains at a time; the page follows it a few times a second while it trains. */
+const LabsView = (() => {
+  const st = { page: 'runs', status: null, runs: null, datasets: null, sel: null, cmp: '', metric: 'loss', mounted: false,
+               form: { template: 'gpt', dataset: '', size: 'small', steps: '', name: '', lr: '', batch: '', seed: '' },
+               starting: false, tryOut: null, trying: false, folderForm: false, sampleAt: -1 };
+  const data = {};                                   // run id -> { rows: [], samples: [], run, next }
+  let pollT = 0, hover = null;
+  const STATE = { queued: 'Waiting', running: 'Training', done: 'Done', stopped: 'Stopped', failed: 'Failed' };
+  const num = (v, d = 3) => v == null || !isFinite(v) ? '–' : (+v).toFixed(d);
+  const pct = v => v == null || !isFinite(v) ? '–' : `${(v * 100).toFixed(1)}%`;
+  const big = n => n >= 1e6 ? `${(n / 1e6).toFixed(1)} M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)} k` : String(n);
+  const dur = s => { s = Math.max(0, Math.round(s || 0)); return s < 60 ? `${s} s` : s < 3600 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${Math.floor(s / 3600)} h ${Math.round(s % 3600 / 60)} min`; };
+  const tpl = k => ((st.status || {}).templates || {})[k] || {};
+  const running = () => (st.status || {}).running || null;
+  const eng = () => (st.status || {}).engine || {};
+
+  function go(page, opts = {}) {
+    if (page) st.page = page;
+    if (opts.run) st.sel = opts.run;
+    const pickData = () => { const d = opts.dataset && (st.datasets || []).find(x => x.id === opts.dataset); if (d) { st.form.dataset = d.id; st.form.template = d.kind === 'images' ? 'cnn' : 'gpt'; } };
+    pickData();
+    if (S.view !== 'labs') showPlace('labs'); else paint();
+    markNav();
+    // The lists can change outside this page (another tab, a dataset just added): fresh on every visit.
+    if (st.page === 'new' || st.page === 'data') loadDatasets().then(() => { pickData(); paint(); });
+  }
+  function markNav() {
+    [['new', 'sb-lab-new'], ['runs', 'sb-lab-runs'], ['data', 'sb-lab-data'], ['engine', 'sb-lab-engine']].forEach(([p, id]) => {
+      const b = $(id); if (b) { b.classList.toggle('on', S.view === 'labs' && st.page === p); b.setAttribute('aria-current', S.view === 'labs' && st.page === p ? 'page' : 'false'); }
+    });
+  }
+  async function poll() {
+    clearTimeout(pollT);
+    try {
+      const [s, r] = await Promise.all([api('/api/labs'), api('/api/labs/runs')]);
+      st.status = s; st.runs = r.runs || [];
+    } catch (_) {}
+    const live = running();
+    if (st.sel && (live === st.sel || !data[st.sel])) await loadRun(st.sel);
+    paintSidebar();
+    if (S.view === 'labs') paint();
+    const settingUp = ((st.status || {}).setup || {}).state === 'running';
+    pollT = setTimeout(poll, live || settingUp ? 1500 : document.hidden ? 60000 : 15000);
+  }
+  async function loadRun(rid) {
+    const d = data[rid] || (data[rid] = { rows: [], samples: [], run: null, next: 0 });
+    try {
+      const r = await api(`/api/labs/runs/${encodeURIComponent(rid)}?since=${d.next}`);
+      if (!r.ok) { if (r.code === 'missing') { delete data[rid]; if (st.sel === rid) st.sel = null; } return; }
+      d.rows.push(...r.rows); d.next = r.next; d.samples = r.samples; d.run = r.run;
+    } catch (_) {}
+  }
+  async function loadDatasets() {
+    try { st.datasets = (await api('/api/labs/datasets')).datasets || []; } catch (e) { st.datasets = []; }
+  }
+  function paintSidebar() {
+    const n = $('sb-lab-runs-n'); if (n) n.textContent = st.runs && st.runs.length ? String(st.runs.length) : '';
+    const dot = $('lab-dot'); if (dot) dot.className = 'dot' + (running() ? ' busy' : eng().installed ? ' on' : '');
+    const live = $('sb-lab-live'), r = running() && (st.runs || []).find(x => x.id === running());
+    if (!live) return;
+    live.hidden = !r;
+    if (r) {
+      const last = r.last || {}, p = Math.min(1, (last.step || 0) / (r.steps || 1));
+      setHtmlIfChanged(live, `<button type="button" class="sb-lab-card" onclick="LabsView.go('runs',{run:'${jsArg(r.id)}'})"><b>${esc(r.name)}</b><small>Training · ${Math.round(p * 100)}%${last.loss != null ? ` · loss ${num(last.loss)}` : ''}</small><span class="bar"><i style="width:${Math.max(2, p * 100)}%"></i></span></button>`);
+    }
+  }
+
+  function render() {
+    const root = $('place');
+    if (!st.mounted || !root.querySelector('#lab-root')) {
+      root.innerHTML = `<div class="lab" id="lab-root"><div class="place-head" id="lab-head"></div><div id="lab-banner"></div><div id="lab-page"></div></div>`;
+      st.mounted = true;
+    }
+    if (!st.status) poll(); else { paint(); poll(); }
+    if (!st.datasets) loadDatasets().then(paint);
+    markNav();
+  }
+  function paint() {
+    if (S.view !== 'labs' || !$('lab-root')) return;
+    const e = eng(), su = (st.status || {}).setup || {};
+    const pill = !st.status ? `<span class="iv-engine"><span class="spinner"></span>Checking…</span>`
+      : su.state === 'running' ? `<span class="iv-engine busy"><span class="spinner"></span>Setting up</span>`
+      : !e.installed ? `<button type="button" class="iv-engine err" onclick="LabsView.go('engine')">${icon('i-alert', 'xs')}Engine not set up</button>`
+      : running() ? `<span class="iv-engine busy"><span class="dot busy"></span>Training</span>`
+      : `<span class="iv-engine on"><span class="dot on"></span>${esc(e.gpu || 'PyTorch')} ready</span>`;
+    setHtmlIfChanged($('lab-head'), `<div><h1 class="place-title">Labs</h1><p class="place-lead">Train models on this PC - every run is kept, with its curves and what it makes.</p></div>
+      <div class="place-acts">${pill}<button type="button" class="btn primary" onclick="LabsView.go('new')">${icon('i-plus', 'xs')}New run</button></div>`);
+    setHtmlIfChanged($('lab-banner'), st.status && !e.installed && st.page !== 'engine' ? `<div class="state-card lab-banner"><span class="sc-ico">${icon('i-flask', 'sm')}</span><div class="grow"><b>Set up the Labs engine to train</b><p>PyTorch with CUDA, in Labs' own Python - about 3 GB, once.</p></div><button type="button" class="btn primary" onclick="LabsView.go('engine')">Set up</button></div>` : '');
+    ({ runs: paintRuns, new: paintNew, data: paintData, engine: paintEngine })[st.page]();
+  }
+  function page(mode, html) {
+    const el = $('lab-page');
+    if (el.dataset.mode !== mode) { el.dataset.mode = mode; el._html = null; el.innerHTML = ''; }
+    if (html != null) setHtmlIfChanged(el, html);
+    return el;
+  }
+
+  /* ---- Engine ---- */
+  function paintEngine() {
+    const e = eng(), su = (st.status || {}).setup || {};
+    let body;
+    if (su.state === 'running') body = `<div class="lab-setup"><span class="spinner"></span><div class="grow"><b>${esc(su.part || 'Working')}</b><pre class="lab-log">${esc((su.log || []).join('\n'))}</pre></div></div>`;
+    else if (e.installed) body = `<dl class="lab-facts"><dt>PyTorch</dt><dd class="mono">${esc(e.torch)}</dd><dt>GPU</dt><dd>${e.cuda ? esc(e.gpu) : '<span class="danger-text">Not visible - training would run on the CPU</span>'}</dd><dt>Folder</dt><dd class="mono">${esc(e.dir)}</dd></dl>
+      <div class="lab-row"><button type="button" class="btn" onclick="LabsView.setup()">${icon('i-retry', 'xs')}Repair or update</button></div>`;
+    else body = `<p>Training needs PyTorch with CUDA. Labs gets its own Python for it, so nothing changes in the app's. About 3 GB, downloaded once through your network route.</p>
+      <div class="lab-row"><button type="button" class="btn primary" onclick="LabsView.setup()">${icon('i-download', 'xs')}Set up the engine</button><span class="muted mono">${esc(e.dir || '')}</span></div>`;
+    if (su.state === 'error') body += `<div class="state-card danger" role="alert"><span class="sc-ico">${icon('i-alert', 'sm')}</span><div class="grow"><b>Setup didn't finish</b><p>${esc(su.error)}</p></div></div>`;
+    else if (su.state === 'done' && su.error) body += `<div class="state-card" role="status"><span class="sc-ico">${icon('i-alert', 'sm')}</span><div class="grow"><p>${esc(su.error)}</p></div></div>`;
+    page('engine', `<section class="lab-card"><h2 class="lab-h">${icon('i-cpu', 'sm')}Labs engine</h2>${body}</section>`);
+  }
+  async function setup() {
+    try { const r = await api('/api/labs/setup', {}); st.status = { ...(st.status || {}), setup: r.setup }; } catch (e) { toast(e.message); }
+    paint(); poll();
+  }
+
+  /* ---- Datasets ---- */
+  function paintData() {
+    const list = st.datasets;
+    const card = d => `<article class="lab-ds">${icon(d.kind === 'text' ? 'i-feed' : 'i-image', 'sm')}<div class="grow"><b>${esc(d.name)}</b>
+        <small>${d.kind === 'text' ? `${big(d.chars)} characters · ${d.vocab} different` : `${d.count} pictures · ${Object.keys(d.classes || {}).length} kinds: ${esc(Object.keys(d.classes || {}).slice(0, 6).join(', '))}${Object.keys(d.classes || {}).length > 6 ? '…' : ''}`}</small>
+        ${d.path ? `<small class="mono">${esc(d.path)}</small>` : ''}</div>
+        <button type="button" class="btn sm" onclick="LabsView.go('new',{dataset:'${jsArg(d.id)}'})">${icon('i-play', 'xs')}Train on it</button>
+        <button type="button" class="icon-btn" onclick="LabsView.delData('${jsArg(d.id)}')" aria-label="Move ${esc(d.name)} to the trash">${icon('i-trash', 'sm')}</button></article>`;
+    page('data', `<section class="lab-card"><h2 class="lab-h">${icon('i-plus', 'sm')}Add a dataset</h2>
+        <div class="lab-add">
+          <button type="button" class="lab-add-b" onclick="$('lab-file').click()">${icon('i-feed')}<b>A text file</b><small>.txt - for the GPT</small></button>
+          <button type="button" class="lab-add-b" onclick="LabsView.folderForm()">${icon('i-folder')}<b>A picture folder</b><small>one subfolder per kind - for the classifier</small></button>
+          <button type="button" class="lab-add-b" onclick="LabsView.sample('sample_text')">${icon('i-book')}<b>Sample: Shakespeare</b><small>1 MB of plays, downloaded</small></button>
+          <button type="button" class="lab-add-b" onclick="LabsView.sample('sample_shapes')">${icon('i-image')}<b>Sample: shapes</b><small>900 pictures, made here</small></button>
+        </div>
+        <input type="file" id="lab-file" accept=".txt,.md,.csv,.json,.py,.js,text/*" hidden onchange="LabsView.upload(this)">
+        ${st.folderForm ? `<form class="lab-folder" onsubmit="event.preventDefault();LabsView.addFolder()"><input class="input grow" id="lab-folder-path" placeholder="C:\\path\\to\\pictures" aria-label="Picture folder" autocomplete="off"><input class="input" id="lab-folder-name" placeholder="Name (optional)" aria-label="Name"><button class="btn primary">Add</button><button type="button" class="btn ghost" onclick="LabsView.folderForm(false)">Cancel</button></form>` : ''}
+      </section>
+      <section class="lab-card"><h2 class="lab-h">${icon('i-layers', 'sm')}Your datasets${list ? ` <span class="muted">${list.length}</span>` : ''}</h2>
+        ${!list ? SKELETON_ROWS : list.length ? `<div class="lab-ds-list">${list.map(card).join('')}</div>` : `<p class="muted">None yet - add one above. The samples are the quickest way to try Labs.</p>`}</section>`);
+  }
+  async function addData(body, done) {
+    let r; try { r = await api('/api/labs/datasets', body); } catch (e) { r = { ok: false, message: e.message }; }
+    if (!r.ok) { toast(r.message); return false; }
+    await loadDatasets(); st.folderForm = false; paint(); toast(done || `Added "${r.dataset.name}".`);
+    return true;
+  }
+  function upload(input) {
+    const f = input.files && input.files[0]; input.value = '';
+    if (!f) return;
+    if (f.size > 64 * 1048576) { toast('That file is over 64 MB - use a part of it.'); return; }
+    const rd = new FileReader();
+    rd.onload = () => addData({ kind: 'text', name: f.name.replace(/\.[^.]+$/, ''), text: String(rd.result || '') });
+    rd.onerror = () => toast("Couldn't read that file.");
+    rd.readAsText(f);
+  }
+
+  /* ---- New run ---- */
+  function paintNew() {
+    const f = st.form, t = tpl(f.template), kind = t.data || 'text';
+    const sets = (st.datasets || []).filter(d => d.kind === kind);
+    if (!sets.some(d => d.id === f.dataset)) f.dataset = sets[0] ? sets[0].id : '';
+    const tcard = k => { const x = tpl(k); return `<button type="button" class="lab-tpl${f.template === k ? ' on' : ''}" aria-pressed="${f.template === k}" onclick="LabsView.set('template','${k}')">${icon(k === 'gpt' ? 'i-feed' : 'i-image')}<b>${esc(x.name || k)}</b><small>${esc(x.about || '')}</small></button>`; };
+    const sizes = Object.entries(t.sizes || {});
+    const size = (t.sizes || {})[f.size] || {};
+    const why = !eng().installed ? 'Set up the engine first (Labs › Engine).' : running() ? 'Another run is training - one at a time.' : !f.dataset ? `Add ${kind === 'text' ? 'a text' : 'a picture folder'} dataset first.` : '';
+    page('new', `<section class="lab-card lab-new">
+        <h2 class="lab-h">${icon('i-flask', 'sm')}What to train</h2>
+        <div class="lab-tpls">${tcard('gpt')}${tcard('cnn')}</div>
+        <div class="lab-set"><div class="lab-set-l"><b>Dataset</b><small>${kind === 'text' ? 'A text to learn from' : 'A picture folder, one subfolder per kind'}</small></div>
+          <div class="lab-set-c">${sets.length ? `<select class="input" onchange="LabsView.set('dataset',this.value)">${sets.map(d => `<option value="${esc(d.id)}"${d.id === f.dataset ? ' selected' : ''}>${esc(d.name)}</option>`).join('')}</select>` : ''}
+            <button type="button" class="btn sm ghost" onclick="LabsView.go('data')">${icon('i-plus', 'xs')}Add one</button></div></div>
+        <div class="lab-set"><div class="lab-set-l"><b>Size</b><small>${esc(size.about || '')}</small></div>
+          <div class="lab-set-c"><div class="seg" role="group" aria-label="Size">${sizes.map(([k, v]) => `<button type="button" class="${f.size === k ? 'on' : ''}" aria-pressed="${f.size === k}" onclick="LabsView.set('size','${k}')">${esc(v.label)}</button>`).join('')}</div></div></div>
+        <div class="lab-set"><div class="lab-set-l"><b>Steps</b><small>How long it trains - more steps, better (to a point)</small></div>
+          <div class="lab-set-c"><input class="input lab-num" type="number" min="100" max="200000" step="100" placeholder="${size.steps || ''}" value="${esc(f.steps)}" onchange="LabsView.set('steps',this.value)"></div></div>
+        <div class="lab-set"><div class="lab-set-l"><b>Name</b><small>Shown in the run list</small></div>
+          <div class="lab-set-c"><input class="input" maxlength="100" placeholder="${esc(`${t.name || ''} on ${((st.datasets || []).find(d => d.id === f.dataset) || {}).name || '…'}`)}" value="${esc(f.name)}" onchange="LabsView.set('name',this.value)"></div></div>
+        <details class="lab-adv"><summary>Advanced</summary>
+          <div class="lab-set"><div class="lab-set-l"><b>Learning rate</b><small>Empty: the size's own</small></div><div class="lab-set-c"><input class="input lab-num" type="number" step="0.0001" min="0.00001" max="0.1" placeholder="auto" value="${esc(f.lr)}" onchange="LabsView.set('lr',this.value)"></div></div>
+          <div class="lab-set"><div class="lab-set-l"><b>Batch</b><small>Examples per step - lower it if the GPU runs out of memory</small></div><div class="lab-set-c"><input class="input lab-num" type="number" min="1" max="512" placeholder="auto" value="${esc(f.batch)}" onchange="LabsView.set('batch',this.value)"></div></div>
+          <div class="lab-set"><div class="lab-set-l"><b>Seed</b><small>Same seed, same data, same settings: the same run</small></div><div class="lab-set-c"><input class="input lab-num" type="number" min="0" placeholder="0" value="${esc(f.seed)}" onchange="LabsView.set('seed',this.value)"></div></div>
+        </details>
+        <div class="lab-go">${why ? `<span class="muted">${esc(why)}</span>` : '<span class="muted">The GPU is freed for it first; pictures, video and music wait while it trains.</span>'}
+          <button type="button" class="btn primary" onclick="LabsView.start()" ${why || st.starting ? 'disabled' : ''}>${st.starting ? '<span class="spinner"></span>Starting…' : `${icon('i-play', 'xs')}Start training`}</button></div>
+      </section>`);
+  }
+  async function start() {
+    const f = st.form; if (st.starting) return;
+    st.starting = true; paint();
+    const settings = {}; if (f.lr) settings.lr = +f.lr; if (f.batch) settings.batch = +f.batch; if (f.seed !== '') settings.seed = +f.seed;
+    let r; try { r = await api('/api/labs/runs', { template: f.template, dataset: f.dataset, size: f.size, name: f.name, steps: f.steps ? +f.steps : null, settings }); } catch (e) { r = { ok: false, message: e.message }; }
+    st.starting = false;
+    if (!r.ok) { toast(r.message); paint(); return; }
+    f.name = ''; f.steps = '';
+    st.sel = r.run.id; st.page = 'runs'; st.cmp = ''; st.sampleAt = -1; st.tryOut = null;
+    await poll(); markNav();
+  }
+
+  /* ---- Runs ---- */
+  function bestVal(r) { return r.last && r.last.val_loss != null ? r.last.val_loss : null; }
+  function paintRuns() {
+    const list = st.runs;
+    if (list && list.length && !list.some(r => r.id === st.sel)) { st.sel = list[0].id; loadRun(st.sel).then(paint); }
+    const row = r => {
+      const last = r.last || {}, state = r.id === running() ? 'running' : r.state;
+      return `<button type="button" class="lab-run${r.id === st.sel ? ' on' : ''}" onclick="LabsView.pick('${jsArg(r.id)}')">
+        <span class="lab-state s-${state}" aria-hidden="true"></span><span class="grow"><b>${esc(r.name)}</b>
+        <small>${esc(STATE[state] || state)} · ${esc((tpl(r.template).sizes || {})[r.size] ? tpl(r.template).sizes[r.size].label : r.size)} · ${big(last.step || 0)}/${big(r.steps)}${bestVal(r) != null ? ` · val ${num(bestVal(r))}` : ''}</small></span></button>`;
+    };
+    const el = page('runs');
+    if (!el.querySelector('#lab-runs')) el.innerHTML = `<div class="lab-runs"><aside class="lab-list" id="lab-runs" aria-label="Runs"></aside><section class="lab-detail" id="lab-detail"></section></div>`;
+    el.querySelector('.lab-runs').classList.toggle('empty', !!list && !list.length);
+    setHtmlIfChanged($('lab-runs'), !list ? SKELETON_ROWS : list.length ? list.map(row).join('')
+      : `<div class="lab-empty">${icon('i-flask')}<b>No runs yet</b><p>Start one from New run - the samples in Datasets make a first run quick.</p><button type="button" class="btn primary" onclick="LabsView.go('new')">${icon('i-plus', 'xs')}New run</button></div>`);
+    paintDetail();
+  }
+  function paintDetail() {
+    const box = $('lab-detail'); if (!box) return;
+    const d = st.sel && data[st.sel], r = d && d.run;
+    if (!r) { box.innerHTML = st.sel ? SKELETON_TEXT : ''; box.dataset.run = ''; return; }
+    if (box.dataset.run !== r.id) {
+      box.dataset.run = r.id; hover = null;
+      box.innerHTML = `<div class="lab-d-head"><input class="lab-title" id="lab-name" value="${esc(r.name)}" aria-label="Run name" maxlength="100" onchange="LabsView.rename(this.value)" onkeydown="if(event.key==='Enter')this.blur()"><div class="lab-d-acts" id="lab-acts"></div></div>
+        <div id="lab-prog"></div><div class="lab-tiles" id="lab-tiles"></div>
+        <section class="lab-card lab-chart-card"><div class="lab-chart-top" id="lab-chart-top"></div>
+          <div class="lab-chart" id="lab-chart"><canvas id="lab-cv" role="img" aria-label="Loss over training steps"></canvas><div class="lab-tip" id="lab-tip" hidden></div></div>
+          <details class="lab-table"><summary>Show the numbers</summary><div id="lab-numbers"></div></details></section>
+        <section class="lab-card" id="lab-samples"></section>
+        <section class="lab-card"><h2 class="lab-h">${icon('i-edit', 'sm')}Notes</h2><textarea class="input lab-notes" placeholder="What you changed, what you noticed…" onchange="LabsView.notes(this.value)">${esc(r.notes || '')}</textarea>
+          <p class="muted lab-meta" id="lab-meta"></p></section>`;
+      const cv = $('lab-cv');
+      cv.addEventListener('mousemove', e => { hover = e.offsetX; drawChart(); });
+      cv.addEventListener('mouseleave', () => { hover = null; drawChart(); });
+      new ResizeObserver(() => drawChart()).observe($('lab-chart'));
+    }
+    const live = r.id === running(), state = live ? 'running' : r.state, rows = d.rows, start = rows.find(x => x.event === 'start') || {};
+    const steps = rows.filter(x => x.loss != null), vals = rows.filter(x => x.val_loss != null);
+    const last = steps[steps.length - 1] || {}, lastVal = vals[vals.length - 1] || {};
+    const step = last.step || 0, frac = Math.min(1, step / (r.steps || 1));
+    let eta = '';
+    // Seconds a step over this session of the run - checks (validation, samples) included, so the estimate holds.
+    if (live && steps.length > 5) { const a = steps[Math.max(0, steps.findLastIndex(x => x.t < 0.5 * last.t) || 0)], b = last; const sps = (b.t - a.t) / Math.max(1, b.step - a.step); if (sps > 0) eta = `about ${dur(sps * (r.steps - step))} left`; }
+    setHtmlIfChanged($('lab-acts'), (live ? `<button type="button" class="btn sm" onclick="LabsView.stop()">${icon('i-stop', 'xs')}Stop</button>`
+      : state === 'done' ? `<button type="button" class="btn sm" onclick="LabsView.resume(true)">${icon('i-play', 'xs')}Train longer</button>`
+      : ['stopped', 'failed'].includes(state) && step ? `<button type="button" class="btn sm primary" onclick="LabsView.resume()">${icon('i-play', 'xs')}Resume</button>` : '')
+      + `<button type="button" class="btn sm ghost" disabled title="Phase 2: a fine-tuned model is finalized and added to Workspace">${icon('i-download', 'xs')}Port to Workspace</button>`
+      + (live ? '' : `<button type="button" class="icon-btn" onclick="LabsView.del()" aria-label="Move this run to the trash">${icon('i-trash', 'sm')}</button>`));
+    setHtmlIfChanged($('lab-prog'), `<div class="lab-prog"><span class="lab-pill s-${state}">${esc(STATE[state] || state)}</span><div class="bar grow"><i style="width:${Math.max(1, frac * 100)}%"></i></div>
+      <span class="mono">${big(step)} / ${big(r.steps)} steps</span><span class="muted">${eta || (last.t ? `${dur(last.t)} training` : '')}</span></div>
+      ${r.state === 'failed' && r.message ? `<div class="state-card danger" role="alert"><span class="sc-ico">${icon('i-alert', 'sm')}</span><div class="grow"><b>It stopped with an error</b><p>${esc(r.message)}</p></div></div>` : r.message && r.state === 'stopped' ? `<p class="muted">${esc(r.message)}</p>` : ''}`);
+    const cnn = r.template === 'cnn';
+    const tile = (label, value, sub = '') => `<div class="lab-tile"><small>${label}</small><b>${value}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
+    setHtmlIfChanged($('lab-tiles'), tile('Training loss', num(last.loss)) + tile('Validation loss', num(lastVal.val_loss), 'on text it never trains on'.replace('text', cnn ? 'pictures' : 'text'))
+      + (cnn ? tile('Validation accuracy', pct(lastVal.val_acc)) : '') + tile('Speed', last.rate ? `${big(Math.round(last.rate))}` : '–', esc(last.unit || ''))
+      + tile('Model', start.params ? `${big(start.params)}` : '–', 'parameters'));
+    const others = (st.runs || []).filter(x => x.id !== r.id && x.template === r.template);
+    setHtmlIfChanged($('lab-chart-top'), `<h2 class="lab-h">${icon('i-trend', 'sm')}${st.metric === 'acc' ? 'Accuracy' : 'Loss'}</h2>
+      <div class="lab-legend" id="lab-legend"></div><span class="grow"></span>
+      ${cnn ? `<div class="seg" role="group" aria-label="Show"><button type="button" class="${st.metric === 'loss' ? 'on' : ''}" onclick="LabsView.metric('loss')">Loss</button><button type="button" class="${st.metric === 'acc' ? 'on' : ''}" onclick="LabsView.metric('acc')">Accuracy</button></div>` : ''}
+      ${others.length ? `<select class="input lab-cmp" aria-label="Compare with another run" onchange="LabsView.compare(this.value)"><option value="">Compare with…</option>${others.map(o => `<option value="${esc(o.id)}"${o.id === st.cmp ? ' selected' : ''}>${esc(o.name)}</option>`).join('')}</select>` : ''}`);
+    paintNumbers(vals, cnn);
+    paintSamples(r, d);
+    setHtmlIfChanged($('lab-meta'), `${esc(tpl(r.template).name || r.template)} · ${esc(r.dataset.name || '')} · ${start.device ? esc(start.device) : ''}${start.vocab ? ` · ${start.vocab} characters` : ''}${start.classes ? ` · ${start.classes.length} kinds, ${start.train} pictures to learn from, ${start.val} held out` : ''} · started ${new Date((r.created || 0) * 1000).toLocaleString()}`);
+    drawChart();
+  }
+  function paintNumbers(vals, cnn) {
+    const rows = vals.slice(-12).reverse();
+    setHtmlIfChanged($('lab-numbers'), rows.length ? `<table class="lab-tbl"><thead><tr><th>Step</th><th>Validation loss</th>${cnn ? '<th>Accuracy</th>' : ''}<th>Time</th></tr></thead><tbody>${rows.map(v => `<tr><td class="mono">${v.step}</td><td class="mono">${num(v.val_loss)}</td>${cnn ? `<td class="mono">${pct(v.val_acc)}</td>` : ''}<td>${dur(v.t)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">The first check comes after a few dozen steps.</p>');
+  }
+  function paintSamples(r, d) {
+    const box = $('lab-samples'), list = d.samples || [];
+    if (r.template === 'gpt') {
+      const i = st.sampleAt < 0 || st.sampleAt >= list.length ? list.length - 1 : st.sampleAt, s = list[i];
+      const head = `<h2 class="lab-h">${icon('i-feed', 'sm')}What it writes</h2>`;
+      const pick = list.length > 1 ? `<label class="lab-slide">At step <b class="mono">${s ? s.step : ''}</b><input type="range" min="0" max="${list.length - 1}" value="${i}" oninput="LabsView.sampleAt(+this.value)" aria-label="Which check"></label>` : '';
+      const tryBox = `<div class="lab-try"><textarea class="input" id="lab-try-p" rows="2" placeholder="Start it off (optional) - it continues from here" aria-label="Start of the text">${esc((st.tryOut && st.tryOut.prompt) || '')}</textarea>
+          <div class="lab-row"><button type="button" class="btn sm primary" onclick="LabsView.tryIt()" ${st.trying ? 'disabled' : ''}>${st.trying ? '<span class="spinner"></span>Writing…' : `${icon('i-sparkle', 'xs')}Write`}</button><span class="muted">${running() === r.id ? 'From the latest checkpoint, on the CPU while it trains.' : 'From the latest checkpoint.'}</span></div>
+          ${st.tryOut && st.tryOut.run === r.id ? `<pre class="lab-text"><span class="lab-prompt">${esc(st.tryOut.prompt === '\n' ? '' : st.tryOut.prompt)}</span>${esc(st.tryOut.text)}</pre>` : ''}</div>`;
+      if (box.dataset.k !== 'gpt' + r.id) { box.dataset.k = 'gpt' + r.id; box._html = null; }
+      // The try box keeps what you typed: only the parts that change are repainted.
+      if (!box.querySelector('#lab-try-p')) box.innerHTML = `${head}<div id="lab-sample-body"></div><h3 class="lab-h3">Try it</h3><div id="lab-try"></div>`;
+      setHtmlIfChanged($('lab-sample-body'), s ? `${pick}<pre class="lab-text">${esc(s.text)}</pre>` : '<p class="muted">Its first writing shows after the first check.</p>');
+      const tryEl = $('lab-try'), typed = $('lab-try-p') ? $('lab-try-p').value : '';
+      if (tryEl._k !== `${st.trying}|${st.tryOut && st.tryOut.text}`) { tryEl._k = `${st.trying}|${st.tryOut && st.tryOut.text}`; tryEl.innerHTML = tryBox; if (typed && !st.tryOut) $('lab-try-p').value = typed; }
+      return;
+    }
+    const s = list[list.length - 1];
+    if (box.dataset.k !== 'cnn' + r.id) { box.dataset.k = 'cnn' + r.id; box._html = null; }
+    setHtmlIfChanged(box, `<h2 class="lab-h">${icon('i-image', 'sm')}What it sees${s ? ` <span class="muted">at step ${s.step}</span>` : ''}</h2>
+      ${s ? `<div class="lab-pics">${s.pictures.map(p => `<figure class="${p.truth === p.guess ? 'hit' : 'miss'}"><img src="/api/labs/runs/${encodeURIComponent(r.id)}/samples/${esc(p.img)}" alt="${esc(p.truth)}" loading="lazy"><figcaption>${icon(p.truth === p.guess ? 'i-check' : 'i-x', 'xs')}<span><b>${esc(p.guess)}</b> ${Math.round(p.conf * 100)}%${p.truth !== p.guess ? `<small>is ${esc(p.truth)}</small>` : ''}</span></figcaption></figure>`).join('')}</div>
+        <h3 class="lab-h3">Accuracy by kind</h3><div class="lab-bars">${Object.entries(s.per_class || {}).map(([k, v]) => `<div class="lab-barrow"><span>${esc(k)}</span><div class="bar"><i style="width:${Math.max(1, v * 100)}%"></i></div><span class="mono">${pct(v)}</span></div>`).join('')}</div>`
+        : '<p class="muted">Its first guesses show after the first check.</p>'}`);
+  }
+
+  /* ---- The chart: steps across, loss (or accuracy) up; this run blue, the compared run orange; training solid,
+     validation dashed. A crosshair shows every line's value at the nearest step. ---- */
+  function series() {
+    const d = data[st.sel]; if (!d) return [];
+    const acc = st.metric === 'acc';
+    const pick = (rows, k) => rows.filter(x => x[k] != null && isFinite(x[k])).map(x => [x.step, x[k]]);
+    const out = [];
+    const add = (rows, name, color) => {
+      const a = pick(rows, acc ? 'acc' : 'loss'), b = pick(rows, acc ? 'val_acc' : 'val_loss');
+      if (a.length) out.push({ label: `${name} · training`, color, dash: [], pts: a, width: 1.5 });
+      if (b.length) out.push({ label: `${name} · validation`, color, dash: [6, 4], pts: b, width: 2, dots: true });
+    };
+    add(d.rows, st.cmp ? 'This run' : 'This run', cssVar('--viz-1'));
+    if (st.cmp && data[st.cmp]) add(data[st.cmp].rows, (data[st.cmp].run || {}).name || 'Other run', cssVar('--viz-2'));
+    return out;
+  }
+  function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
+  function drawChart() {
+    const cv = $('lab-cv'); if (!cv) return;
+    const box = cv.parentElement, W = box.clientWidth, H = box.clientHeight, dpr = window.devicePixelRatio || 1;
+    if (!W || !H) return;
+    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + 'px'; cv.style.height = H + 'px'; }
+    const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+    const ser = series(), acc = st.metric === 'acc', run = (data[st.sel] || {}).run || {};
+    setHtmlIfChanged($('lab-legend'), ser.map(s => `<span class="lab-key"><svg width="22" height="8" aria-hidden="true"><line x1="1" y1="4" x2="21" y2="4" stroke="${s.color}" stroke-width="2" ${s.dash.length ? 'stroke-dasharray="5 3"' : ''}/></svg>${esc(s.label)}</span>`).join(''));
+    const all = ser.flatMap(s => s.pts.map(p => p[1]));
+    const L = 46, R = 12, T = 10, B = 26, pw = W - L - R, ph = H - T - B;
+    const ink = cssVar('--muted'), grid = cssVar('--border');
+    g.font = '11px ' + (getComputedStyle(document.body).fontFamily || 'sans-serif');
+    if (!all.length) { g.fillStyle = ink; g.textAlign = 'center'; g.fillText(run.id === running() ? 'The first numbers come in a few seconds…' : 'No numbers yet.', W / 2, H / 2); $('lab-tip').hidden = true; return; }
+    const xMax = Math.max(run.steps || 1, ...ser.flatMap(s => s.pts.map(p => p[0])));
+    const sorted = [...all].sort((a, b) => a - b);
+    let y0 = acc ? 0 : sorted[0], y1 = acc ? 1 : sorted[Math.floor((sorted.length - 1) * 0.99)];
+    if (!acc) { const pad = (y1 - y0) * 0.08 || 0.1; y0 = Math.max(0, y0 - pad); y1 += pad; }
+    const X = s => L + (s / xMax) * pw, Y = v => T + (1 - (Math.min(y1, v) - y0) / (y1 - y0 || 1)) * ph;
+    // Recessive grid and labels (ink tokens, never the series colours).
+    g.strokeStyle = grid; g.lineWidth = 1; g.fillStyle = ink; g.textAlign = 'right'; g.textBaseline = 'middle';
+    for (let i = 0; i <= 4; i++) { const v = y0 + (y1 - y0) * i / 4, y = Y(v); g.beginPath(); g.moveTo(L, Math.round(y) + .5); g.lineTo(W - R, Math.round(y) + .5); g.stroke(); g.fillText(acc ? `${Math.round(v * 100)}%` : v.toFixed(v < 10 ? 2 : 1), L - 6, y); }
+    g.textAlign = 'center'; g.textBaseline = 'top';
+    const stepTick = [10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000, 20000, 50000].find(t => xMax / t <= 6) || 100000;
+    for (let s = 0; s <= xMax; s += stepTick) g.fillText(big(s), X(s), H - B + 8);
+    for (const s of ser) {
+      g.strokeStyle = s.color; g.lineWidth = s.width; g.setLineDash(s.dash); g.lineJoin = 'round'; g.beginPath();
+      s.pts.forEach(([x, v], i) => (i ? g.lineTo(X(x), Y(v)) : g.moveTo(X(x), Y(v)))); g.stroke(); g.setLineDash([]);
+      if (s.dots && s.pts.length < 60) { g.fillStyle = s.color; for (const [x, v] of s.pts) { g.beginPath(); g.arc(X(x), Y(v), 2.5, 0, Math.PI * 2); g.fill(); } }
+    }
+    const tip = $('lab-tip');
+    if (hover == null || hover < L || hover > W - R) { tip.hidden = true; return; }
+    const at = Math.round((hover - L) / pw * xMax);
+    g.strokeStyle = ink; g.lineWidth = 1; g.beginPath(); g.moveTo(Math.round(hover) + .5, T); g.lineTo(Math.round(hover) + .5, T + ph); g.stroke();
+    const lines = ser.map(s => { let best = null; for (const p of s.pts) if (!best || Math.abs(p[0] - at) < Math.abs(best[0] - at)) best = p; return best && { s, p: best }; }).filter(Boolean);
+    for (const { s, p } of lines) { g.fillStyle = cssVar('--surface'); g.beginPath(); g.arc(X(p[0]), Y(p[1]), 4.5, 0, Math.PI * 2); g.fill(); g.fillStyle = s.color; g.beginPath(); g.arc(X(p[0]), Y(p[1]), 3, 0, Math.PI * 2); g.fill(); }
+    tip.hidden = false;
+    tip.innerHTML = `<b>Step ${big(at)}</b>${lines.map(({ s, p }) => `<div><svg width="14" height="6" aria-hidden="true"><line x1="0" y1="3" x2="14" y2="3" stroke="${s.color}" stroke-width="2" ${s.dash.length ? 'stroke-dasharray="4 2"' : ''}/></svg>${esc(s.label)}<span class="mono">${acc ? pct(p[1]) : num(p[1])}</span></div>`).join('')}`;
+    tip.style.left = `${Math.min(W - tip.offsetWidth - 4, Math.max(4, hover + 12))}px`;
+  }
+
+  async function act(path, body, okMsg) {
+    let r; try { r = await api(`/api/labs/runs/${encodeURIComponent(st.sel)}${path}`, body || {}); } catch (e) { r = { ok: false, message: e.message }; }
+    if (!r.ok) { toast(r.message); return null; }
+    if (okMsg) toast(okMsg);
+    return r;
+  }
+  return {
+    render, poll, go, setup, upload, start,
+    pick: async rid => { st.sel = rid; st.cmp = ''; st.sampleAt = -1; st.tryOut = null; hover = null; paint(); if (!data[rid]) { await loadRun(rid); paint(); } },
+    set: (k, v) => { st.form[k] = v; if (k === 'template') { st.form.size = 'small'; st.form.dataset = ''; } paint(); },
+    metric: m => { st.metric = m; paintDetail(); },
+    compare: async rid => { st.cmp = rid; if (rid && !data[rid]) await loadRun(rid); paintDetail(); },
+    sampleAt: i => { st.sampleAt = i; paintDetail(); },
+    stop: async () => { if (await act('/stop', {}, 'Stopping - it saves its checkpoint first.')) poll(); },
+    resume: async more => {
+      let extra = 0;
+      if (more) { const v = prompt('Train for how many more steps?', '2000'); if (v === null) return; extra = Math.max(100, parseInt(v, 10) || 0); }
+      if (await act('/resume', { more_steps: extra }, more ? `Training ${extra} more steps.` : 'Resumed from its checkpoint.')) { delete data[st.sel]; await loadRun(st.sel); poll(); }
+    },
+    del: async () => { if (!confirm('Move this run to the Labs trash? (runs\\trash, beside the Labs engine)')) return; if (await act('/delete', {}, 'Run moved to the trash.')) { delete data[st.sel]; st.sel = null; poll(); } },
+    rename: async v => { const r = await act('', { name: v }); if (r && data[st.sel]) { data[st.sel].run.name = r.run.name; poll(); } },
+    notes: async v => { const r = await act('', { notes: v }); if (r && data[st.sel]) data[st.sel].run.notes = v; },
+    tryIt: async () => {
+      if (st.trying) return;
+      const p = ($('lab-try-p') || {}).value || '';
+      st.trying = true; paintDetail();
+      const r = await act('/try', { prompt: p, length: 500, temperature: 0.8 });
+      st.trying = false; st.tryOut = r ? { run: st.sel, prompt: r.prompt, text: r.text } : st.tryOut;
+      if (r && r.unknown && r.unknown.length) toast(`It never saw ${r.unknown.map(c => JSON.stringify(c)).join(' ')} in its text - those were left out.`);
+      paintDetail();
+    },
+    folderForm: (on = true) => { st.folderForm = on; paint(); if (on) setTimeout(() => $('lab-folder-path') && $('lab-folder-path').focus(), 0); },
+    addFolder: () => addData({ kind: 'folder', path: $('lab-folder-path').value, name: $('lab-folder-name').value }),
+    sample: kind => { toast(kind === 'sample_text' ? 'Downloading Shakespeare…' : 'Drawing 900 shapes…'); addData({ kind }); },
+    delData: async id => { if (!confirm('Move this dataset to the Labs trash? Runs that used it keep their results.')) return; let r; try { r = await api(`/api/labs/datasets/${encodeURIComponent(id)}/delete`, {}); } catch (e) { r = { ok: false, message: e.message }; } if (!r.ok) { toast(r.message); return; } await loadDatasets(); paint(); },
+    markNav,
+  };
+})();
+setTimeout(() => LabsView.poll(), 4000);              // the sidebar's Labs counts and a run training in the background
 /* ---- The viewer: any picture full size - your gallery, a picture in a chat or one you attached -------
-   Fit or 100%, zoom with +/- (or the wheel), ← → through a list, C compares two side by side, Esc closes.
-   The strip along the bottom is the list it was opened from. */
+   The wheel zooms at the cursor, a drag moves a zoomed picture, a double-click goes between fit and close up;
+   +/- and 0 (fit) on the keyboard. ← → through a list (the gallery's selection follows), C compares two side by
+   side - zoomed and moved together. Esc closes. The strip along the bottom is the list it was opened from. */
 const Viewer = (() => {
-  let el = null, list = [], idx = 0, zoom = 0, cmp = null, lastFocus = null;
-  const ZOOMS = [0, 1, 1.5, 2, 3];          // 0 = fit
+  let el = null, list = [], idx = 0, cmp = null, lastFocus = null, onMove = null;
+  let z = 1, tx = 0, ty = 0, drag = null;           // z: 1 = fit; tx, ty: how far it is moved from the centre (px)
   function mount() {
     if (el) return;
     el = document.createElement('div');
     el.className = 'viewer'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Picture viewer');
     el.innerHTML = `<div class="vw-top"><b class="vw-title" id="vw-title"></b><span class="grow"></span>
-        <div class="vw-zoom" role="group" aria-label="Zoom"><button type="button" data-z="-" aria-label="Zoom out">−</button><button type="button" data-z="fit">Fit</button><button type="button" data-z="1">100%</button><button type="button" data-z="+" aria-label="Zoom in">+</button></div>
+        <span class="vw-pct" id="vw-pct" aria-live="polite"></span>
+        <div class="vw-zoom" role="group" aria-label="Zoom"><button type="button" data-z="-" aria-label="Zoom out">−</button><button type="button" data-z="fit">Fit</button><button type="button" data-z="1" title="Actual pixels">100%</button><button type="button" data-z="+" aria-label="Zoom in">+</button></div>
         <button type="button" class="vw-btn" data-act="compare" title="Compare with the next picture (C)">${icon('i-columns', 'sm')}<span>Compare</span></button>
         <button type="button" class="vw-btn icon" data-act="close" aria-label="Close (Esc)">${icon('i-x')}</button></div>
       <div class="vw-stage"><button type="button" class="vw-nav prev" data-act="prev" aria-label="Previous picture">${icon('i-arrow-left')}</button><div class="vw-panes" id="vw-panes"></div><button type="button" class="vw-nav next" data-act="next" aria-label="Next picture">${icon('i-arrow-right')}</button></div>
-      <div class="vw-foot"><div class="vw-strip" id="vw-strip"></div><div class="vw-keys"><span class="kbd">← →</span>move<span class="kbd">C</span>compare<span class="kbd">0</span>fit<span class="kbd">Esc</span>close</div></div>`;
+      <div class="vw-foot"><div class="vw-strip" id="vw-strip"></div><div class="vw-keys"><span class="kbd">Scroll</span>zoom<span class="kbd">Drag</span>move<span class="kbd">← →</span>next<span class="kbd">C</span>compare<span class="kbd">0</span>fit<span class="kbd">Esc</span>close</div></div>`;
     document.body.appendChild(el);
     el.addEventListener('click', e => {
       const b = e.target.closest('[data-act],[data-z],[data-i]'); if (!b) { if (e.target === el.querySelector('.vw-stage')) close(); return; }
       if (b.dataset.z) setZoom(b.dataset.z);
-      else if (b.dataset.i != null) { const i = +b.dataset.i; if (cmp != null && e.shiftKey) cmp = i; else idx = i; paint(); }
+      else if (b.dataset.i != null) { const i = +b.dataset.i; if (cmp != null && e.shiftKey) cmp = i; else jump(i); paint(); }
       else ({ close, prev: () => go(-1), next: () => go(1), compare: toggleCompare })[b.dataset.act]();
     });
-    el.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); setZoom(e.deltaY < 0 ? '+' : '-'); }, { passive: false });
+    el.addEventListener('wheel', e => {
+      if (e.target.closest('.vw-strip')) {                          // the strip scrolls sideways with the wheel
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { $('vw-strip').scrollLeft += e.deltaY; e.preventDefault(); }
+        return;
+      }
+      if (!e.target.closest('.vw-stage')) return;
+      e.preventDefault();
+      const d = Math.max(-60, Math.min(60, e.deltaY * (e.deltaMode === 1 ? 16 : 1)));   // a notch is ~±25%
+      const box = e.target.closest('.vw-img');
+      zoomAt(z * Math.exp(-d * 0.004), box ? at(e, box) : null);
+    }, { passive: false });
+    el.addEventListener('pointerdown', e => {
+      const box = e.target.closest('.vw-img'); if (!box || z === 1 || e.button !== 0) return;
+      e.preventDefault();
+      drag = { x: e.clientX - tx, y: e.clientY - ty };
+      box.setPointerCapture(e.pointerId); el.classList.add('panning');
+    });
+    el.addEventListener('pointermove', e => { if (!drag) return; tx = e.clientX - drag.x; ty = e.clientY - drag.y; clampPan(); applyT(); });
+    const endDrag = () => { if (drag) { drag = null; el.classList.remove('panning'); } };
+    el.addEventListener('pointerup', endDrag); el.addEventListener('pointercancel', endDrag);
+    el.addEventListener('dblclick', e => { const box = e.target.closest('.vw-img'); if (box) zoomAt(z > 1 ? 1 : Math.max(2, natural()), at(e, box)); });
+  }
+  // the cursor from the centre of a picture's box (the picture is centred in it)
+  function at(e, box) { const r = box.getBoundingClientRect(); return { x: e.clientX - r.left - r.width / 2, y: e.clientY - r.top - r.height / 2 }; }
+  function firstImg() { return el && el.querySelector('.vw-img img'); }
+  // how many times the fitted size the picture's real pixels are
+  function natural() { const i = firstImg(); return i && i.naturalWidth && i.clientWidth ? i.naturalWidth / i.clientWidth : 1; }
+  function zoomAt(z2, p) {
+    z2 = Math.max(1, Math.min(Math.max(8, natural() * 4), z2));
+    if (z2 <= 1.001) { z2 = 1; tx = ty = 0; }
+    else { const u = p || { x: 0, y: 0 }, r = z2 / z; tx = u.x - r * (u.x - tx); ty = u.y - r * (u.y - ty); }    // the point under the cursor stays put
+    z = z2; clampPan(); applyT();
+  }
+  // Zoomed in, any part of the picture can be dragged to the middle - even past the edges, so a detail near a side
+  // can sit in the centre instead of pinned to the edge of the view.
+  function clampPan() {
+    const i = firstImg(); if (!i) return;
+    const mx = z > 1 ? i.clientWidth * z / 2 : 0, my = z > 1 ? i.clientHeight * z / 2 : 0;
+    tx = Math.max(-mx, Math.min(mx, tx)); ty = Math.max(-my, Math.min(my, ty));
+  }
+  function applyT() {
+    if (!el) return;
+    el.querySelectorAll('.vw-img img').forEach(i => { i.style.transform = z === 1 ? '' : `translate(${tx}px, ${ty}px) scale(${z})`; });
+    el.classList.toggle('zoomed', z > 1);
+    const pct = Math.round(z * 100 / natural());
+    $('vw-pct').textContent = z === 1 ? '' : `${pct}%`;
+    el.querySelectorAll('[data-z]').forEach(b => b.classList.toggle('on', (b.dataset.z === 'fit' && z === 1) || (b.dataset.z === '1' && z > 1 && pct === 100)));
+  }
+  function setZoom(k) {
+    if (k === 'fit') zoomAt(1);
+    else if (k === '1') zoomAt(natural());
+    else zoomAt(k === '+' ? z * 1.25 : z / 1.25);
   }
   function keys(e) {
     if (!el || el.hidden) return;
@@ -6316,16 +6932,17 @@ const Viewer = (() => {
     else return;
     e.preventDefault(); e.stopPropagation();
   }
-  function setZoom(z) {
-    const i = ZOOMS.indexOf(zoom);
-    zoom = z === 'fit' ? 0 : z === '1' ? 1 : z === '+' ? ZOOMS[Math.min(ZOOMS.length - 1, i + 1)] : ZOOMS[Math.max(0, i - 1)];
-    paint();
+  // Another picture: the zoom stays when it is the same size (to compare details), else back to fit.
+  function jump(i) {
+    const a = list[idx], b = list[i];
+    idx = i;
+    if (!(a && b && a.width && a.width === b.width && a.height === b.height)) { z = 1; tx = ty = 0; }
+    if (onMove && b) { try { onMove(b); } catch (_) {} }
   }
-  function go(d) { if (list.length < 2) return; idx = (idx + d + list.length) % list.length; if (cmp === idx) cmp = (idx + 1) % list.length; paint(); }
-  function toggleCompare() { if (list.length < 2) return; cmp = cmp == null ? (idx + 1) % list.length : null; zoom = 0; paint(); }
-  function pane(item, i) {
-    const fit = zoom === 0;
-    return `<figure class="vw-pane${fit ? ' fit' : ''}"><div class="vw-img"><img src="${esc(item.url)}" alt="${esc(item.prompt || item.name || '')}" style="${fit ? '' : `width:${Math.round((item.width || 1024) * zoom)}px`}"></div>
+  function go(d) { if (list.length < 2) return; jump((idx + d + list.length) % list.length); if (cmp === idx) cmp = (idx + 1) % list.length; paint(); }
+  function toggleCompare() { if (list.length < 2) return; cmp = cmp == null ? (idx + 1) % list.length : null; z = 1; tx = ty = 0; paint(); }
+  function pane(item) {
+    return `<figure class="vw-pane fit"><div class="vw-img"><img src="${esc(item.url)}" alt="${esc(item.prompt || item.name || '')}" draggable="false"></div>
       ${item.prompt || item.seed != null ? `<figcaption><span class="mono">${item.seed != null ? `seed ${esc(item.seed)}` : ''}${item.seconds ? ` · ${esc(item.seconds)} s` : ''}</span>${cmp != null && item.id && ImagesView.find(item.id) ? `<button type="button" class="vw-btn" onclick="ImagesView.select('${jsArg(item.id)}');Viewer.close()">Keep this one</button>` : ''}</figcaption>` : ''}</figure>`;
   }
   function paint() {
@@ -6335,14 +6952,17 @@ const Viewer = (() => {
     el.querySelector('[data-act="compare"]').hidden = list.length < 2;
     el.querySelector('[data-act="compare"]').setAttribute('aria-pressed', String(cmp != null));
     el.querySelectorAll('.vw-nav').forEach(b => { b.hidden = list.length < 2; });
-    el.querySelectorAll('[data-z]').forEach(b => b.classList.toggle('on', (b.dataset.z === 'fit' && zoom === 0) || (b.dataset.z === '1' && zoom === 1)));
-    $('vw-panes').innerHTML = pane(cur, idx) + (cmp != null && list[cmp] ? pane(list[cmp], cmp) : '');
+    $('vw-panes').innerHTML = pane(cur) + (cmp != null && list[cmp] ? pane(list[cmp]) : '');
+    el.querySelectorAll('.vw-img img').forEach(i => { i.onload = () => { clampPan(); applyT(); }; });
+    applyT();
     $('vw-strip').innerHTML = list.length > 1 ? list.map((it, i) => `<button type="button" class="vw-thumb${i === idx || i === cmp ? ' on' : ''}" data-i="${i}" aria-label="Picture ${i + 1}"><img src="${esc(it.url)}" alt="" loading="lazy"></button>`).join('') : '';
     $('vw-strip').querySelector('.on')?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
   }
-  function open(items, i = 0) {
+  // opts.onMove(item): called when ← →, a click on the strip or a swipe shows another picture of the list.
+  function open(items, i = 0, opts = {}) {
     mount();
-    list = items.slice(0, 400); idx = Math.max(0, Math.min(list.length - 1, i)); zoom = 0; cmp = null;
+    list = items.slice(0, 400); idx = Math.max(0, Math.min(list.length - 1, i)); z = 1; tx = ty = 0; cmp = null;
+    onMove = opts.onMove || null;
     lastFocus = document.activeElement;
     el.hidden = false; el.classList.remove('closing');
     document.addEventListener('keydown', keys, true);
@@ -6353,6 +6973,7 @@ const Viewer = (() => {
   function close() {
     if (!el || el.hidden) return;
     document.removeEventListener('keydown', keys, true);
+    drag = null; el.classList.remove('panning');
     el.classList.add('closing');
     setTimeout(() => { el.hidden = true; el.classList.remove('closing'); }, 160);
     if (lastFocus && lastFocus.isConnected) lastFocus.focus({ preventScroll: true });
@@ -8913,6 +9534,7 @@ const DesignPanel = (() => {
 const BrowserPanel = (() => {
   const panel = $('browser-panel'), img = $('bp-img'), view = $('bp-view'), urlBox = $('bp-url');
   let open = false, timer = 0, hash = '', st = { running: false }, fastUntil = 0, blob = null, hadPanel = false, closedRun = -1, wheel = null, sized = '';
+  let starting = false, failed = '', wantFocus = false;
   const hdr = (r, k) => r.headers.get(k) || '';
   function show() {
     if (open) return;
@@ -8931,9 +9553,25 @@ const BrowserPanel = (() => {
   }
   // The assistant used its browser: show it - unless you closed the panel during this run.
   function follow() { if (S.settings.browser_builtin !== false && closedRun !== actState.runId) { show(); fastUntil = Date.now() + 4000; } }
+  // What stands in for the page: not open, starting (~6 s the first time), a start that failed, or a blank new page.
+  // A blank page was a black rectangle that looked broken, so it says what to do and the address bar is focused.
+  function paintEmpty(mode) {
+    const box = $('bp-empty');
+    box.hidden = !mode;
+    if (!mode) return;
+    const sub = {
+      off: `<svg class="icon"><use href="#i-globe"/></svg><b>The assistant's browser</b><span>It opens here when it browses for you - with its own profile, none of your passwords or cookies.</span><button type="button" class="btn" onclick="BrowserPanel.nav('open')">Open it</button>`,
+      starting: `<span class="spinner"></span><b>Starting the browser…</b><span>The first start takes a few seconds.</span>`,
+      failed: `<svg class="icon"><use href="#i-alert"/></svg><b>The browser didn't start</b><span>${esc(failed)}</span><button type="button" class="btn" onclick="BrowserPanel.nav('open')">Try again</button>`,
+      blank: `<svg class="icon"><use href="#i-globe"/></svg><b>Ready</b><span>Type an address or search words in the bar above.</span>`,
+    }[mode];
+    setHtmlIfChanged(box, sub);
+  }
   function paint() {
-    const running = st.running;
-    $('bp-empty').hidden = running; img.hidden = !running;
+    const running = st.running, blank = running && (!st.url || st.url === 'about:blank');
+    const mode = starting ? 'starting' : failed && !running ? 'failed' : !running ? 'off' : blank ? 'blank' : '';
+    paintEmpty(mode); img.hidden = !running || blank;
+    if (mode === 'blank' && wantFocus) { wantFocus = false; urlBox.focus(); }
     $('bp-back').disabled = !st.back; $('bp-fwd').disabled = !st.forward; $('bp-reload').disabled = !running;
     $('bp-load').hidden = !st.loading;
     if (document.activeElement !== urlBox) urlBox.value = running && st.url !== 'about:blank' ? st.url : '';
@@ -8998,9 +9636,15 @@ const BrowserPanel = (() => {
   async function nav(action, url) {
     fastUntil = Date.now() + 5000;
     if (action === 'go' && !String(url || '').trim()) return;
+    if (starting) return;                                                // one start at a time
+    const cold = !st.running && (action === 'open' || action === 'go');
+    if (cold) { starting = true; failed = ''; paint(); }
     let r = null;
-    try { r = await api('/api/browser/view/nav', { action, url: url || '' }); } catch (e) { toast(e.message); }
-    if (r && r.ok === false && r.message) toast(r.message);
+    try { r = await api('/api/browser/view/nav', { action, url: url || '' }); } catch (e) { r = { ok: false, message: e.message }; }
+    if (cold) { starting = false; if (r && r.ok === false) failed = r.message || "It didn't answer."; }
+    if (r && r.ok === false && r.message && !cold) toast(r.message);
+    if (action === 'open' && r && r.ok) wantFocus = true;
+    if (cold) paint();
     if (action === 'go') view.focus({ preventScroll: true });
     if (action === 'open' || action === 'close') sized = '';           // a new browser has its own size
     hash = ''; clearTimeout(timer); timer = setTimeout(tick, 120);

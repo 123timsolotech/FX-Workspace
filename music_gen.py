@@ -221,7 +221,7 @@ def generate(prompt: str, lyrics: str = "", duration: float = 60, instrumental: 
         while wait_while and wait_while():
             if _stop_requested.is_set():
                 raise MusicError("Stopped before it started.", "stopped")
-            progress("Waiting for the GPU - the chat model is busy")
+            progress("Waiting for the GPU - the chat model or a Labs run is using it")
             time.sleep(1)
         progress("Making room on the GPU")
         _free_gpu()

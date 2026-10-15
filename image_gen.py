@@ -606,7 +606,7 @@ def generate(prompt: str, quality: str | None = None, size=None, seed: int | Non
             while wait_while and wait_while():
                 if should_cancel and should_cancel():
                     raise ImageError("Stopped.", "stopped")
-                _set_stage("waiting", progress, "Waiting for the GPU - the chat model is busy")
+                _set_stage("waiting", progress, "Waiting for the GPU - the chat model or a Labs run is using it")
                 time.sleep(1)
             if not (_alive() and _proc_key == key):
                 _warm_wait(key, progress, should_cancel)

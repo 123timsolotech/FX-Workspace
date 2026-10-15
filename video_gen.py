@@ -317,7 +317,7 @@ def generate(prompt: str, size=None, length=None, seed: int | None = None, negat
         while wait_while and wait_while():
             if stop():
                 raise VideoError("Stopped before it started.", "stopped")
-            _job.update(stage="waiting", text="Waiting for the GPU - the chat model is busy")
+            _job.update(stage="waiting", text="Waiting for the GPU - the chat model or a Labs run is using it")
             time.sleep(1)
         _job.update(stage="freeing", text="Making room on the GPU")
         _free_gpu()

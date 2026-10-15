@@ -136,7 +136,7 @@ def add_sound(vid: str, prompt: str = "", dialogue: str = "", language: str = "e
         while wait_while and wait_while():
             if _stop.is_set():
                 raise SoundError("Stopped before it started.", "stopped")
-            _job.update(text="Waiting for the GPU - the chat model is busy")
+            _job.update(text="Waiting for the GPU - the chat model or a Labs run is using it")
             time.sleep(1)
         _job.update(text="Making room on the GPU")
         _free_gpu()

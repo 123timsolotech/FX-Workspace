@@ -81,6 +81,8 @@ import image_gen
 import video_gen
 import video_audio
 import music_gen
+import labs
+import httpx
 import chat_guard
 import osint.collector as osint_collector
 import osint.geo as osint_geo
@@ -153,6 +155,11 @@ def _busy(default: str) -> str:
     return benchmark_runner.busy_message() or default
 
 
+def _gpu_wait() -> bool:
+    """Image, video and music jobs wait while the chat model works or a Labs run trains on the GPU."""
+    return shared.state_lock.locked() or labs.gpu_busy()
+
+
 @app.post("/api/chat")
 def start_chat(req: shared.ChatRequest):
     """Start a turn in the background and return its id at once. The UI then
@@ -181,6 +188,10 @@ def start_chat(req: shared.ChatRequest):
     if _model_loading() or (shared.state_lock.locked() and not tasks.turns.running()):
         # A model force-load (its own lock), or something other than a turn holds state_lock.
         return {"status": "error", "message": _busy("Busy - a model is loading. Try again in a moment.")}
+    if labs.gpu_busy() and getattr(req, "mode", config.MODE_LOCAL) != config.MODE_CLOUD:
+        # A local model would load onto the GPU a Labs run is training on - both would run out of memory.
+        return {"status": "error", "message": "A Labs run is training on the GPU, so a local model can't load now. "
+                                              "Stop the run in Labs, wait for it to finish, or switch to a cloud model."}
     turn = tasks.turns.start(req, {"message": req.message[:500], "with_vision": bool(req.with_vision),
                              "command": req.command, "event_seq": shared.app_state.get("event_seq", 0),
                              "temp": open_temp["id"] if open_temp else None})
@@ -1019,6 +1030,8 @@ def _start_background_services():
         event_log.log_action(f"Removed {swept} temporary chat folder{'s' if swept != 1 else ''} left by the last run.")
     # MCP servers connect in the background (a slow one must not delay the UI).
     threading.Thread(target=_connect_mcp_servers, daemon=True, name="mcp-connect").start()
+    # A hidden browser the last run left behind (closed without its shutdown) holds the browser's port and memory.
+    threading.Thread(target=lambda: browser.agent_browser.close_leftover(), daemon=True, name="browser-leftover").start()
     # Reopen the chat and project that were open when the server stopped.
     try:
         sessions.restore()
@@ -2497,7 +2510,7 @@ def _image_call(fn):
     """Runs one image request from the page (not from a chat turn): it waits while a chat turn holds the GPU's
     model instead of unloading it mid-answer, and every refusal comes back with its code for the page."""
     try:
-        return {"ok": True, "image": _public_image(fn(wait_while=lambda: shared.state_lock.locked()))}
+        return {"ok": True, "image": _public_image(fn(wait_while=_gpu_wait))}
     except image_gen.ImageError as e:
         return {"ok": False, "message": str(e), "code": e.code}
 
@@ -2757,7 +2770,7 @@ def videos_generate(body: VideoRequest):
         ref = meta["path"]
     try:
         clip = video_gen.generate(body.prompt, body.size, body.length, body.seed, body.negative, ref_image=ref,
-                                  ref_id=body.ref_id, best=body.best, wait_while=lambda: shared.state_lock.locked(),
+                                  ref_id=body.ref_id, best=body.best, wait_while=_gpu_wait,
                                   key=body.model if body.model in video_gen.MODELS else "turbo")
     except video_gen.VideoError as e:
         return {"ok": False, "message": str(e), "code": e.code}
@@ -2790,7 +2803,7 @@ def videos_add_sound(vid: str, body: SoundRequest):
     """Add sound (effects + an optional spoken line + optional music) - a new copy of the clip; the original stays."""
     try:
         clip = video_audio.add_sound(vid, body.prompt, body.dialogue, body.language, body.voice_start, body.emotion,
-                                     body.music_id, seed=body.seed, wait_while=lambda: shared.state_lock.locked())
+                                     body.music_id, seed=body.seed, wait_while=_gpu_wait)
     except video_audio.SoundError as e:
         return {"ok": False, "message": str(e), "code": e.code}
     event_log.log_action(f"Added sound to the video {vid} in {clip['sound']['seconds']} s.")
@@ -2888,7 +2901,7 @@ class MusicRequest(BaseModel):
 def music_generate(body: MusicRequest):
     try:
         song = music_gen.generate(body.prompt, body.lyrics, body.duration, body.instrumental, body.seed, body.language,
-                                  body.bpm, wait_while=lambda: shared.state_lock.locked(), key=body.key,
+                                  body.bpm, wait_while=_gpu_wait, key=body.key,
                                   time_signature=body.time_signature, title=body.title, edit=body.edit)
     except music_gen.MusicError as e:
         return {"ok": False, "message": str(e), "code": e.code}
@@ -2953,6 +2966,137 @@ def music_restore(mid: str):
 @app.post("/api/music/{mid}/purge")
 def music_purge(mid: str):
     return _music_action(lambda: music_gen.purge(mid), f"Deleted the song {mid} for good from the trash.")
+
+
+# ==============================================================================
+# Fx Labs (labs.py): train models on this PC - the engine, datasets, runs
+# ==============================================================================
+def _labs(fn, log: str | None = None):
+    try:
+        out = fn()
+    except labs.LabsError as e:
+        return {"ok": False, "message": str(e), "code": e.code}
+    except OSError as e:
+        return {"ok": False, "message": f"That didn't work: {e.strerror or e}", "code": "failed"}
+    if log:
+        event_log.log_action(log)
+    return {"ok": True, **(out if isinstance(out, dict) else {"items": out} if isinstance(out, list) else {})}
+
+
+class LabsDatasetBody(BaseModel):
+    kind: str                         # text | folder | sample_text | sample_shapes
+    name: str = ""
+    text: str = ""
+    path: str = ""
+
+
+class LabsRunBody(BaseModel):
+    template: str
+    dataset: str
+    size: str = "small"
+    name: str = ""
+    steps: int | None = None
+    settings: dict | None = None
+
+
+class LabsRunEdit(BaseModel):
+    name: str | None = None
+    notes: str | None = None
+    more_steps: int = 0
+
+
+class LabsTryBody(BaseModel):
+    prompt: str = ""
+    length: int = 400
+    temperature: float = 0.8
+
+
+@app.get("/api/labs")
+def labs_status():
+    return labs.status()
+
+
+@app.post("/api/labs/setup")
+def labs_setup():
+    event_log.log_action("Labs: setting up its engine (PyTorch).")
+    return {"ok": True, "setup": labs.setup()}
+
+
+@app.get("/api/labs/datasets")
+def labs_datasets():
+    return {"datasets": labs.datasets()}
+
+
+@app.post("/api/labs/datasets")
+def labs_add_dataset(body: LabsDatasetBody):
+    fn = {"text": lambda: labs.add_text(body.name, body.text), "folder": lambda: labs.add_folder(body.name, body.path),
+          "sample_text": labs.add_sample_text, "sample_shapes": labs.add_sample_shapes}.get(body.kind)
+    if not fn:
+        return {"ok": False, "message": "Unknown kind of dataset."}
+
+    def go():
+        try:
+            return {"dataset": fn()}
+        except httpx.HTTPError as e:
+            raise labs.LabsError(f"The download didn't work: {e}", "failed") from None
+    return _labs(go, f"Labs: added a dataset ({body.kind}).")
+
+
+@app.post("/api/labs/datasets/{did}/delete")
+def labs_delete_dataset(did: str):
+    return _labs(lambda: labs.delete_dataset(did), f"Labs: dataset {did} moved to the Labs trash.")
+
+
+@app.get("/api/labs/runs")
+def labs_runs():
+    return {"runs": labs.runs(), "running": labs.status()["running"]}
+
+
+@app.post("/api/labs/runs")
+def labs_create_run(body: LabsRunBody):
+    return _labs(lambda: {"run": labs.create(body.template, body.dataset, body.size, body.name, body.steps, body.settings)},
+                 f"Labs: started a {body.template} run.")
+
+
+@app.get("/api/labs/runs/{rid}")
+def labs_run(rid: str, since: int = 0):
+    return _labs(lambda: labs.metrics(rid, max(0, since)))
+
+
+@app.post("/api/labs/runs/{rid}")
+def labs_edit_run(rid: str, body: LabsRunEdit):
+    return _labs(lambda: {"run": labs.update(rid, body.name, body.notes)})
+
+
+@app.post("/api/labs/runs/{rid}/stop")
+def labs_stop_run(rid: str):
+    return _labs(lambda: {"run": labs.stop(rid)}, f"Labs: asked run {rid} to stop.")
+
+
+@app.post("/api/labs/runs/{rid}/resume")
+def labs_resume_run(rid: str, body: LabsRunEdit = None):
+    return _labs(lambda: {"run": labs.start(rid, (body.more_steps if body else 0))}, f"Labs: resumed run {rid}.")
+
+
+@app.post("/api/labs/runs/{rid}/delete")
+def labs_delete_run(rid: str):
+    return _labs(lambda: labs.delete_run(rid), f"Labs: run {rid} moved to the Labs trash.")
+
+
+@app.post("/api/labs/runs/{rid}/try")
+def labs_try(rid: str, body: LabsTryBody):
+    return _labs(lambda: labs.try_it(rid, body.prompt, body.length, body.temperature))
+
+
+@app.get("/api/labs/runs/{rid}/samples/{name}")
+def labs_sample_file(rid: str, name: str):
+    try:
+        path = labs.sample_file(rid, name)
+    except labs.LabsError:
+        path = None
+    if not path:
+        return JSONResponse({"ok": False, "message": "No such picture."}, status_code=404)
+    return FileResponse(path, media_type="image/png", headers={"Cache-Control": "max-age=3600"})
 
 
 # ==============================================================================

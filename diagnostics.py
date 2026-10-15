@@ -270,8 +270,9 @@ def assess(name: str, cfg: dict, gpu: dict) -> dict:
         base = estimate(meta, cfg, opts, step, "q8_0", cpu_moe=layers)
         on_gpu = max(0, min(layers, int((usable - MARGIN_MB - base["total_mb"]) // per_layer)))
         est = estimate(meta, cfg, opts, step, "q8_0", cpu_moe=layers - on_gpu)
+        # **extra: a hybrid MoE (Qwen 3.5 35B-A3B) keeps ngl = 99 - only its experts go to RAM, never whole layers.
         row["change"] = {"ctx-size": step, "cache-type-k": "q8_0", "cache-type-v": "q8_0", "flash-attn": "on",
-                         "n-cpu-moe": layers - on_gpu, "load-mode": "none"}
+                         "n-cpu-moe": layers - on_gpu, "load-mode": "none", **extra}
         row["after"] = est
         row["plan"] = (f"Its weights alone ({row['size_mb'] / 1024:.1f} GB) are bigger than the free VRAM. It is a mixture-of-experts "
                        f"model: keep the experts of {layers - on_gpu} of its {layers} layers in RAM and everything else on the GPU "
