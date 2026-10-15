@@ -21,7 +21,9 @@ import json
 import os
 import re
 import secrets
+import shutil
 import subprocess
+import tempfile
 import threading
 import time
 
@@ -119,7 +121,10 @@ def _start(progress) -> None:
     root = _cfg()["music_root"]
     env = {**os.environ, "ACESTEP_API_HOST": "127.0.0.1", "ACESTEP_API_PORT": str(PORT),
            "ACESTEP_INIT_LLM": "true", "ACESTEP_LM_MODEL_PATH": LM_MODEL, "ACESTEP_LM_BACKEND": "pt",
-           "ACESTEP_DOWNLOAD_SOURCE": "huggingface", "CHECK_UPDATE": "false", "PYTHONIOENCODING": "utf-8"}
+           "ACESTEP_DOWNLOAD_SOURCE": "huggingface", "CHECK_UPDATE": "false", "PYTHONIOENCODING": "utf-8",
+           # On an 8 GB card the resident DiT left ~0.1 GB for decoding the audio; ACE-Step then decodes on the CPU,
+           # which hung for 15+ minutes. Moving the DiT off the GPU between steps leaves the decode room on the GPU.
+           "ACESTEP_OFFLOAD_TO_CPU": "true", "ACESTEP_OFFLOAD_DIT_TO_CPU": "true"}
     os.makedirs(MUSIC_DIR, exist_ok=True)
     log = open(os.path.join(MUSIC_DIR, "server.log"), "ab")
     _proc = subprocess.Popen([_python(), "-m", "acestep.api_server"], cwd=root, env=env, stdout=log,
@@ -163,11 +168,39 @@ def _free_gpu() -> None:
         llama_local.unload_all()
 
 
+KEYS = tuple(f"{n} {m}" for n in ("C", "C#", "D", "Eb", "E", "F", "F#", "G", "Ab", "A", "Bb", "B") for m in ("major", "minor"))
+TIME_SIGNATURES = ("2", "3", "4", "6")
+STRENGTHS = {"subtle": 0.3, "balanced": 0.55, "bold": 0.85}
+
+
 def generate(prompt: str, lyrics: str = "", duration: float = 60, instrumental: bool = False, seed: int | None = None,
-             language: str = "en", bpm: int | None = None, wait_while=None) -> dict:
-    """Make one song. Returns its metadata with "url". Raises MusicError."""
+             language: str = "en", bpm: int | None = None, wait_while=None, key: str = "", time_signature: str = "",
+             title: str = "", edit: dict | None = None) -> dict:
+    """Make one song, or with `edit` ({"src": id, "start": s, "end": s, "change": text, "strength": subtle|balanced|bold})
+    remake that part of an existing song (ACE-Step's repaint) as a new version - the source is never changed.
+    Returns its metadata with "url". Raises MusicError."""
     global _job, _last_used, _last_error, _typical, _idle_thread
     prompt, lyrics = str(prompt or "").strip(), str(lyrics or "").strip()
+    src = None
+    if edit:
+        got = find(edit.get("src"))
+        if not got:
+            raise MusicError("The song to change no longer exists.", "missing")
+        src, src_folder = got
+        change = str(edit.get("change") or "").strip()
+        if not change:
+            raise MusicError("Say what should change in the selected part.", "empty")
+        total = float(src.get("duration") or 0)
+        start = max(0.0, float(edit.get("start") or 0))
+        end = min(total or 1e9, float(edit.get("end") or 0))
+        if end - start < 1:
+            raise MusicError("Select at least one second of the song.", "empty")
+        # The selected part is described by the change, in the song's own style; the rest stays as it is.
+        prompt = f"{change}. {src.get('prompt', '')}".strip()
+        lyrics = lyrics or src.get("lyrics", "")
+        instrumental, language = bool(src.get("instrumental")) and not lyrics, src.get("language") or language
+        duration, bpm, key = total or duration, bpm or src.get("bpm"), key or src.get("key") or ""
+        title = title or src.get("title") or ""
     if not prompt:
         raise MusicError("Describe the music - genre, mood, instruments.", "empty")
     refused = image_gen._check(f"{prompt}\n{lyrics}")
@@ -203,6 +236,18 @@ def generate(prompt: str, lyrics: str = "", duration: float = 60, instrumental: 
                 "use_random_seed": seed is None, "seed": int(seed) if seed is not None else -1}
         if bpm:
             body["bpm"] = max(30, min(300, int(bpm)))
+        if key in KEYS:
+            body["key_scale"] = key
+        if str(time_signature) in TIME_SIGNATURES:
+            body["time_signature"] = str(time_signature)
+        if src:
+            # ACE-Step only reads source audio from the system temp folder (its path check).
+            tmp = os.path.join(tempfile.gettempdir(), f"fx-music-src-{src['id']}.flac")
+            shutil.copyfile(os.path.join(src_folder, src["id"] + ".flac"), tmp)
+            body.update(task_type="repaint", src_audio_path=tmp, repainting_start=start, repainting_end=end,
+                        repaint_mode="balanced", repaint_strength=STRENGTHS.get(edit.get("strength"), 0.55),
+                        repaint_wav_crossfade_sec=0.15, thinking=False)
+            progress("Changing the selected part")
         r = httpx.post(f"{BASE}/release_task", json=body, timeout=60).json()
         task = (r.get("data") or {}).get("task_id")
         if not task:
@@ -216,8 +261,9 @@ def generate(prompt: str, lyrics: str = "", duration: float = 60, instrumental: 
             time.sleep(1.5)
             spent = time.time() - started
             est = _typical * max(0.5, duration / 60)
-            progress(f"Making the song, about {max(1, round(est - spent))} s left" if spent < est
-                     else "Making the song, almost done", round(min(0.97, spent / (spent + max(5, est - spent))), 3))
+            what = "Changing the part" if src else "Making the song"
+            progress(f"{what}, about {max(1, round(est - spent))} s left" if spent < est
+                     else f"{what}, almost done", round(min(0.97, spent / (spent + max(5, est - spent))), 3))
             q = httpx.post(f"{BASE}/query_result", json={"task_id_list": [task]}, timeout=30).json()
             item = ((q.get("data") or [{}])[0]) or {}
             if item.get("status") == 2:
@@ -234,14 +280,22 @@ def generate(prompt: str, lyrics: str = "", duration: float = 60, instrumental: 
         os.makedirs(MUSIC_DIR, exist_ok=True)
         with open(os.path.join(MUSIC_DIR, mid + ".flac"), "wb") as f:
             f.write(audio.content)
-        metas = res.get("metas") or {}
+        metas = {k: v for k, v in (res.get("metas") or {}).items() if v not in (None, "", "N/A")}
         seconds = round(time.time() - t0, 1)
-        _typical = (time.time() - started) * 60 / duration
-        meta = {"id": mid, "prompt": prompt, "lyrics": lyrics if not instrumental else "", "instrumental": instrumental
+        if not src:
+            _typical = (time.time() - started) * 60 / duration
+        meta = {"id": mid, "title": str(title or "").strip()[:80], "prompt": src.get("prompt", prompt) if src else prompt, "lyrics": lyrics if not instrumental else "", "instrumental": instrumental
                 or not lyrics, "language": body["vocal_language"], "duration": metas.get("duration") or duration,
                 "bpm": metas.get("bpm"), "key": metas.get("keyscale"), "seed": res.get("seed_value"),
                 "model": f"ACE-Step 1.5 ({res.get('dit_model') or 'turbo'})", "seconds": seconds, "fav": False,
-                "created": time.time()}
+                "created": time.time(), "time_signature": metas.get("timesignature") or time_signature or None}
+        if src:
+            # A version of the source: the same family (root), what changed and where.
+            meta.update(parent=src["id"], root=src.get("root") or src["id"],
+                        edit={"start": round(start, 2), "end": round(end, 2), "change": change,
+                              "strength": edit.get("strength") or "balanced"})
+            for k in ("bpm", "key", "time_signature"):
+                meta[k] = meta.get(k) or src.get(k)
         with open(os.path.join(MUSIC_DIR, mid + ".json"), "w", encoding="utf-8") as f:
             json.dump(meta, f, ensure_ascii=False, indent=1)
         _last_error = ""
@@ -253,6 +307,11 @@ def generate(prompt: str, lyrics: str = "", duration: float = 60, instrumental: 
         _last_error = f"The music engine didn't answer: {e}"
         raise MusicError(_last_error, "failed")
     finally:
+        if src:
+            try:
+                os.remove(os.path.join(tempfile.gettempdir(), f"fx-music-src-{src['id']}.flac"))
+            except OSError:
+                pass
         _last_used = time.time()
         _job = {}
         _lock.release()
@@ -305,7 +364,7 @@ def recent(limit: int = 200, q: str = "", fav: bool = False, trashed: bool = Fal
         meta = _read_meta(folder, n[:-5])
         if not meta or "id" not in meta or (fav and not meta.get("fav")):
             continue
-        hay = f"{meta.get('prompt', '')} {meta.get('lyrics', '')}".lower()
+        hay = f"{meta.get('title', '')} {meta.get('prompt', '')} {meta.get('lyrics', '')}".lower()
         if words and not all(w in hay for w in words):
             continue
         out.append({**meta, "url": f"/api/music/{'trash/' if trashed else ''}{meta['id']}.flac", "trashed": trashed})
@@ -315,11 +374,19 @@ def recent(limit: int = 200, q: str = "", fav: bool = False, trashed: bool = Fal
 
 
 def set_favorite(mid: str, on: bool) -> dict:
+    return _update(mid, fav=bool(on))
+
+
+def set_title(mid: str, title: str) -> dict:
+    return _update(mid, title=str(title or "").strip()[:80])
+
+
+def _update(mid: str, **fields) -> dict:
     got = find(mid)
     if not got:
         raise MusicError("No such song.", "missing")
     meta, folder = got
-    meta["fav"] = bool(on)
+    meta.update(fields)
     with open(os.path.join(folder, mid + ".json"), "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=1)
     return meta

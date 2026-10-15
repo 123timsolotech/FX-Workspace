@@ -178,8 +178,8 @@ def start_chat(req: shared.ChatRequest):
         req.message, req.command = text, command
     else:
         req.command = None                    # only ever set from the message
-    if shared.state_lock.locked() and not tasks.turns.running():
-        # Something other than a turn holds the lock (a model force-load).
+    if _model_loading() or (shared.state_lock.locked() and not tasks.turns.running()):
+        # A model force-load (its own lock), or something other than a turn holds state_lock.
         return {"status": "error", "message": _busy("Busy - a model is loading. Try again in a moment.")}
     turn = tasks.turns.start(req, {"message": req.message[:500], "with_vision": bool(req.with_vision),
                              "command": req.command, "event_seq": shared.app_state.get("event_seq", 0),
@@ -220,8 +220,8 @@ def start_benchmark(body: BenchmarkBody):
     """Benchmark one local model (Settings > Models): loads it, runs the tool-call
     cases and context probes through the agent's own request path, stores the
     result and updates the model's capabilities. Never during a task."""
-    if tasks.turns.running():
-        return {"ok": False, "message": "Busy - a task is running. Run the benchmark when it has finished."}
+    if tasks.turns.running() or _model_loading():
+        return {"ok": False, "message": "Busy - a task or model load is running. Run the benchmark when it has finished."}
     try:
         configured = {c["name"] for c in llama_local.list_model_configs()}
     except Exception:
@@ -941,10 +941,15 @@ def force_load_model(body: ForceLoadRequest):
     already the resident model, --models-max 1 means the router will NOT
     reload it on its own - so evict_first briefly swaps to any other
     configured model first, guaranteeing freshly-edited ngl/ctx-size/batch-
-    size settings are actually re-read from models.ini."""
-    if not shared.state_lock.acquire(blocking=False):
-        return {"status": "error", "message": "Busy - wait for the current turn to finish first."}
+    size settings are actually re-read from models.ini.
+    It holds its own lock, not state_lock: a load takes minutes, and switching or reading chats must keep working
+    meanwhile. New messages wait for it (start_chat checks model_loading)."""
+    if shared.state_lock.locked() or not _model_load_lock.acquire(blocking=False):
+        return {"status": "error", "message": _busy("Busy - wait for the current turn or load to finish first.")}
+    shared.app_state["model_loading"] = body.model
     try:
+        if shared.state_lock.locked():          # a turn slipped in between the check and the flag
+            return {"status": "error", "message": "Busy - wait for the current turn to finish first."}
         if not llama_local.server_is_up():
             return {"status": "error", "message": llama_local.unreachable_message()}
         reported = llama_local.server_models(force=True) or []
@@ -978,7 +983,15 @@ def force_load_model(body: ForceLoadRequest):
     except Exception as e:
         return {"status": "error", "message": f"Force-load failed: {str(e)[:600]}"}
     finally:
-        shared.state_lock.release()
+        shared.app_state["model_loading"] = None
+        _model_load_lock.release()
+
+
+_model_load_lock = threading.Lock()
+
+
+def _model_loading() -> bool:
+    return bool(shared.app_state.get("model_loading"))
 
 
 def _connect_mcp_servers():
@@ -2205,7 +2218,7 @@ def run_routine(rid: str, trigger: str = "click"):
     if routine is None:
         return {"status": "error", "message": "That routine no longer exists."}
     trigger = "schedule" if trigger == "schedule" else "click"
-    if shared.state_lock.locked() and not tasks.turns.running():
+    if _model_loading() or (shared.state_lock.locked() and not tasks.turns.running()):
         why = _busy("Busy - a model is loading. Try again in a moment.")
         if trigger == "schedule":                    # a scheduled run is never dropped silently
             routine_runner._record(routine, "skipped", why, trigger)
@@ -2865,17 +2878,33 @@ class MusicRequest(BaseModel):
     seed: int | None = None
     language: str = "en"
     bpm: int | None = None
+    key: str = ""
+    time_signature: str = ""
+    title: str = ""
+    edit: dict | None = None              # {"src", "start", "end", "change", "strength"}: remake that part as a new version
 
 
 @app.post("/api/music/generate")
 def music_generate(body: MusicRequest):
     try:
         song = music_gen.generate(body.prompt, body.lyrics, body.duration, body.instrumental, body.seed, body.language,
-                                  body.bpm, wait_while=lambda: shared.state_lock.locked())
+                                  body.bpm, wait_while=lambda: shared.state_lock.locked(), key=body.key,
+                                  time_signature=body.time_signature, title=body.title, edit=body.edit)
     except music_gen.MusicError as e:
         return {"ok": False, "message": str(e), "code": e.code}
-    event_log.log_action(f"Made a song ({song['duration']} s) in {song['seconds']} s.")
+    except (OSError, ValueError, TypeError) as e:
+        return {"ok": False, "message": f"That didn't work: {str(e)[:200]}", "code": "failed"}
+    event_log.log_action(f"{'Changed part of a song' if body.edit else 'Made a song'} ({song['duration']} s) in {song['seconds']} s.")
     return {"ok": True, "song": song}
+
+
+class MusicTitle(BaseModel):
+    title: str = ""
+
+
+@app.post("/api/music/{mid}/title")
+def music_title(mid: str, body: MusicTitle):
+    return _music_action(lambda: music_gen.set_title(mid, body.title))
 
 
 @app.post("/api/music/stop")

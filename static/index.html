@@ -261,6 +261,106 @@ html.temp-chat #chat-title { color: var(--incog); }
 /* ---- A chat closed by the chat limits (chat_guard.py) ----------------------
    The banner ends the thread and the message box is disabled. The owner's
    unlock is deliberately quiet: a double-click on the banner's lock icon. */
+/* Music (MusicView): library | studio */
+.mz { display: flex; flex-direction: column; gap: 14px; max-width: 1240px; margin: 0 auto; padding: 0 20px 40px; }
+.mz-body { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 18px; align-items: start; }
+.mz-lib { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 10px; max-height: calc(100vh - 150px);
+  border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); background: var(--surface); padding: 10px; }
+.mz-lib-head { display: flex; gap: 6px; align-items: center; }
+.mz-search { flex: 1; min-width: 0; }
+.mz-lib-list { overflow-y: auto; display: flex; flex-direction: column; gap: 2px; margin: 0 -4px; padding: 0 4px; }
+.mz-row { display: flex; align-items: center; gap: 10px; padding: 8px; border-radius: 10px; cursor: pointer; transition: background .15s; }
+.mz-row:hover { background: var(--surface-2); }
+.mz-row.on { background: var(--accent-soft); }
+.mz-row-text { min-width: 0; }
+.mz-row-text b { display: block; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mz-row-text small { color: var(--muted); font-size: 11.5px; }
+.mz-fav { color: var(--accent-text, var(--accent)); margin-right: 4px; }
+.mz-badge { color: var(--accent-text, var(--accent)); }
+.mz-play { flex: none; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border-strong); background: var(--surface);
+  color: var(--text); display: grid; place-items: center; cursor: pointer; transition: transform .15s, background .15s, color .15s; }
+.mz-play:hover { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); transform: scale(1.06); }
+.mz-empty { text-align: center; padding: 28px 10px; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.mz-empty b { color: var(--text); }
+.mz-empty p { margin: 0; font-size: 12.5px; }
+.mz-empty-trash { margin: 8px auto 2px; }
+.mz-main { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.mz-tabs { align-self: flex-start; }
+.mz-tab-sub { margin-left: 6px; color: var(--muted); font-weight: 400; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mz-card { border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); background: var(--surface); padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.mz-h { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+/* New song */
+.mz-new .field { margin: 0; }
+.mz-new .field label small { color: var(--muted); font-weight: 400; margin-left: 4px; }
+.mz-new textarea.input { resize: vertical; min-height: 64px; line-height: 1.5; }
+.mz-lyrics { font-family: var(--mono, ui-monospace, monospace); font-size: 12.5px; }
+.mz-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.mz-tags .chip { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-2); cursor: pointer; }
+.mz-tags .chip:hover { border-color: var(--accent); color: var(--accent-text, var(--accent)); }
+.mz-settings { display: flex; flex-direction: column; border-top: 1px solid var(--border); padding-top: 10px; }
+.mz-set { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px dashed var(--border); flex-wrap: wrap; }
+.mz-set:last-child { border-bottom: 0; }
+.mz-set-l { display: flex; flex-direction: column; min-width: 160px; }
+.mz-set-l b { font-size: 13px; font-weight: 600; }
+.mz-set-l small { color: var(--muted); font-size: 11.5px; }
+.mz-set-c { display: flex; align-items: center; gap: 6px; }
+.mz-set-c select.input { width: auto; min-width: 140px; height: 32px; }
+.mz-num { width: 96px; height: 32px; }
+.mz-unit { color: var(--muted); font-size: 12px; }
+.mz-go { display: flex; justify-content: flex-end; align-items: center; gap: 12px; }
+/* Studio */
+.mz-st-head { display: flex; align-items: center; gap: 10px; }
+.mz-title-in { flex: 1; min-width: 0; font: inherit; font-size: 20px; font-weight: 650; color: var(--text); background: transparent; border: 1px solid transparent;
+  border-radius: 8px; padding: 4px 8px; margin-left: -8px; }
+.mz-title-in:hover:not(:disabled) { border-color: var(--border); }
+.mz-title-in:focus { outline: none; border-color: var(--accent); background: var(--surface-2); }
+.mz-st-acts { display: flex; gap: 2px; }
+.mz-st-acts .icon-btn[aria-pressed="true"] { color: var(--accent-text, var(--accent)); }
+.mz-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.mz-chip { display: inline-flex; align-items: baseline; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); font-size: 12.5px; }
+.mz-chip small { color: var(--muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: .04em; }
+.mz-chip.edit { background: var(--accent-soft); border-color: transparent; }
+.mz-tl { position: relative; border-radius: 12px; background: var(--surface-2); border: 1px solid var(--border); padding: 0 10px 8px; user-select: none; touch-action: none; cursor: crosshair; }
+.mz-tl:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.mz-ruler { position: relative; height: 22px; font-size: 10.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.mz-ruler span { position: absolute; bottom: 3px; transform: translateX(-50%); white-space: nowrap; }
+.mz-ruler span::after { content: ''; position: absolute; left: 50%; top: 15px; width: 1px; height: 5px; background: var(--border-strong); }
+.mz-ruler span:first-child { transform: none; }
+.mz-wave { position: relative; height: 132px; }
+.mz-wave canvas { position: absolute; inset: 0; display: block; }
+.mz-wave-msg { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); font-size: 12.5px; pointer-events: none; }
+.mz-wave-msg:empty { display: none; }
+.mz-transport { display: flex; align-items: center; gap: 12px; }
+.mz-big-play { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; cursor: pointer;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent); transition: transform .15s; }
+.mz-big-play:hover { transform: scale(1.06); }
+.mz-time { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 13px; }
+.mz-time b { color: var(--text); font-weight: 600; }
+.mz-transport .btn.on { color: var(--accent-text, var(--accent)); background: var(--accent-soft); }
+.mz-hint { color: var(--faint); font-size: 12px; }
+.mz-sel { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); background: color-mix(in srgb, var(--accent) 6%, var(--surface)); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+.mz-sel-top, .mz-sel-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mz .grow { flex: 1; }
+.mz-new #mu-prompt { font-family: inherit; }
+.mz-sel-range { font-weight: 600; font-variant-numeric: tabular-nums; font-size: 13px; }
+.mz-sel-l { font-size: 12px; color: var(--muted); }
+.mz-sel-row .input.grow { flex: 1; min-width: 220px; height: 36px; }
+.mz-sel-note { margin: 0; font-size: 11.5px; color: var(--muted); }
+.mz-ver { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
+.mz-ver-b { flex: none; text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; max-width: 240px; }
+.mz-ver-b small { color: var(--muted); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mz-ver-b.on { border-color: var(--accent); background: var(--accent-soft); }
+.mz-about summary { cursor: pointer; color: var(--muted); font-size: 12.5px; }
+.mz-about p { margin: 8px 0 0; font-size: 13px; color: var(--text-2); }
+.mz-about pre { white-space: pre-wrap; font-size: 12.5px; background: var(--surface-2); border-radius: 8px; padding: 10px; max-height: 260px; overflow: auto; }
+@media (max-width: 860px) {
+  .mz-body { grid-template-columns: 1fr; }
+  .mz-lib { position: static; max-height: 300px; }
+  .mz { padding: 0 12px 32px; }
+}
+.peek-bar { position: sticky; top: 8px; z-index: 3; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0 8px; padding: 9px 12px;
+  border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface, var(--bg)); box-shadow: 0 4px 16px rgba(0,0,0,.12); font-size: 13px; }
+#composer-dock.peeking { display: none; }
 .lock-banner { display: flex; align-items: flex-start; gap: 10px; margin: 18px 0 4px; padding: 10px 12px; border: 1px solid var(--border-strong);
   border-radius: 12px; background: color-mix(in srgb, var(--surface-2) 70%, transparent); color: var(--text-2); font-size: 13px; line-height: 1.5; }
 .lock-banner .lb-key { flex-shrink: 0; margin-top: 2px; color: var(--muted); cursor: default; user-select: none; }
@@ -3923,6 +4023,8 @@ html.voice-on .idle-screen { display: none !important; }
     <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></symbol>
     <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
     <symbol id="i-play" viewBox="0 0 24 24"><path class="ip-push" d="M7 5l12 7-12 7V5z"/></symbol>
+    <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
     <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
     <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14"/><path class="ip-reel" d="M3 9h4M3 15h4M17 9h4M17 15h4"/></symbol>
     <symbol id="i-bookmark" viewBox="0 0 24 24"><path class="ip-dip" d="M6 3h12v18l-6-4.5L6 21V3z"/></symbol>
@@ -4058,6 +4160,7 @@ html.voice-on .idle-screen { display: none !important; }
     </div>
 
     <div class="scroll hidden" id="scroll">
+      <div class="thread peek" id="peek" hidden></div>
       <div class="thread" id="thread" aria-live="polite"></div>
     </div>
     <!-- Places (the revamp): Images, Projects, Routines - each a page of its own in the main column. -->
@@ -5468,7 +5571,7 @@ setTimeout(() => ImagesView.poll(), 1500);         // the sidebar's Image engine
 const VIDEO_SIZES = [['landscape', 'Landscape', 16, 9], ['portrait', 'Portrait', 9, 16], ['square', 'Square', 12, 12], ['hd', 'HD', 16, 9], ['hd_portrait', 'HD portrait', 9, 16]];
 const VIDEO_LENGTHS = [['short', '1.4 s'], ['medium', '2 s'], ['long', '3.4 s'], ['longest', '5 s']];
 const VideosView = (() => {
-  const st = { model: 'turbo', size: null, length: null, seed: '', negative: '', showNeg: false, ref: null, picking: false, pics: null,
+  const st = { model: 'quality', size: null, length: null, seed: '', negative: '', showNeg: false, ref: null, picking: false, pics: null,
                filter: 'all', q: '', sel: null, list: null, listErr: '', status: null, busy: false, error: null, mounted: false };
   let pollT = 0, wasActive = false, qT = 0;
   const size = () => st.size || (S.settings || {}).video_size || 'landscape';
@@ -5550,12 +5653,16 @@ const VideosView = (() => {
     const frames = ((st.status || {}).lengths || {})[L] || 49;
     const best = (S.settings || {}).video_best_quality !== false;      // default on: the fast decoder flickers
     // video_gen.estimates: stage by stage from this PC's measured speeds (the full decoder grows fastest)
-    const est = (((st.status || {}).estimates) || {})[`${z}|${L}|${best ? 'best' : 'fast'}`] || 0;
+    const est = ((((st.status || {}).estimates_by_model) || {})[st.model] || (st.status || {}).estimates || {})[`${z}|${L}|${best ? 'best' : 'fast'}`] || 0;
     const models = (st.status || {}).models || [];
-    const mBtns = [['turbo', 'General', 'Wan 2.2 5B Turbo - any style'], ['anime', 'Anime', '2D / anime - best from one of your anime pictures']]
-      .filter(([id]) => !models.length || models.some(x => x.key === id && x.installed))
-      .map(([id, label, tip]) => `<button type="button" class="${st.model === id ? 'on' : ''}" aria-pressed="${st.model === id}" title="${esc(tip)}" onclick="VideosView.set('model','${id}')">${label}</button>`).join('');
-    setHtmlIfChanged($('vv-ctrls'), `<div class="seg" role="group" aria-label="Style">${mBtns}</div>
+    // Two choices make the model key: style (General / Anime) x motion (Fast = 4-step Turbo, Steady = the full 5B).
+    const has = id => !models.length || models.some(x => x.key === id && x.installed);
+    const anime = /anime/.test(st.model), steady = /^quality/.test(st.model);
+    const keyOf = (a, s) => s ? (a ? 'quality_anime' : 'quality') : (a ? 'anime' : 'turbo');
+    const pickBtn = (on, label, tip, key) => has(key) ? `<button type="button" class="${on ? 'on' : ''}" aria-pressed="${on}" title="${esc(tip)}" onclick="VideosView.set('model','${key}')">${label}</button>` : '';
+    const mBtns = pickBtn(!anime, 'General', 'Any style', keyOf(false, steady)) + pickBtn(anime, 'Anime', '2D / anime - best from one of your anime pictures', keyOf(true, steady));
+    const motion = has(keyOf(anime, true)) ? `<div class="seg" role="group" aria-label="Motion">${pickBtn(!steady, 'Fast', 'Turbo, 4 steps: quick, but objects can vanish or morph', keyOf(anime, false))}${pickBtn(steady, 'Steady', 'The full model, 24 steps: objects and movement hold together - about 4x slower', keyOf(anime, true))}</div>` : '';
+    setHtmlIfChanged($('vv-ctrls'), `<div class="seg" role="group" aria-label="Style">${mBtns}</div>${motion}
       <div class="seg iv-size" role="group" aria-label="Size">${zBtns}</div>
       <div class="seg" role="group" aria-label="Length">${lBtns}</div>
       <div class="seg" role="group" aria-label="Decoding"><button type="button" class="${best ? '' : 'on'}" aria-pressed="${!best}" onclick="saveSettings({video_best_quality:false}).then(()=>VideosView.render())" title="The tiny decoder: seconds instead of minutes, but colours can flicker - for trying ideas">Fast preview</button><button type="button" class="${best ? 'on' : ''}" aria-pressed="${best}" onclick="saveSettings({video_best_quality:true}).then(()=>VideosView.render())" title="The full Wan 2.2 decoder: sharper, about 2 minutes more">Best quality</button></div>
@@ -5757,12 +5864,29 @@ setTimeout(() => VideosView.poll(), 2500);         // the sidebar's Videos count
 /* ---- Music: songs made on this PC (music_gen.py - ACE-Step 1.5) ----------------------------------------
    Describe the style; add lyrics or keep it instrumental; pick the length. The list plays each song in place,
    with favourites and a trash (Delete forever / Empty trash ask first). */
-const MUSIC_LENGTHS = [[30, '30 s'], [60, '1 min'], [120, '2 min'], [180, '3 min']];
+const MUSIC_LENGTHS = [[30, '30 s'], [60, '1 min'], [120, '2 min'], [180, '3 min'], [240, '4 min']];
 const MUSIC_LANGS = [['en', 'English'], ['ja', 'Japanese'], ['he', 'Hebrew'], ['ru', 'Russian'], ['es', 'Spanish'], ['fr', 'French'], ['de', 'German'], ['ko', 'Korean'], ['zh', 'Chinese']];
+const MUSIC_KEYS = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'].flatMap(n => [`${n} major`, `${n} minor`]);
+const MUSIC_METERS = [['', 'Auto'], ['4', '4/4'], ['3', '3/4'], ['6', '6/8'], ['2', '2/4']];
+const MUSIC_STRENGTHS = [['subtle', 'Subtle', 'Keeps most of what is there'], ['balanced', 'Balanced', 'A clear change that still fits'], ['bold', 'Bold', 'Remakes the part freely']];
+/* Music (music_gen.py - ACE-Step 1.5): a library on the left; the studio on the right - the selected song's timeline,
+   where dragging selects a part to change ("add a guitar solo here") as a new version, the original kept - and a
+   New song panel with every setting in plain view. */
 const MusicView = (() => {
-  const st = { len: 60, instrumental: false, lang: 'en', filter: 'all', q: '', list: null, status: null, busy: false, error: null, mounted: false };
-  let pollT = 0, qT = 0, wasActive = false;
+  const form = Object.assign({ len: 60, instrumental: false, lang: 'en', bpm: '', key: '', meter: '', seed: '' }, store.get('musicForm', {}));
+  const st = { filter: 'all', q: '', list: null, status: null, busy: false, error: null, mounted: false,
+               tab: 'new', sel: null, region: null, strength: 'balanced', change: '', loop: false };
+  const draft = { title: '', prompt: '', lyrics: '' };   // the New song text, kept while you look at the studio
+  const peaks = new Map();                    // song id -> Float32Array (or 'loading' / 'failed')
+  const audio = new Audio(); audio.preload = 'auto';
+  let pollT = 0, qT = 0, wasActive = false, raf = 0, drag = null;
   const find = id => (st.list || []).find(s => s.id === id);
+  const sel = () => find(st.sel);
+  const nameOf = s => s.title || s.prompt || 'Untitled';
+  const rootOf = s => s.root || s.id;
+  const clock = t => { t = Math.max(0, t || 0); return `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`; };
+  const saveForm = () => store.set('musicForm', form);
+
   async function poll() {
     clearTimeout(pollT);
     let s = null; try { s = await api('/api/music/status'); } catch (_) {}
@@ -5777,29 +5901,31 @@ const MusicView = (() => {
     pollT = setTimeout(poll, st.busy || (st.status && Object.keys(st.status.job || {}).length) ? 1500 : document.hidden ? 60000 : 20000);
   }
   async function load() {
-    const p = new URLSearchParams({ limit: '300' });
+    const p = new URLSearchParams({ limit: '400' });
     if (st.q) p.set('q', st.q);
     if (st.filter === 'fav') p.set('fav', 'true');
     if (st.filter === 'trash') p.set('trash', 'true');
     try { const d = await api('/api/music?' + p); st.list = d.songs || []; st.status = d.status; } catch (e) { st.list = []; toast(e.message); }
-    if (S.view === 'music') { paintHead(); paintList(); }
+    if (st.sel && !sel()) { st.sel = null; st.region = null; if (st.tab === 'studio') st.tab = 'new'; }
+    if (S.view === 'music') { paintHead(); paintLib(); paintMain(); }
   }
+
   function render() {
     const root = $('place');
     if (!st.mounted || !root.querySelector('#mu-root')) {
-      root.innerHTML = `<div class="iv" id="mu-root"><div class="iv-main">
-        <div class="place-head iv-head" id="mu-head"></div>
-        <section class="iv-gen" aria-label="Make a song">
-          <textarea id="mu-prompt" rows="2" placeholder="Describe the music - genre, mood, instruments, voice (e.g. upbeat J-pop, female vocals, synths, 128 bpm)" aria-label="Describe the music" onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();MusicView.make()}"></textarea>
-          <div id="mu-lyr"></div>
-          <div class="iv-ctrls" id="mu-ctrls"></div>
-        </section>
-        <div class="iv-run" id="mu-run" aria-live="polite"></div>
-        <section class="iv-gal" aria-label="Your music"><div class="iv-gal-head" id="mu-gal-head"></div><div class="mv-songs" id="mu-list"></div></section>
-      </div></div>`;
+      root.innerHTML = `<div class="mz" id="mu-root">
+        <div class="place-head mz-head" id="mu-head"></div>
+        <div class="mz-body">
+          <aside class="mz-lib" aria-label="Your music"><div class="mz-lib-head" id="mu-lib-head"></div><div class="mz-lib-list" id="mu-list"></div></aside>
+          <div class="mz-main">
+            <div class="seg mz-tabs" role="tablist" id="mu-tabs"></div>
+            <div class="iv-run" id="mu-run" aria-live="polite"></div>
+            <section id="mu-pane"></section>
+          </div>
+        </div></div>`;
       st.mounted = true;
     }
-    paintHead(); paintGen(); paintRun(); paintList();
+    paintHead(); paintLib(); paintMain(); paintRun();
     if (!st.list) load();
     poll();
   }
@@ -5811,19 +5937,247 @@ const MusicView = (() => {
       : Object.keys(s.job || {}).length ? `<span class="iv-engine busy"><span class="spinner"></span>ACE-Step 1.5</span>`
       : s.running ? `<span class="iv-engine on"><span class="dot on"></span>ACE-Step 1.5 ready<button type="button" class="btn sm ghost" onclick="MusicView.unload()" title="Free its memory now">Unload</button></span>`
       : `<span class="iv-engine"><span class="dot"></span>ACE-Step 1.5 · idle</span>`;
-    setHtmlIfChanged(el, `<div><h1 class="place-title">Music</h1><p class="place-lead">Songs and instrumentals made on this PC by ACE-Step 1.5 - nothing is sent anywhere.</p></div><div class="place-acts">${pill}</div>`);
+    setHtmlIfChanged(el, `<div><h1 class="place-title">Music</h1><p class="place-lead">Make songs, then select any part of one to change it. Everything runs on this PC.</p></div><div class="place-acts">${pill}</div>`);
   }
-  function paintGen() {
-    setHtmlIfChanged($('mu-lyr'), st.instrumental ? ''
-      : `<textarea class="mv-lyrics" id="mu-lyrics" placeholder="Lyrics (optional) - use [Verse], [Chorus], [Bridge]. Leave empty for an instrumental." aria-label="Lyrics"></textarea>`);
-    const lBtns = MUSIC_LENGTHS.map(([n, label]) => `<button type="button" class="${st.len === n ? 'on' : ''}" aria-pressed="${st.len === n}" onclick="MusicView.set('len',${n})">${label}</button>`).join('');
+
+  /* ---- library ---- */
+  function paintLib() {
+    const head = $('mu-lib-head'), list = $('mu-list'); if (!head || !list) return;
+    const f = (id, label, title) => `<button type="button" class="${st.filter === id ? 'on' : ''}" aria-pressed="${st.filter === id}" title="${title}" onclick="MusicView.filterBy('${id}')">${label}</button>`;
+    setHtmlIfChanged(head, `<label class="iv-search mz-search">${icon('i-search', 'sm')}<input type="search" placeholder="Search songs" aria-label="Search songs" value="${esc(st.q)}" oninput="MusicView.search(this.value)"></label>
+      <div class="seg mz-filter" role="group" aria-label="Show">${f('all', 'All', 'All songs')}${f('fav', icon('i-star', 'xs'), 'Favourites')}${f('trash', icon('i-trash', 'xs'), 'Trash')}</div>`);
+    if (!st.list) { setHtmlIfChanged(list, `<div class="iv-skel">${'<i class="shimmer" style="aspect-ratio:auto;height:52px"></i>'.repeat(4)}</div>`); return; }
+    // Versions sit under their original (shown in the studio); one whose original is gone stands on its own.
+    const ids = new Set(st.list.map(s => s.id));
+    const rows = st.list.filter(s => !s.root || !ids.has(s.root));
+    const nVer = id => st.list.filter(s => s.root === id).length;
+    if (!rows.length) {
+      setHtmlIfChanged(list, `<div class="mz-empty">${icon(st.filter === 'trash' ? 'i-trash' : 'i-music')}<b>${st.filter === 'trash' ? 'The trash is empty' : st.q ? 'Nothing matches' : 'No music yet'}</b><p>${st.filter === 'trash' ? 'Songs you move to the trash wait here.' : st.q ? 'Try other words.' : 'Make your first song on the right.'}</p></div>`);
+    } else {
+      const playing = !audio.paused && audio.dataset.id;
+      setHtmlIfChanged(list, rows.map(s => {
+        const on = st.sel && (st.sel === s.id || (find(st.sel) || {}).root === s.id), v = nVer(s.id);
+        return `<div class="mz-row${on ? ' on' : ''}" role="button" tabindex="0" onclick="MusicView.pick('${jsArg(s.id)}')" onkeydown="if(event.key==='Enter')MusicView.pick('${jsArg(s.id)}')">
+          <button type="button" class="mz-play" aria-label="${playing === s.id ? 'Pause' : 'Play'}" onclick="event.stopPropagation();MusicView.quickPlay('${jsArg(s.id)}')">${icon(playing === s.id ? 'i-pause' : 'i-play', 'xs')}</button>
+          <div class="grow mz-row-text"><b>${s.fav ? `<span class="mz-fav">${icon('i-star', 'xs')}</span>` : ''}${esc(nameOf(s))}</b>
+            <small>${clock(s.duration)}${s.bpm ? ` · ${esc(s.bpm)} bpm` : ''}${s.instrumental ? ' · instrumental' : ''}${v ? ` · <span class="mz-badge">${v + 1} versions</span>` : ''}</small></div></div>`;
+      }).join(''));
+    }
+    if (st.filter === 'trash' && st.list.length) list.insertAdjacentHTML('beforeend', `<button type="button" class="btn sm ghost danger mz-empty-trash" onclick="MusicView.emptyTrash()">${icon('i-trash', 'xs')}Empty trash</button>`);
+  }
+
+  /* ---- main: tabs ---- */
+  function paintMain() {
+    const tabs = $('mu-tabs'), pane = $('mu-pane'); if (!tabs || !pane) return;
+    const s = sel();
+    if (st.tab === 'studio' && !s) st.tab = 'new';
+    const t = (id, label, dis) => `<button type="button" role="tab" class="${st.tab === id ? 'on' : ''}" aria-selected="${st.tab === id}" ${dis ? 'disabled' : ''} onclick="MusicView.tab('${id}')">${label}</button>`;
+    setHtmlIfChanged(tabs, t('new', `${icon('i-plus', 'xs')}New song`) + t('studio', `${icon('i-sliders', 'xs')}Studio${s ? `<span class="mz-tab-sub">${esc(nameOf(s).slice(0, 28))}</span>` : ''}`, !s));
+    if (st.tab === 'studio') paintStudio(); else paintNew();
+  }
+
+  /* ---- New song ---- */
+  function paintNew() {
+    const pane = $('mu-pane');
+    if (pane.dataset.mode !== 'new') {
+      pane.dataset.mode = 'new'; pane._html = null;
+      pane.innerHTML = `<div class="mz-card mz-new">
+        <div class="field"><label for="mu-title">Title <small>optional</small></label><input class="input" id="mu-title" maxlength="80" placeholder="Untitled"></div>
+        <div class="field"><label for="mu-prompt">Describe the music</label>
+          <textarea class="input" id="mu-prompt" rows="3" placeholder="Genre, mood, instruments, voice - e.g. dreamy synth-pop, female vocals, warm bass, 110 bpm" onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();MusicView.make()}"></textarea></div>
+        <div id="mu-lyr-wrap"></div>
+        <div class="mz-settings" id="mu-settings"></div>
+        <div class="mz-go" id="mu-go"></div></div>`;
+      $('mu-title').value = draft.title; $('mu-prompt').value = draft.prompt;
+      pane.oninput = e => { if (e.target.id === 'mu-title') draft.title = e.target.value; else if (e.target.id === 'mu-prompt') draft.prompt = e.target.value; else if (e.target.id === 'mu-lyrics') draft.lyrics = e.target.value; };
+    }
+    const lyr = $('mu-lyr-wrap');
+    if (form.instrumental) { lyr.innerHTML = ''; }
+    else if (!$('mu-lyrics')) {
+      lyr.innerHTML = `<div class="field"><label for="mu-lyrics">Lyrics <small>optional - empty makes an instrumental</small></label>
+        <div class="mz-tags">${['Intro', 'Verse', 'Pre-Chorus', 'Chorus', 'Bridge', 'Outro'].map(t => `<button type="button" class="chip" onclick="MusicView.tag('${t}')">[${t}]</button>`).join('')}</div>
+        <textarea class="input mz-lyrics" id="mu-lyrics" rows="7" placeholder="[Verse]\nFirst line…\n\n[Chorus]\n…"></textarea></div>`;
+      $('mu-lyrics').value = draft.lyrics;
+    }
+    const seg = (k, opts) => `<div class="seg" role="group">${opts.map(([v, l]) => `<button type="button" class="${String(form[k]) === String(v) ? 'on' : ''}" aria-pressed="${String(form[k]) === String(v)}" onclick="MusicView.set('${k}',${JSON.stringify(v).replace(/"/g, '&quot;')})">${l}</button>`).join('')}</div>`;
+    const row = (label, hint, ctrl) => `<div class="mz-set"><div class="mz-set-l"><b>${label}</b><small>${hint}</small></div><div class="mz-set-c">${ctrl}</div></div>`;
+    setHtmlIfChanged($('mu-settings'), `<h3 class="mz-h">${icon('i-sliders', 'xs')}Settings</h3>`
+      + row('Length', 'How long the song is', seg('len', MUSIC_LENGTHS))
+      + row('Vocals', 'Sung, or music only', seg('instrumental', [[false, 'With vocals'], [true, 'Instrumental']]))
+      + (form.instrumental ? '' : row('Language', 'Of the lyrics', `<select class="input" onchange="MusicView.set('lang',this.value)">${MUSIC_LANGS.map(([v, l]) => `<option value="${v}"${form.lang === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`))
+      + row('Tempo', 'Beats per minute - empty lets the model choose', `<input class="input mz-num" type="number" min="30" max="300" placeholder="Auto" value="${esc(form.bpm)}" onchange="MusicView.set('bpm',this.value,1)"><span class="mz-unit">bpm</span>`)
+      + row('Key', 'The musical key', `<select class="input" onchange="MusicView.set('key',this.value)"><option value="">Auto</option>${MUSIC_KEYS.map(k => `<option${form.key === k ? ' selected' : ''}>${k}</option>`).join('')}</select>`)
+      + row('Time signature', 'Beats per bar', seg('meter', MUSIC_METERS))
+      + row('Seed', 'Same seed + same settings = the same song', `<input class="input mz-num" type="number" min="0" placeholder="Random" value="${esc(form.seed)}" onchange="MusicView.set('seed',this.value,1)">`));
     const per = ((st.status || {}).estimate_per_minute) || 60;
-    setHtmlIfChanged($('mu-ctrls'), `<div class="seg" role="group" aria-label="Length">${lBtns}</div>
-      <div class="seg" role="group" aria-label="Vocals"><button type="button" class="${st.instrumental ? '' : 'on'}" aria-pressed="${!st.instrumental}" onclick="MusicView.set('instrumental',false)">With vocals</button><button type="button" class="${st.instrumental ? 'on' : ''}" aria-pressed="${st.instrumental}" onclick="MusicView.set('instrumental',true)">Instrumental</button></div>
-      ${st.instrumental ? '' : `<select class="input" style="width:auto;height:30px" aria-label="Language of the lyrics" onchange="MusicView.set('lang',this.value)">${MUSIC_LANGS.map(([v, l]) => `<option value="${v}"${st.lang === v ? ' selected' : ''}>${l}</option>`).join('')}</select>`}
-      <span class="iv-go"><span class="iv-est">${st.busy ? '' : `about ${Math.max(10, Math.round(per * st.len / 60))} s`}</span>
-      <button type="button" class="btn primary" onclick="MusicView.make()" ${st.busy ? 'disabled' : ''}>${st.busy ? '<span class="spinner"></span>Making…' : 'Make it'}<span class="kbd-hint">Ctrl+Enter</span></button></span>`);
+    setHtmlIfChanged($('mu-go'), `<span class="iv-est">${st.busy ? '' : `Takes about ${Math.max(10, Math.round(per * form.len / 60))} s`}</span>
+      <button type="button" class="btn primary" onclick="MusicView.make()" ${st.busy ? 'disabled' : ''}>${st.busy ? '<span class="spinner"></span>Working…' : `${icon('i-sparkle', 'xs')}Make it`}<span class="kbd-hint">Ctrl+Enter</span></button>`);
   }
+
+  /* ---- Studio: the timeline ---- */
+  function paintStudio() {
+    const pane = $('mu-pane'), s = sel(); if (!s) return;
+    if (pane.dataset.mode !== 'studio' || pane.dataset.song !== s.id) {
+      pane.dataset.mode = 'studio'; pane.dataset.song = s.id; pane._html = null;
+      pane.innerHTML = `<div class="mz-card mz-studio">
+          <div class="mz-st-head"><input class="mz-title-in" id="mu-name" value="${esc(s.title || '')}" placeholder="${esc((s.prompt || 'Untitled').slice(0, 60))}" aria-label="Title" maxlength="80" ${s.trashed ? 'disabled' : ''} onchange="MusicView.rename(this.value)" onkeydown="if(event.key==='Enter')this.blur()">
+            <div class="mz-st-acts" id="mu-acts"></div></div>
+          <div class="mz-chips" id="mu-chips"></div>
+          <div class="mz-tl" id="mu-tl" tabindex="0" aria-label="Timeline - drag to select a part, click to jump" onkeydown="MusicView.key(event)">
+            <div class="mz-ruler" id="mu-ruler"></div>
+            <div class="mz-wave"><canvas id="mu-canvas"></canvas><div class="mz-wave-msg" id="mu-wave-msg"></div></div>
+          </div>
+          <div class="mz-transport" id="mu-transport"></div>
+          <div id="mu-edit"></div>
+          <div class="mz-versions" id="mu-versions"></div>
+          <details class="mz-about"><summary>Description and lyrics</summary><p>${esc(s.prompt || '')}</p>${s.lyrics ? `<pre>${esc(s.lyrics)}</pre>` : '<p class="muted">Instrumental - no lyrics.</p>'}</details>
+        </div>`;
+      const tl = $('mu-tl');
+      tl.addEventListener('pointerdown', down);
+      if (audio.dataset.id !== s.id) { audio.pause(); audio.src = s.url; audio.dataset.id = s.id; }
+      loadPeaks(s);
+      new ResizeObserver(() => draw()).observe($('mu-canvas').parentElement);
+    }
+    const ver = st.list.filter(v => rootOf(v) === rootOf(s)).sort((a, b) => (a.created || 0) - (b.created || 0));
+    setHtmlIfChanged($('mu-acts'), s.trashed
+      ? `<button type="button" class="btn sm" onclick="MusicView.act('${jsArg(s.id)}','restore')">${icon('i-undo', 'xs')}Restore</button><button type="button" class="btn sm danger" onclick="MusicView.purge('${jsArg(s.id)}')">${icon('i-trash', 'xs')}Delete forever</button>`
+      : `<button type="button" class="icon-btn" onclick="MusicView.fav('${jsArg(s.id)}')" aria-pressed="${!!s.fav}" title="${s.fav ? 'Remove from favourites' : 'Add to favourites'}">${icon('i-star', 'sm')}</button>
+         <button type="button" class="icon-btn" onclick="MusicView.reuse()" title="Start a new song from these settings">${icon('i-copy', 'sm')}</button>
+         <a class="icon-btn" href="${esc(s.url)}" download="${esc(nameOf(s).replace(/[\\/:*?"<>|]/g, '').slice(0, 60) || s.id)}.flac" title="Save as FLAC">${icon('i-download', 'sm')}</a>
+         <button type="button" class="icon-btn" onclick="MusicView.act('${jsArg(s.id)}','trash')" title="Move to trash">${icon('i-trash', 'sm')}</button>`);
+    const chip = (l, v) => v ? `<span class="mz-chip"><small>${l}</small>${esc(v)}</span>` : '';
+    setHtmlIfChanged($('mu-chips'), chip('Length', clock(s.duration)) + chip('Tempo', s.bpm && `${s.bpm} bpm`) + chip('Key', s.key)
+      + chip('Meter', s.time_signature && (MUSIC_METERS.find(m => m[0] === String(s.time_signature)) || [0, s.time_signature])[1])
+      + chip('Vocals', s.instrumental ? 'Instrumental' : (MUSIC_LANGS.find(l => l[0] === s.language) || [0, s.language])[1])
+      + chip('Seed', s.seed != null && String(s.seed)) + (s.edit ? `<span class="mz-chip edit"><small>Changed</small>${clock(s.edit.start)}–${clock(s.edit.end)}: ${esc(s.edit.change)}</span>` : ''));
+    setHtmlIfChanged($('mu-versions'), ver.length > 1 ? `<h3 class="mz-h">Versions</h3><div class="mz-ver">${ver.map((v, i) => `<button type="button" class="mz-ver-b${v.id === s.id ? ' on' : ''}" onclick="MusicView.pick('${jsArg(v.id)}', true)">
+        <b>${i === 0 && !v.edit ? 'Original' : `Version ${i + 1}`}</b><small>${v.edit ? `${clock(v.edit.start)}–${clock(v.edit.end)} · ${esc(v.edit.change.slice(0, 40))}` : esc(new Date((v.created || 0) * 1000).toLocaleDateString())}</small></button>`).join('')}</div>` : '');
+    paintTransport(); paintEdit(); paintRuler(); draw();
+  }
+  function paintTransport() {
+    const el = $('mu-transport'), s = sel(); if (!el || !s) return;
+    const r = st.region, playing = !audio.paused;
+    setHtmlIfChanged(el, `<button type="button" class="mz-big-play" onclick="MusicView.toggle()" aria-label="${playing ? 'Pause' : 'Play'}">${icon(playing ? 'i-pause' : 'i-play', 'sm')}</button>
+      <span class="mz-time"><b id="mu-now">${clock(audio.currentTime)}</b> / ${clock(s.duration)}</span>
+      <button type="button" class="btn sm ghost${st.loop ? ' on' : ''}" aria-pressed="${st.loop}" onclick="MusicView.loopToggle()" title="Loop the selected part (or the whole song)">${icon('i-repeat', 'xs')}Loop</button>
+      <span class="grow"></span>
+      <span class="mz-hint">${r ? '' : 'Drag across the waveform to select a part to change'}</span>`);
+  }
+  function paintEdit() {
+    const el = $('mu-edit'), s = sel(); if (!el || !s) return;
+    const r = st.region;
+    if (!r || s.trashed) { el.innerHTML = ''; el._html = null; return; }
+    if (!$('mu-change')) {
+      el.innerHTML = `<div class="mz-sel rise">
+        <div class="mz-sel-top"><span class="mz-sel-range" id="mu-range"></span><span class="grow"></span>
+          <button type="button" class="btn sm ghost" onclick="MusicView.playRegion()">${icon('i-play', 'xs')}Play part</button>
+          <button type="button" class="icon-btn" onclick="MusicView.clearRegion()" aria-label="Clear the selection">${icon('i-x', 'sm')}</button></div>
+        <div class="mz-sel-row"><input class="input grow" id="mu-change" placeholder="What should change here? e.g. add a guitar solo, make it calmer, drop the drums" onkeydown="if(event.key==='Enter'){event.preventDefault();MusicView.applyEdit()}">
+          <button type="button" class="btn primary" id="mu-apply" onclick="MusicView.applyEdit()">${icon('i-sparkle', 'xs')}Change this part</button></div>
+        <div class="mz-sel-row"><span class="mz-sel-l">How much</span><div class="seg" id="mu-strength"></div><small class="muted" id="mu-strength-hint"></small></div>
+        <p class="mz-sel-note">Makes a new version - this one stays as it is.</p></div>`;
+      $('mu-change').value = st.change;
+      $('mu-change').oninput = e => { st.change = e.target.value; };
+    }
+    $('mu-range').textContent = `${clock(r.a)} – ${clock(r.b)} · ${Math.round(r.b - r.a)} s selected`;
+    setHtmlIfChanged($('mu-strength'), MUSIC_STRENGTHS.map(([v, l]) => `<button type="button" class="${st.strength === v ? 'on' : ''}" aria-pressed="${st.strength === v}" onclick="MusicView.strength('${v}')">${l}</button>`).join(''));
+    $('mu-strength-hint').textContent = (MUSIC_STRENGTHS.find(x => x[0] === st.strength) || [])[2] || '';
+    const b = $('mu-apply'); b.disabled = st.busy;
+  }
+  function paintRuler() {
+    const el = $('mu-ruler'), s = sel(); if (!el || !s) return;
+    const d = s.duration || 1, w = el.clientWidth || 600;
+    const step = [1, 2, 5, 10, 15, 30, 60, 120].find(x => w / (d / x) >= 64) || 120;
+    let h = '';
+    for (let t = 0; t <= d + 0.01; t += step) h += `<span style="left:${(t / d) * 100}%">${clock(t)}</span>`;
+    setHtmlIfChanged(el, h);
+  }
+
+  /* waveform: decoded once in the page (Chrome reads FLAC), reduced to peaks */
+  async function loadPeaks(s) {
+    if (peaks.has(s.id)) return draw();
+    peaks.set(s.id, 'loading'); draw();
+    try {
+      const buf = await (await fetch(s.url)).arrayBuffer();
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new Ctx(); const data = await ctx.decodeAudioData(buf); ctx.close();
+      const n = 2000, out = new Float32Array(n), chans = [...Array(data.numberOfChannels)].map((_, i) => data.getChannelData(i));
+      const per = Math.max(1, Math.floor(data.length / n));
+      for (let i = 0; i < n; i++) {
+        let m = 0; const o = i * per;
+        for (const c of chans) for (let j = 0; j < per; j += 4) { const v = Math.abs(c[o + j] || 0); if (v > m) m = v; }
+        out[i] = m;
+      }
+      const top = out.reduce((a, b) => Math.max(a, b), 0.001);
+      for (let i = 0; i < n; i++) out[i] = Math.pow(out[i] / top, 0.8);
+      peaks.set(s.id, out);
+    } catch (_) { peaks.set(s.id, 'failed'); }
+    if (st.sel === s.id) draw();
+  }
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+  function draw() {
+    const cv = $('mu-canvas'), s = sel(); if (!cv || !s) return;
+    const box = cv.parentElement, dpr = window.devicePixelRatio || 1, W = box.clientWidth, H = box.clientHeight;
+    if (!W) return;
+    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + 'px'; cv.style.height = H + 'px'; paintRuler(); }
+    const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+    const p = peaks.get(s.id), d = s.duration || 1, x = t => (t / d) * W;
+    const accent = css('--accent') || '#d97757', dim = css('--faint') || '#888', soft = css('--accent-soft') || 'rgba(217,119,87,.15)';
+    $('mu-wave-msg').textContent = p === 'loading' ? 'Reading the song…' : p === 'failed' ? "Couldn't read the waveform - playback still works." : '';
+    // the part an earlier change remade (this version's edit)
+    if (s.edit) { g.fillStyle = soft; g.fillRect(x(s.edit.start), 0, x(s.edit.end) - x(s.edit.start), 4); }
+    if (p instanceof Float32Array) {
+      const bar = 3, gap = 1, n = Math.floor(W / (bar + gap)), mid = H / 2, played = x(audio.dataset.id === s.id ? audio.currentTime : 0);
+      for (let i = 0; i < n; i++) {
+        const v = p[Math.min(p.length - 1, Math.floor((i / n) * p.length))], h = Math.max(2, v * (H - 16)), bx = i * (bar + gap);
+        g.fillStyle = bx < played ? accent : dim; g.globalAlpha = bx < played ? 1 : 0.55;
+        g.beginPath(); (g.roundRect ? g.roundRect(bx, mid - h / 2, bar, h, 1.5) : g.rect(bx, mid - h / 2, bar, h)); g.fill();
+      }
+      g.globalAlpha = 1;
+    }
+    const r = st.region;
+    if (r) {
+      g.fillStyle = soft; g.fillRect(x(r.a), 0, x(r.b) - x(r.a), H);
+      g.fillStyle = accent; [r.a, r.b].forEach(t => { g.fillRect(x(t) - 1, 0, 2, H); g.beginPath(); g.arc(x(t), 7, 5, 0, Math.PI * 2); g.fill(); });
+    }
+    if (audio.dataset.id === s.id) { g.fillStyle = css('--text') || '#fff'; g.fillRect(x(audio.currentTime) - 0.75, 0, 1.5, H); }
+  }
+  function tick() {
+    cancelAnimationFrame(raf);
+    const s = sel();
+    if (st.region && st.loop && audio.dataset.id === st.sel && audio.currentTime >= st.region.b) audio.currentTime = st.region.a;
+    if (S.view === 'music' && s && st.tab === 'studio') { draw(); const n = $('mu-now'); if (n) n.textContent = clock(audio.currentTime); }
+    if (!audio.paused) raf = requestAnimationFrame(tick);
+  }
+  audio.addEventListener('play', () => { tick(); paintTransport(); paintLib(); });
+  audio.addEventListener('pause', () => { tick(); paintTransport(); paintLib(); });
+  audio.addEventListener('ended', () => { if (st.loop) { audio.currentTime = st.region ? st.region.a : 0; audio.play(); } });
+  audio.addEventListener('seeked', tick);
+
+  // Pointer on the timeline: a click jumps there, a drag selects a part, the selection's edges can be dragged.
+  function timeAt(e) { const c = $('mu-canvas').getBoundingClientRect(), s = sel(); return Math.max(0, Math.min(s.duration || 0, ((e.clientX - c.left) / c.width) * (s.duration || 0))); }
+  function down(e) {
+    const s = sel(); if (!s || e.button !== 0) return;
+    const t = timeAt(e), c = $('mu-canvas').getBoundingClientRect(), px = (s.duration || 1) / c.width * 8, r = st.region;
+    drag = r && Math.abs(t - r.a) < px ? { edge: 'a' } : r && Math.abs(t - r.b) < px ? { edge: 'b' } : { from: t, x: e.clientX, moved: false };
+    $('mu-tl').setPointerCapture(e.pointerId);
+    const move = ev => {
+      const now = timeAt(ev);
+      if (drag.edge) { const o = { ...st.region, [drag.edge]: now }; st.region = { a: Math.min(o.a, o.b), b: Math.max(o.a, o.b) }; if (drag.edge === 'a' && o.a > o.b) drag.edge = 'b'; else if (drag.edge === 'b' && o.b < o.a) drag.edge = 'a'; }
+      else if (drag.moved || Math.abs(ev.clientX - drag.x) > 4) { drag.moved = true; st.region = { a: Math.min(drag.from, now), b: Math.max(drag.from, now) }; }
+      draw(); paintEdit();
+    };
+    const up = () => {
+      $('mu-tl').removeEventListener('pointermove', move); $('mu-tl').removeEventListener('pointerup', up);
+      if (!drag.edge && !drag.moved) { if (audio.dataset.id !== s.id) { audio.src = s.url; audio.dataset.id = s.id; } audio.currentTime = drag.from; }
+      if (st.region && st.region.b - st.region.a < 1) st.region = null;
+      drag = null; draw(); paintEdit(); paintTransport();
+      if (st.region) { const c2 = $('mu-change'); if (c2 && !c2.value) c2.focus(); }
+    };
+    $('mu-tl').addEventListener('pointermove', move); $('mu-tl').addEventListener('pointerup', up);
+  }
+
+  /* ---- actions ---- */
   function paintRun() {
     const el = $('mu-run'); if (!el) return;
     const j = (st.status || {}).job || {};
@@ -5832,39 +6186,36 @@ const MusicView = (() => {
     if (st.error && !st.busy) html += `<div class="state-card ${st.error.code === 'stopped' ? '' : 'danger'}" role="alert"><span class="sc-ico">${icon('i-alert', 'sm')}</span><div class="grow"><b>${st.error.code === 'stopped' ? 'Stopped' : "That didn't work"}</b><p>${esc(st.error.message)}</p></div><button type="button" class="icon-btn" onclick="MusicView.dismiss()" aria-label="Dismiss">${icon('i-x', 'sm')}</button></div>`;
     setHtmlIfChanged(el, html);
   }
-  function paintList() {
-    const head = $('mu-gal-head'), list = $('mu-list'); if (!head || !list) return;
-    const f = (id, label) => `<button type="button" class="${st.filter === id ? 'on' : ''}" aria-pressed="${st.filter === id}" onclick="MusicView.filterBy('${id}')">${label}</button>`;
-    setHtmlIfChanged(head, `<h2>${st.filter === 'trash' ? 'Trash' : 'Your music'}${st.list ? ` <span class="muted">${st.list.length}</span>` : ''}</h2>
-      <div class="seg iv-filter" role="group" aria-label="Show">${f('all', 'All')}${f('fav', `${icon('i-star', 'xs')}Favourites`)}${f('trash', `${icon('i-trash', 'xs')}Trash`)}</div>
-      <span class="grow"></span>${st.filter === 'trash' && st.list && st.list.length ? `<button type="button" class="btn sm ghost danger" onclick="MusicView.emptyTrash()">${icon('i-trash', 'xs')}Empty trash</button>` : ''}
-      <label class="iv-search">${icon('i-search', 'sm')}<input type="search" placeholder="Search" aria-label="Search songs" value="${esc(st.q)}" oninput="MusicView.search(this.value)"></label>`);
-    if (!st.list) { setHtmlIfChanged(list, `<div class="iv-skel">${'<i class="shimmer" style="aspect-ratio:auto;height:64px"></i>'.repeat(3)}</div>`); return; }
-    if (!st.list.length) { setHtmlIfChanged(list, `<div class="place-empty">${icon(st.filter === 'trash' ? 'i-trash' : 'i-music')}<b>${st.filter === 'trash' ? 'The trash is empty' : 'No music yet'}</b><p>${st.filter === 'trash' ? 'Songs you move to the trash wait here.' : 'Describe a song above - add lyrics, or make it instrumental.'}</p></div>`); return; }
-    setHtmlIfChanged(list, st.list.map(s => `<div class="mv-song"><div class="grow">
-        <b title="${esc(s.prompt)}">${s.fav ? `${icon('i-star', 'xs')} ` : ''}${esc(s.prompt)}</b>
-        <audio controls preload="none" src="${esc(s.url)}"></audio>
-        <small>${esc(Math.round(s.duration))} s${s.bpm ? ` · ${esc(s.bpm)} bpm` : ''}${s.key ? ` · ${esc(s.key)}` : ''} · ${s.instrumental ? 'instrumental' : esc(s.language || '')} · made in ${esc(s.seconds)} s</small>
-        ${s.lyrics ? `<details><summary>Lyrics</summary><pre>${esc(s.lyrics)}</pre></details>` : ''}</div>
-      <div class="acts">${s.trashed
-        ? `<button type="button" class="btn sm" onclick="MusicView.act('${jsArg(s.id)}','restore')">${icon('i-undo', 'xs')}Restore</button><button type="button" class="btn sm danger" onclick="MusicView.purge('${jsArg(s.id)}')">${icon('i-trash', 'xs')}Delete forever</button>`
-        : `<button type="button" class="icon-btn" onclick="MusicView.fav('${jsArg(s.id)}')" aria-pressed="${!!s.fav}" aria-label="${s.fav ? 'Remove from favourites' : 'Add to favourites'}">${icon('i-star', 'sm')}</button><a class="icon-btn" href="${esc(s.url)}" download="${esc(s.id)}.flac" aria-label="Save as">${icon('i-download', 'sm')}</a><button type="button" class="icon-btn" onclick="MusicView.act('${jsArg(s.id)}','trash')" aria-label="Move to trash">${icon('i-trash', 'sm')}</button>`}</div></div>`).join(''));
+  async function run(body, done) {
+    st.busy = true; st.error = null; paintMain(); paintRun(); setTimeout(poll, 600);
+    let r; try { r = await api('/api/music/generate', body); } catch (e) { r = { ok: false, message: e.message }; }
+    st.busy = false;
+    if (r.ok) { if (st.filter !== 'all') { st.filter = 'all'; } done(r.song); } else st.error = { message: r.message, code: r.code };
+    await load(); paintMain(); paintRun(); poll();
+    if (r.ok) { st.sel = r.song.id; st.tab = 'studio'; st.region = null; paintLib(); paintMain(); }
   }
   async function make() {
     if (st.busy) return;
     const prompt = ($('mu-prompt').value || '').trim();
     if (!prompt) { $('mu-prompt').focus(); toast('Describe the music first.'); return; }
-    const lyrics = st.instrumental ? '' : (($('mu-lyrics') || {}).value || '').trim();
-    st.busy = true; st.error = null; paintGen(); paintRun(); setTimeout(poll, 600);
-    let r; try { r = await api('/api/music/generate', { prompt, lyrics, duration: st.len, instrumental: st.instrumental || !lyrics, language: st.lang }); } catch (e) { r = { ok: false, message: e.message }; }
-    st.busy = false;
-    if (r.ok) { if (st.filter === 'trash') st.filter = 'all'; Notify.done('Your song is ready', prompt.slice(0, 80)); } else st.error = { message: r.message, code: r.code };
-    paintGen(); paintRun(); await load(); poll();
+    const lyrics = form.instrumental ? '' : (($('mu-lyrics') || {}).value || '').trim();
+    const title = ($('mu-title').value || '').trim();
+    await run({ prompt, lyrics, title, duration: form.len, instrumental: form.instrumental || !lyrics, language: form.lang,
+                bpm: form.bpm ? +form.bpm : null, key: form.key, time_signature: form.meter, seed: form.seed !== '' ? +form.seed : null },
+      () => { Object.assign(draft, { title: '', prompt: '', lyrics: '' }); Notify.done('Your song is ready', (title || prompt).slice(0, 80)); });
+  }
+  async function applyEdit() {
+    const s = sel(), r = st.region; if (!s || !r || st.busy) return;
+    const change = (st.change || '').trim();
+    if (!change) { $('mu-change').focus(); toast('Say what should change in this part.'); return; }
+    audio.pause();
+    await run({ prompt: s.prompt, edit: { src: s.id, start: r.a, end: r.b, change, strength: st.strength } }, () => { st.change = ''; Notify.done('The new version is ready', change.slice(0, 80)); });
   }
   async function act(id, what) {
     let r; try { r = await api(`/api/music/${encodeURIComponent(id)}/${what}`, {}); } catch (e) { r = { ok: false, message: e.message }; }
     if (!r.ok) { toast(r.message); return; }
-    if (what === 'trash') toast('Moved to the trash.', { action: 'Undo', run: () => act(id, 'restore') }); else if (what === 'restore') toast('Restored.');
+    if (what === 'trash') { if (audio.dataset.id === id) audio.pause(); toast('Moved to the trash.', { action: 'Undo', run: () => act(id, 'restore') }); }
+    else if (what === 'restore') toast('Restored.');
     load(); poll();
   }
   async function purge(id) { if (confirm("Delete this song for good? It can't be restored.")) { await act(id, 'purge'); toast('Deleted for good.'); } }
@@ -5877,12 +6228,52 @@ const MusicView = (() => {
   }
   async function fav(id) {
     const s = find(id); if (!s) return;
-    const on = !s.fav; s.fav = on; paintList();
-    try { const r = await api(`/api/music/${encodeURIComponent(id)}/fav`, { on }); if (!r.ok) throw new Error(r.message); } catch (e) { s.fav = !on; paintList(); toast(e.message); }
+    const on = !s.fav; s.fav = on; paintLib(); paintMain();
+    try { const r = await api(`/api/music/${encodeURIComponent(id)}/fav`, { on }); if (!r.ok) throw new Error(r.message); } catch (e) { s.fav = !on; paintLib(); paintMain(); toast(e.message); }
   }
-  return { render, poll, load, make, act, purge, emptyTrash, fav,
-    set: (k, v) => { st[k] = v; paintGen(); },
-    filterBy: f => { st.filter = f; st.list = null; paintList(); load(); },
+  async function rename(title) {
+    const s = sel(); if (!s) return;
+    try { const r = await api(`/api/music/${encodeURIComponent(s.id)}/title`, { title }); if (!r.ok) throw new Error(r.message); s.title = title.trim(); paintLib(); paintMain(); }
+    catch (e) { toast(e.message); }
+  }
+  function pick(id, keepTab) {
+    if (st.sel !== id) { st.region = null; st.change = ''; }
+    st.sel = id; st.tab = 'studio';
+    paintLib(); paintMain();
+    if (!keepTab) $('mu-pane').scrollIntoView({ block: 'nearest' });
+  }
+  function quickPlay(id) {
+    const s = find(id); if (!s) return;
+    if (audio.dataset.id === id && !audio.paused) { audio.pause(); return; }
+    if (audio.dataset.id !== id) { audio.src = s.url; audio.dataset.id = id; }
+    audio.play().catch(e => toast(e.message));
+  }
+  function reuse() {
+    const s = sel(); if (!s) return;
+    Object.assign(form, { instrumental: !!s.instrumental, lang: s.language || 'en', bpm: s.bpm ? String(s.bpm) : '', key: MUSIC_KEYS.includes(s.key) ? s.key : '',
+      meter: s.time_signature ? String(s.time_signature) : '', len: MUSIC_LENGTHS.reduce((a, [n]) => Math.abs(n - (s.duration || 60)) < Math.abs(a - (s.duration || 60)) ? n : a, 60) });
+    Object.assign(draft, { title: '', prompt: s.prompt || '', lyrics: s.lyrics || '' });
+    saveForm(); st.tab = 'new'; $('mu-pane').dataset.mode = ''; paintMain();
+    $('mu-prompt').focus();
+  }
+
+  return { render, poll, load, make, act, purge, emptyTrash, fav, rename, pick, quickPlay, reuse, applyEdit,
+    set: (k, v, raw) => { form[k] = raw ? String(v).trim() : v; saveForm(); paintNew(); },
+    tab: t => { st.tab = t; paintMain(); },
+    tag: t => { const ta = $('mu-lyrics'); if (!ta) return; const at = ta.selectionStart ?? ta.value.length, pre = ta.value.slice(0, at);
+      const ins = `${pre && !pre.endsWith('\n\n') ? (pre.endsWith('\n') ? '\n' : '\n\n') : ''}[${t}]\n`; ta.setRangeText(ins, at, ta.selectionEnd ?? at, 'end'); ta.focus(); },
+    toggle: () => { const s = sel(); if (!s) return; if (audio.dataset.id !== s.id) { audio.src = s.url; audio.dataset.id = s.id; } if (audio.paused) audio.play().catch(e => toast(e.message)); else audio.pause(); },
+    playRegion: () => { const s = sel(); if (!s || !st.region) return; if (audio.dataset.id !== s.id) { audio.src = s.url; audio.dataset.id = s.id; } audio.currentTime = st.region.a; audio.play().catch(e => toast(e.message)); },
+    clearRegion: () => { st.region = null; draw(); paintEdit(); paintTransport(); },
+    loopToggle: () => { st.loop = !st.loop; paintTransport(); },
+    strength: v => { st.strength = v; paintEdit(); },
+    key: e => {
+      if (e.target.tagName === 'INPUT') return;
+      if (e.key === ' ') { e.preventDefault(); MusicView.toggle(); }
+      else if (e.key === 'Escape') MusicView.clearRegion();
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.preventDefault(); audio.currentTime = Math.max(0, audio.currentTime + (e.key === 'ArrowLeft' ? -5 : 5)); }
+    },
+    filterBy: f => { st.filter = f; st.list = null; paintLib(); load(); },
     search: q => { st.q = q.trim(); clearTimeout(qT); qT = setTimeout(load, 220); },
     stop: async () => { try { await api('/api/music/stop', {}); toast('Stopping…'); } catch (e) { toast(e.message); } poll(); },
     unload: async () => { try { await api('/api/music/unload', {}); toast('The music engine let go of its memory.'); } catch (e) { toast(e.message); } poll(); },
@@ -9230,6 +9621,7 @@ async function completeTurn(data) {
   if (!$('af-history').hidden) searchRuns(runHist.q);          // the run just saved
   const liveThought = Thinking.snapshot();                     // before the turn and its stream are cleared
   const command = S.turn && S.turn.command, turnTools = (S.turn && S.turn.tools) || [];
+  Peek.close();                                                // the answer shows in its own chat
   const steps = await finishTurn();
   closeStream();
   const thinking = data.thinking || liveThought;               // the server's saved copy when there is one
@@ -10419,6 +10811,7 @@ function endTemporaryChat() {
 // Home keeps the open chat: Continue (or the chat in the sidebar) brings it back.
 function goHome() {
   if ($('app').classList.contains('drawer')) toggleSidebar(false);
+  Peek.close();
   showThread(false);
   promptEl.focus();
 }
@@ -15063,13 +15456,46 @@ function showChat(chat, reveal = true) {
   renderPins(); Find.refresh(); Usage.soon();
   renderSidebar();
 }
+/* While a task runs the server keeps its chat open (switching would swap the conversation it is using), so another
+   chat is shown read-only above the live thread, which keeps running hidden. "Back" (or the task finishing) returns. */
+const Peek = {
+  id: null,
+  async open(id) {
+    let r;
+    try { r = await api(`/api/chats/${encodeURIComponent(id)}`); } catch (e) { toast(e.message); return; }
+    if (!r.ok) { toast(r.message); return; }
+    if (!S.busy) { openChat(id); return; }         // finished meanwhile: open it for real
+    const c = r.chat, el = $('peek');
+    this.id = id;
+    const rows = (c.transcript || []).slice(-80).map(m =>
+      m.r === 'u' ? `<div class="msg-user">${esc(m.t)}</div>`
+      : m.r === 'a' ? `<div class="msg-assistant"><div class="assistant-body">${renderMarkdown(m.t || '')}</div></div>`
+      : m.r === 'e' ? `<div class="msg-note">${esc(m.t)}</div>` : '').join('');
+    el.innerHTML = `<div class="peek-bar">${icon('i-activity', 'xs')}<span class="grow">Viewing <b>${esc(c.title || 'Untitled chat')}</b> - read only while your task runs.</span>
+      <button type="button" class="btn sm primary" onclick="Peek.close()">Back to the running chat</button></div>${rows || '<p class="set-note">This chat is empty.</p>'}`;
+    el.hidden = false; $('thread').hidden = true; $('composer-dock').classList.add('peeking');
+    showThread(true); $('chat-title').textContent = c.title || 'Chat';
+    $('scroll').scrollTop = 0;
+    if (window.innerWidth < 760) toggleSidebar(false);
+  },
+  close() {
+    if (!this.id) return;
+    this.id = null;
+    const el = $('peek'); el.hidden = true; el.innerHTML = '';
+    $('thread').hidden = false; $('composer-dock').classList.remove('peeking');
+    $('chat-title').textContent = S.title || 'New chat';
+    scrollToBottom(true);
+  },
+};
 async function openChat(id) {
+  if (Peek.id && id === Peek.id) return;
+  Peek.close();
   if (id === S.chatId) {                       // already open (maybe behind Home): just show it
     await resumeChat();
     if (window.innerWidth < 760) toggleSidebar(false);
     return;
   }
-  if (S.busy) { toast('Stop the current task first, or wait for it to finish.'); return; }
+  if (S.busy) { Peek.open(id); return; }            // a task is running: read the other chat without leaving it
   try {
     const r = await api(`/api/chats/${encodeURIComponent(id)}/open`, {});
     if (!r.ok) { toast(r.message); loadSidebar(); return; }

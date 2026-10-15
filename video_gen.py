@@ -51,7 +51,22 @@ MODELS = {
               "vae": "wan2.2_vae.safetensors", "tae": "taew2_2.pth", "steps": 4, "cfg": 1.0, "sampler": "euler",
               "fps": 24, "lora": ("wan22_5B_anime_v1.0", 0.8), "prefix": "anime style, ",
               "about": "2D / anime clips - best when it starts from one of your anime pictures."},
+    # The undistilled 5B (QuantStack GGUF, Apache-2.0): full steps and real CFG - slower, but motion holds together
+    # better than the 4-step Turbo, and negative prompts work (Turbo runs at CFG 1, which ignores them).
+    "quality": {"name": "Wan 2.2 TI2V 5B", "by": "Wan-AI / QuantStack", "license": "Apache-2.0",
+                "diffusion": "Wan2.2-TI2V-5B-Q5_K_M.gguf", "t5xxl": "umt5-xxl-encoder-Q5_K_M.gguf",
+                "vae": "wan2.2_vae.safetensors", "tae": "taew2_2.pth", "steps": 24, "cfg": 5.0, "sampler": "euler",
+                "fps": 24, "negative": True, "about": "Steadier motion and objects, full steps - several times slower."},
+    "quality_anime": {"name": "Wan 2.2 5B + anime LoRA", "by": "Wan-AI / QuantStack / hjhf", "license": "Apache-2.0 (LoRA: not stated)",
+                      "diffusion": "Wan2.2-TI2V-5B-Q5_K_M.gguf", "t5xxl": "umt5-xxl-encoder-Q5_K_M.gguf",
+                      "vae": "wan2.2_vae.safetensors", "tae": "taew2_2.pth", "steps": 24, "cfg": 5.0, "sampler": "euler",
+                      "fps": 24, "negative": True, "lora": ("wan22_5B_anime_v1.0", 0.8), "prefix": "anime style, ",
+                      "about": "Anime with steadier motion, full steps - several times slower."},
 }
+# Wan's own default negative prompt (its generate.py), used by the models that run with CFG.
+WAN_NEGATIVE = ("blurry, low quality, worst quality, jpeg artifacts, static, overexposed, subtitles, deformed, "
+                "disfigured, extra fingers, bad hands, bad anatomy, fused fingers, messy background, three legs, "
+                "many people in the background, walking backwards, morphing, flickering, objects passing through each other")
 # Measured here (2026-10-13, RTX 3060 Ti, 832x480, 49 frames, models on G: - a hard disk):
 #   --offload-to-cpu + --vae-tiling: 1135 s - the text encoder alone took 885 s shuttled RAM<->GPU.
 #   auto-fit (--max-vram -1.5, --mmap): 127 s - prompt 2.4 s, 4 steps 12.6 s, full VAE decode 105 s (it ran out
@@ -204,7 +219,8 @@ def estimate_left(p: dict, w: int, h: int, frames: int, steps: int, fast: bool, 
 
 def estimates(key: str = "turbo") -> dict:
     """Seconds for a whole clip, before it starts - {"<size>|<length>|fast|best": s} for the page's "about ..."."""
-    steps = MODELS[key]["steps"]
+    m = MODELS[key]
+    steps = m["steps"] * (2 if m["cfg"] > 1 else 1)        # CFG runs the model twice a step
     blank = {"stage": "loading", "step": 0, "steps": 0, "sec_per_step": 0.0, "tile": 0, "tiles": 0,
              "sec_per_tile": 0.0, "retries": 0}
     return {f"{s}|{L}|{'fast' if fast else 'best'}": round(estimate_left(blank, w, h, n, steps, fast, 0.0))
@@ -311,7 +327,8 @@ def generate(prompt: str, size=None, length=None, seed: int | None = None, negat
         if m.get("lora"):
             run_prompt += f"<lora:{m['lora'][0]}:{m['lora'][1]:g}>"
         args = [exe, "-M", "vid_gen", "--diffusion-model", files["diffusion"], "--t5xxl", files["t5xxl"],
-                "--vae", files["vae"], "-p", run_prompt, "-n", negative or "", "--cfg-scale", f"{m['cfg']:g}",
+                "--vae", files["vae"], "-p", run_prompt,
+                "-n", ", ".join(x for x in (negative, WAN_NEGATIVE if m.get("negative") else "") if x), "--cfg-scale", f"{m['cfg']:g}",
                 "--steps", str(m["steps"]), "--sampling-method", m["sampler"], "-W", str(w), "-H", str(h),
                 "--video-frames", str(frames), "--fps", str(m["fps"]), "-s", str(seed),
                 # auto-fit keeps what fits on the GPU and leaves 1.5 GB for the work itself; never --offload-to-cpu
@@ -394,7 +411,8 @@ def status() -> dict:
             "count": count(),
             "models": [{"key": k, "name": m["name"], "license": m["license"], "about": m["about"], "installed": installed(k),
                         "seconds": round(_typical.get(k, 0))} for k, m in MODELS.items()],
-            "sizes": {k: f"{w}x{h}" for k, (w, h) in SIZES.items()}, "lengths": LENGTHS, "estimates": estimates()}
+            "sizes": {k: f"{w}x{h}" for k, (w, h) in SIZES.items()}, "lengths": LENGTHS, "estimates": estimates(),
+            "estimates_by_model": {k: estimates(k) for k in MODELS if installed(k)}}
 
 
 # ---- the gallery ------------------------------------------------------------------------------------------
