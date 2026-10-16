@@ -51,3 +51,9 @@ snake.html
 snake-game-34.html
 solar-system.html
 stud_trunk.png
+
+# desktop app and installer builds
+desktop/node_modules/
+desktop/dist/
+installer/stage/
+installer/output/

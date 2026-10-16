@@ -97,10 +97,20 @@ def section_name(model_file: str, taken: set) -> str:
     return unique
 
 
+def _own_options(model: str) -> str:
+    """Options a model needs from the start: a hybrid (Qwen 3.5 - Gated DeltaNet layers) must stay whole on the GPU,
+    or llama.cpp splits it and it crawls (diagnostics.keeps_whole) - so it gets ngl = 99 when it is added."""
+    try:
+        import diagnostics
+        return "ngl = 99\n" if diagnostics.keeps_whole(diagnostics.meta_for(model)) else ""
+    except Exception:
+        return ""
+
+
 def _append(entries: list) -> None:
     with open(ini_path(), "a", encoding="utf-8") as f:
         for name, model, proj in entries:
-            f.write(f"\n[{name}]\nmodel = {model}\n" + (f"mmproj = {proj}\n" if proj else ""))
+            f.write(f"\n[{name}]\nmodel = {model}\n" + (f"mmproj = {proj}\n" if proj else "") + _own_options(model))
     llama_local._ini_cache.update(key=None, configs=None)
     llama_local.invalidate_cache()
 

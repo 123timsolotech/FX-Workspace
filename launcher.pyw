@@ -7,6 +7,10 @@ dependency sync, keys.local.bat, llama-server, the page copy - serves the app in
 app window. Closing the app window stops the server, and llama-server too when this launcher started it, so
 nothing keeps running unseen (or holding the GPU).
 
+Under the desktop app (desktop/, Electron) the launcher runs with FX_SHELL=electron: Electron shows the window,
+so this opens none - it watches Electron's process instead (FX_PARENT_PID) and stops the server, and llama-server,
+once that is gone.
+
 Logs, since there is no console: data/logs/server.log and data/logs/llama-server.log (the run before is kept
 as *.prev.log). Problems show as a message box. `run.bat console` still runs everything in a console window.
 """
@@ -26,12 +30,18 @@ if BASE not in sys.path:
     sys.path.insert(0, BASE)
 LOGS = os.path.join(BASE, "data", "logs")
 NO_WINDOW = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+IS_WIN = os.name == "nt"
+VENV_PY = os.path.join(BASE, ".venv", "Scripts", "python.exe") if IS_WIN else os.path.join(BASE, ".venv", "bin", "python")
+LLAMA_EXE = "llama-server.exe" if IS_WIN else "llama-server"
 TITLE = "FX Workspace"
 APP_URL = "http://127.0.0.1:8000"
 CLOSE_GRACE = 4.0                     # seconds without the app window before the server stops (a reload is quicker)
 
 
 def message(text: str, error: bool = True) -> None:
+    if not IS_WIN:                    # Linux: the desktop app shows its own error; the log has the details
+        print(("[ERROR] " if error else "") + text, flush=True)
+        return
     import ctypes
     ctypes.windll.user32.MessageBoxW(None, text, TITLE, 0x10 if error else 0x40)
 
@@ -66,7 +76,7 @@ def sync_dependencies(log) -> bool:
     except OSError:
         pass
     print("Syncing pinned dependencies...", flush=True)
-    python = os.path.join(BASE, ".venv", "Scripts", "python.exe")
+    python = VENV_PY
     done = subprocess.run([python, "-m", "pip", "install", "--disable-pip-version-check", "-r", req],
                           stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT, creationflags=NO_WINDOW)
     if done.returncode:
@@ -101,7 +111,7 @@ def llama_dir() -> str:
     # fork when a model needs it (Ternary Bonsai 2) and back (llama_builds.py).
     import paths
     for d in (*paths.llama_dirs(), *paths.prism_dirs()):
-        if os.path.exists(os.path.join(d, "llama-server.exe")):
+        if os.path.exists(os.path.join(d, LLAMA_EXE)):
             return d
     return paths.llama_dirs()[0]
 
@@ -128,7 +138,7 @@ def start_llama() -> subprocess.Popen | None:
     models = f"{env['LLAMA_SERVER_BASE']}/models"
     if answers(models, 3) or env.get("AUTOSTART_LLAMA") != "1":
         return None
-    exe = os.path.join(llama_dir(), "llama-server.exe")
+    exe = os.path.join(llama_dir(), LLAMA_EXE)
     if not os.path.exists(exe):
         print(f"[WARNING] llama-server.exe was not found at {exe}. Cloud mode can still be used.", flush=True)
         return None
@@ -152,6 +162,13 @@ def start_llama() -> subprocess.Popen | None:
 def stop_tree(proc: subprocess.Popen | None) -> None:
     """llama-server's router and the model servers it started."""
     if proc and proc.poll() is None:
+        if not IS_WIN:
+            proc.terminate()
+            try:
+                proc.wait(10)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+            return
         subprocess.run(["taskkill", "/PID", str(proc.pid), "/T", "/F"], capture_output=True, timeout=15, creationflags=NO_WINDOW)
 
 
@@ -177,8 +194,46 @@ def app_windows(browser_name: str) -> int:
     return n
 
 
+def shell_mode() -> bool:
+    """Started by the desktop app (Electron), which owns the window."""
+    return os.environ.get("FX_SHELL") == "electron"
+
+
+def _alive(pid: int) -> bool:
+    try:
+        import psutil
+        return psutil.pid_exists(pid) and psutil.Process(pid).status() != psutil.STATUS_ZOMBIE
+    except ImportError:
+        try:
+            os.kill(pid, 0)
+            return True
+        except OSError:
+            return False
+    except Exception:
+        return False
+
+
+def watch_shell(server) -> None:
+    """Desktop app: stop once its process (FX_PARENT_PID) has exited - closing the app closes everything."""
+    try:
+        pid = int(os.environ.get("FX_PARENT_PID") or 0)
+    except ValueError:
+        pid = 0
+    if not pid:
+        return
+    while not server.should_exit:
+        if not _alive(pid):
+            print("The desktop app closed - stopping.", flush=True)
+            server.should_exit = True
+            return
+        time.sleep(1)
+
+
 def watch(server) -> None:
     """Open the app window once the server answers; stop the server once the window has been closed."""
+    if shell_mode():
+        watch_shell(server)
+        return
     import app_window
     if not app_window.wait_for_server(APP_URL, timeout=120):
         return
@@ -210,6 +265,8 @@ def quiet_children() -> None:
     tasklist, the assistant's shell commands...) shared run.bat's console. Under pythonw there is no console to
     share, so each would open a window of its own: here they get none instead - as before, minus the window.
     (Windowed programs ignore the flag; launches that ask for their own console or none at all keep theirs.)"""
+    if not IS_WIN:
+        return
     own = getattr(subprocess, "CREATE_NEW_CONSOLE", 0x10) | getattr(subprocess, "DETACHED_PROCESS", 0x8)
     original = subprocess.Popen.__init__
 
@@ -221,7 +278,20 @@ def quiet_children() -> None:
     subprocess.Popen.__init__ = init
 
 
+_lock = None
+
+
 def single_instance() -> bool:
+    if not IS_WIN:                    # Linux: an exclusive lock on a file in data/ (released when the process ends)
+        global _lock
+        import fcntl
+        os.makedirs(os.path.join(BASE, "data"), exist_ok=True)
+        _lock = open(os.path.join(BASE, "data", ".launcher.lock"), "w")
+        try:
+            fcntl.flock(_lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return True
+        except OSError:
+            return False
     import ctypes
     ctypes.windll.kernel32.CreateMutexW(None, False, "Local\\AgenticWorkspaceLauncher")
     return ctypes.windll.kernel32.GetLastError() != 183            # ERROR_ALREADY_EXISTS
@@ -231,9 +301,9 @@ def main() -> int:
     os.chdir(BASE)
     if not single_instance():
         # Already starting or running: show its window (when it's still starting, its own window is coming).
-        # No logging here - the running launcher has the log open.
+        # No logging here - the running launcher has the log open. Under the desktop app, Electron shows it.
         sys.stdout = sys.stderr = open(os.devnull, "w")
-        if answers(f"{APP_URL}/api/settings"):
+        if not shell_mode() and answers(f"{APP_URL}/api/settings"):
             import app_window
             app_window.open_app(APP_URL)
         return 0
@@ -242,8 +312,9 @@ def main() -> int:
     print(f"FX Workspace - {time.strftime('%Y-%m-%d %H:%M:%S')}", flush=True)
     quiet_children()
     if answers(f"{APP_URL}/api/settings"):              # a server started some other way (run.bat console)
-        import app_window
-        app_window.open_app(APP_URL)
+        if not shell_mode():
+            import app_window
+            app_window.open_app(APP_URL)
         return 0
     if not sync_dependencies(out):
         message("Installing the Python dependencies failed.\n\nDetails: data\\logs\\server.log\n"

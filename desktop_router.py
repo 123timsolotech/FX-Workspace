@@ -118,7 +118,11 @@ def _close_app(app_name: str) -> dict:
         return {"ok": False, "verified": False, "message": "Desktop app routing is available on Windows only."}
     found = ctx.window_is_open(app_name)
     if not found:
-        return {"ok": True, "verified": True, "message": f"{app_name} is already closed."}
+        known, _ = app_registry.resolve_app(app_name)
+        if known:
+            return {"ok": True, "verified": True, "message": f"{known['display']} isn't open - nothing to close."}
+        return {"ok": False, "verified": False, "message": (
+            f"There's no open window or installed app called '{app_name}', so nothing was closed.")}
     hwnd, title = found
     if not di.close_window(hwnd):
         return {"ok": False, "verified": False, "title": title,

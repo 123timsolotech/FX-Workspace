@@ -68,6 +68,14 @@ SKILLS: dict[str, tuple[str, tuple[str, ...]]] = {
     "mcp": ("the tools of your connected MCP servers", ()),         # filled live: mcp__<server>__<tool> (skill_of)
 }
 SKILL_OF = {tool: sid for sid, (_, tools) in SKILLS.items() for tool in tools}
+# What the user sees when a skill comes in ("Added tools: Files, Commands") - not the internal ids.
+NAMES = {"desktop": "Apps & windows", "files": "Files", "shell": "Commands", "web": "Web", "system": "System",
+         "clipboard": "Clipboard & media", "reminders": "Reminders", "memory": "Memory", "roblox": "Roblox Studio",
+         "studio": "Studio MCP", "mcp": "MCP servers"}
+
+
+def names(ids) -> str:
+    return ", ".join(NAMES.get(i, i) for i in ids)
 DEFAULT = ("desktop", "files")
 
 _W = r"(?<![\w-])"          # a word start that also works before Hebrew and Cyrillic
@@ -231,6 +239,7 @@ def note_used(tool: str) -> str | None:
     if sid and load([sid]):
         import events as event_log
         event_log.log_action(f"Loaded the {sid} skill: the model called {tool}.")
+        event_log.emit_activity("skills_loaded", f"Added tools: {names([sid])}", detail=SKILLS[sid][0])
         return sid
     return None
 
@@ -263,8 +272,10 @@ def index(offered_names) -> str:
             for sid, line in rest]
     if not rest or "load_skill" not in offered:
         return ""
-    return ("MORE SKILLS (call load_skill with their names; their tools come with your next step - don't tell the "
-            "user you can't do it): " + "; ".join(f"{sid} - {line}" for sid, line in rest) + ".")
+    return ("MORE SKILLS - tools you don't have yet. If the request needs one, call load_skill ONCE with every skill "
+            "it needs (e.g. [\"files\", \"shell\"]); the tools arrive with your next step. Don't load skills \"just in "
+            "case\", and never tell the user you can't do something a skill below covers: "
+            + "; ".join(f"{sid} - {line}" for sid, line in rest) + ".")
 
 
 def load_skill_tool(args: dict) -> dict:
@@ -277,14 +288,16 @@ def load_skill_tool(args: dict) -> dict:
                 "message": f"No skill called {', '.join(unknown)}. Skills: {', '.join(SKILLS)}."}
     if new:
         import events as event_log
-        event_log.emit_activity("skills_loaded", f"Loaded {', '.join(new)}", detail="the model asked for them")
+        event_log.emit_activity("skills_loaded", f"Added tools: {names(new)}",
+                                detail="; ".join(f"{NAMES.get(i, i)}: {SKILLS[i][0]}" for i in new))
     tools = sorted({t for sid in asked if sid in SKILLS for t in SKILLS[sid][1]})
     if {"mcp", "studio"} & set(asked):
         from tools import schemas
         tools += sorted(t["function"]["name"] for t in schemas.mcp_schemas() if skill_of(t["function"]["name"]) in asked)
     return {"ok": True, "loaded": new,
-            "message": (f"Loaded {', '.join(new)}. " if new else "Already loaded. ")
-                       + f"These tools are yours from your next step: {', '.join(tools)}. Call them now as needed."}
+            "message": (f"Loaded {', '.join(new)}. " if new else "Already loaded - its tools are already in your list. ")
+                       + f"These tools are yours from your next step: {', '.join(tools)}. Continue the task with them now - "
+                         "don't load more unless a step needs a tool none of these has."}
 
 
 SCHEMA = {"type": "function", "function": {

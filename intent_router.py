@@ -49,6 +49,21 @@ class DesktopIntent:
     arguments: dict = field(default_factory=dict)
 
 
+@dataclass
+class ChatIntent:
+    """A request about this chat itself ("close this chat") - done by the app, never by a desktop tool."""
+    action: str
+    original: str = ""
+
+
+# "close this chat", "end the conversation", "exit chat": the user means this conversation in the app, not a
+# window called "this chat" - routed to the desktop it closed nothing and claimed "already closed".
+_CHAT_CLOSE_RE = re.compile(
+    r"^\s*(?:please\s+)?(?:(?:can|could)\s+you\s+)?(?:close|end|exit|quit|leave|finish|stop)\s+"
+    r"(?:(?:this|the|our|current|my)\s+)?(?:chat|conversation|convo|thread|session)(?:\s+(?:now|here|for\s+me))?"
+    r"(?:\s+please)?[.!?]*\s*$", re.IGNORECASE)
+
+
 # A product family is intentionally explicit.  Suggestions are useful even
 # when only one of these products is installed: the user's phrase may refer to
 # a web product, while desktop execution must never silently assume which one.
@@ -194,6 +209,8 @@ def route(message: str):
         if target.casefold() == "proton":
             target = "Proton VPN"
         return DesktopIntent(target, ["connect"], message)
+    if _CHAT_CLOSE_RE.match(message):
+        return ChatIntent("close", message)
     close = _SIMPLE_CLOSE_RE.match(message)
     if close:
         target = _clean_target(close.group("target"))

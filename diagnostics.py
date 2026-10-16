@@ -63,8 +63,39 @@ _state = {"result": None, "running": False}
 _lock = threading.Lock()
 
 
+_DISK_CACHE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "model_meta_cache.json")
+_disk: dict | None = None
+_meta_lock = threading.Lock()                # the header cache's own (_lock guards the checks)
+
+
+def _disk_cache() -> dict:
+    """GGUF headers read before, by file (path, size, modified time) - kept across starts: reading every model's header
+    at startup (multi-GB files, some on a hard disk) held the server up for seconds."""
+    global _disk
+    if _disk is None:
+        try:
+            import json
+            with open(_DISK_CACHE, encoding="utf-8") as f:
+                _disk = json.load(f)
+        except (OSError, ValueError):
+            _disk = {}
+    return _disk
+
+
+def _disk_save() -> None:
+    try:
+        import json
+        os.makedirs(os.path.dirname(_DISK_CACHE), exist_ok=True)
+        tmp = _DISK_CACHE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(_disk, f)
+        os.replace(tmp, _DISK_CACHE)
+    except OSError:
+        pass
+
+
 def meta_for(path: str) -> dict | None:
-    """The model's GGUF header (cached per file version), or None."""
+    """The model's GGUF header (cached per file version - in memory and on disk), or None."""
     try:
         key = (path, os.path.getmtime(path), os.path.getsize(path))
     except OSError:
@@ -72,10 +103,19 @@ def meta_for(path: str) -> dict | None:
     hit = _meta_cache.get(path)
     if hit and hit[0] == key:
         return hit[1]
-    try:
-        meta = gguf_meta.read(path)
-    except (OSError, gguf_meta.GGUFError):
-        meta = None
+    stamp = f"{key[1]}:{key[2]}"
+    with _meta_lock:
+        saved = _disk_cache().get(path)
+    if saved and saved.get("stamp") == stamp:
+        meta = saved.get("meta")
+    else:
+        try:
+            meta = gguf_meta.read(path)
+        except (OSError, gguf_meta.GGUFError):
+            meta = None
+        with _meta_lock:
+            _disk_cache()[path] = {"stamp": stamp, "meta": meta}
+            _disk_save()
     _meta_cache[path] = (key, meta)
     return meta
 
@@ -138,6 +178,41 @@ def estimate(meta: dict, cfg: dict, opts: dict, ctx: int, cache: str | None = No
     total = weights + mmproj + kv + compute
     return {"weights_mb": round(weights), "mmproj_mb": round(mmproj), "kv_mb": round(kv), "compute_mb": round(compute),
             "total_mb": round(total), "ctx": ctx, "cache": ck}
+
+
+def ctx_limits(name: str, cfg: dict, gpu: dict) -> dict:
+    """Settings > Models' context helpers: the most the model was trained for ("max"), and the largest context
+    that still fits in the GPU with its current settings (KV cache type, experts in RAM) - in steps of 1,024,
+    never past the trained maximum. {} when the file or its header can't be read."""
+    if not cfg.get("model_path") or not os.path.exists(cfg["model_path"]):
+        return {}
+    meta = meta_for(cfg["model_path"])
+    if not meta:
+        return {}
+    opts = llama_local.model_options(name)
+    trained = int(meta.get("trained_ctx") or 0)
+    cpu_moe = int(opts.get("n-cpu-moe") or 0) if meta.get("expert_count") else 0
+    usable = gpu.get("plan_usable_mb") or gpu.get("usable_mb") or 0
+    out = {"trained": trained, "usable_mb": usable, "cache": opts.get("cache-type-k") or "f16", "cpu_moe": cpu_moe}
+    if not usable:
+        return out
+    hi = trained or 262144
+    if estimate(meta, cfg, opts, 1024, cpu_moe=cpu_moe)["total_mb"] > usable:
+        out["fits"] = 0                                     # even the weights don't fit: no context does
+        return out
+    lo = 1                                                  # in units of 1,024 tokens: lo fits, hi may not
+    hi_u = hi // 1024
+    if estimate(meta, cfg, opts, hi_u * 1024, cpu_moe=cpu_moe)["total_mb"] <= usable:
+        lo = hi_u
+    else:
+        while hi_u - lo > 1:
+            mid = (lo + hi_u) // 2
+            if estimate(meta, cfg, opts, mid * 1024, cpu_moe=cpu_moe)["total_mb"] <= usable:
+                lo = mid
+            else:
+                hi_u = mid
+    out["fits"] = lo * 1024
+    return out
 
 
 def gpu_info() -> dict:

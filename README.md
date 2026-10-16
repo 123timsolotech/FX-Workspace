@@ -34,6 +34,16 @@ Everything runs on this PC by default. Nothing is sent anywhere unless you use a
 
 ## Install
 
+**Easiest:** download `FX-Workspace-Setup-<version>.exe` from the
+[Releases](https://github.com/fuxion64-ctrl/FX-Workspace/releases) page and run it. The wizard asks where to put
+the models and what to download, sets everything up, and adds FX Workspace to the Start menu. The app opens in
+its own window (no browser needed). See [`docs/DESKTOP.md`](docs/DESKTOP.md).
+
+**Updating:** download the newer installer and run it. It updates the app in place and keeps your chats, settings,
+API keys and models exactly as they are. Settings > About > Check for updates tells you when there is one.
+
+**From the source:**
+
 1. Download this repository (green **Code** button > **Download ZIP**) and unzip it, or `git clone` it.
 2. Double-click **`install.bat`**. It:
    - sets up Python and the app's packages,
@@ -80,6 +90,8 @@ what was sent where.
 | Path | What it is |
 |---|---|
 | `run.bat`, `launcher.pyw` | start the app |
+| `desktop/` | the desktop app window (Electron) |
+| `installer/` | the setup wizard (Inno Setup; `installer\build.ps1`) |
 | `install.bat`, `install.ps1` | first-time setup |
 | `main.py`, `api/`, `agent/` | the server and the assistant |
 | `index.html` | the whole interface (copied to `static/` on start) |

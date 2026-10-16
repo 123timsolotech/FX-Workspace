@@ -98,7 +98,7 @@ DEFAULT_SETTINGS = {
     "theme": "system",            # the concrete theme the three above make (clean_appearance) - kept for older files
     "look": "studio",             # studio | focus | operator | command (UI layout)
     "layout": "comfortable",
-    "accent": "#c96442",
+    "accent": "",                  # "" = the default gold (follows light/dark); a hex = a chosen accent
     "chat_font": "serif",         # serif | sans  (assistant replies)
     "user_name": "",
     # Privacy: cloud models never see screenshots unless this is on.
@@ -364,8 +364,9 @@ def load_settings() -> dict:
     data.update(awareness.clean_settings(data))
     # A settings.json from before appearance families has only "theme": the family comes from it.
     data.update(clean_appearance(data, from_theme=isinstance(saved, dict) and "theme" in saved and "appearance" not in saved))
-    if data.get("accent") == "#7c6cf0":
-        data["accent"] = "#c96442"
+    # The old defaults (violet, then clay) become the new one - the logo's gold. Terracotta stays one click away.
+    if data.get("accent") in ("#7c6cf0", "#c96442"):
+        data["accent"] = ""
     if data.get("chat_font") not in ("serif", "sans"):
         data["chat_font"] = "serif"
     data["look"] = clean_look(data.get("look"))

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="fx-gold" gradientUnits="userSpaceOnUse" x1="18" y1="10" x2="104" y2="94"><stop offset="0" stop-color="#fff2ad"/><stop offset=".35" stop-color="#f8c94a"/><stop offset=".7" stop-color="#e79c1e"/><stop offset="1" stop-color="#b9740c"/></linearGradient>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2925"/><stop offset="1" stop-color="#181715"/></linearGradient>
+  </defs>
+  <rect x="16" y="16" width="480" height="480" rx="108" fill="url(#bg)"/>
+  <rect x="16.5" y="16.5" width="479" height="479" rx="107.5" fill="none" stroke="#ffffff" stroke-opacity=".08"/>
+  <g transform="translate(41 70) scale(3.25)">
+    <g transform="skewX(-12) translate(16 0)" fill="url(#fx-gold)" fill-rule="evenodd"><path d="M20 14 H66 V28 H36 V42 H58 V54 H36 V90 H20 Z M28 46 C27.2 60 23 76 21.4 88.6 H34.6 C33 76 28.8 60 28 46 Z"/><path d="M60 40 H76 L109 90 H93 Z"/><path d="M108 40 H92 L76 64 L59 90 H60.6 L79 66 C86 56 98 46 108 40 Z"/></g>
+  </g>
+</svg>

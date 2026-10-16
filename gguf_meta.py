@@ -38,6 +38,26 @@ def _string(f) -> str:
     return f.read(n).decode("utf-8", errors="replace")
 
 
+def _skip_strings(f, count: int) -> None:
+    """Step over `count` length-prefixed strings (a 250,000-word vocabulary) through 1 MB reads: one small read and a
+    seek per word was ~0.2 s a model, all of it holding the server while it started."""
+    chunk = 1 << 20
+    buf, pos = f.read(chunk), 0
+    for _ in range(count):
+        if pos + 8 > len(buf):
+            buf, pos = buf[pos:] + f.read(chunk), 0
+            if len(buf) < 8:
+                raise GGUFError("The file ends inside its header.")
+        n = struct.unpack_from("<Q", buf, pos)[0]
+        if n > 1 << 24:
+            raise GGUFError("A string in the header is implausibly long.")
+        pos += 8 + n
+        if pos > len(buf):                               # the string runs past what is buffered
+            f.seek(pos - len(buf), 1)
+            buf, pos = f.read(chunk), 0
+    f.seek(pos - len(buf), 1)                            # back to just after the last string
+
+
 def _value(f, vtype):
     if vtype in _SCALARS:
         return _read(f, _SCALARS[vtype])
@@ -45,6 +65,9 @@ def _value(f, vtype):
         return _string(f)
     if vtype == 9:
         itype, count = _read(f, "<I"), _read(f, "<Q")
+        if itype == 8 and count > _MAX_KEEP:             # a vocabulary: skipped, not kept
+            _skip_strings(f, count)
+            return None
         if itype == 8:                                   # strings: skip what isn't kept
             out = []
             for i in range(count):

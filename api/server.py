@@ -22,6 +22,7 @@ from pydantic import BaseModel
 import app_registry
 import approval
 import awareness
+import app_version
 import diagnostics
 import browser
 import context as ctx
@@ -555,7 +556,10 @@ def update_settings(body: SettingsUpdate):
     # written the same way. llm._current_model() is the last model that RAN - before a local
     # model has answered a message it is a different one, the choice went under its name, and
     # the slider kept showing (and snapping back to) the displayed model's old entry.
-    model = _next_model(for_mode or None, for_model or None)[0] if for_mode else llm._current_model()
+    # Only effort and Prompt Prep need the model - finding it can ask llama-server, which made every other save (a
+    # colour, light/dark) wait for it.
+    needs_model = updates.get("effort") in effort.CHOICES or updates.get("prompt_prep") in prompt_prep.MODES
+    model = (_next_model(for_mode or None, for_model or None)[0] if for_mode else llm._current_model()) if needs_model else None
     if updates.get("effort") in effort.CHOICES and model and "effort_by_model" not in updates:
         updates["effort_by_model"] = {**(current.get("effort_by_model") or {}), model: updates["effort"]}
     if updates.get("prompt_prep") in prompt_prep.MODES and model:     # Prompt Prep: same rule
@@ -831,6 +835,27 @@ def get_local_model_configs():
     for c in configs:      # checked on every call: a file can be added or removed without editing models.ini
         c["file_found"] = bool(c.get("model_path")) and os.path.isfile(c["model_path"])
     return {"status": "success", "models": configs, "defaults": llama_local.get_default_resources()}
+
+
+@app.get("/api/local-models/ctx-info")
+async def local_model_ctx_info():
+    """Each model's context limits for Settings > Models' "Max context" buttons: the most it was trained for and
+    the most that fits in VRAM. Separate from the list because reading every model's GGUF header the first time
+    (multi-GB files, some on a hard disk) took ~16 s - the list shows at once and these fill in after."""
+    def work():
+        try:
+            gpu = diagnostics.gpu_info()
+        except Exception:
+            gpu = {}
+        out = {}
+        for c in llama_local.list_model_configs():
+            if c.get("model_path") and os.path.isfile(c["model_path"]):
+                try:
+                    out[c["name"]] = diagnostics.ctx_limits(c["name"], c, gpu)
+                except Exception:
+                    out[c["name"]] = {}
+        return out
+    return {"status": "success", "models": await asyncio.to_thread(work)}
 
 
 class ModelAdd(BaseModel):
@@ -1453,6 +1478,41 @@ def voice_stop():
 
 
 # ---- The app window and the overlay window (app_window.py) -------------------------------
+class ClientLog(BaseModel):
+    kind: str = "error"
+    message: str = ""
+    detail: str = ""
+
+
+_client_log_n = {"n": 0}
+
+
+@app.post("/api/client-log")
+def client_log(body: ClientLog):
+    """The page's own errors (and a Settings page found blank) into data/logs/client.log - so a problem seen only
+    in the desktop window can be read afterwards. Capped at 500 entries a run; nothing leaves the PC."""
+    if _client_log_n["n"] >= 500:
+        return {"ok": False}
+    _client_log_n["n"] += 1
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "logs", "client.log")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "a", encoding="utf-8") as f:
+        f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} [{body.kind[:40]}] {body.message[:1000]}"
+                + (f"\n    {body.detail[:3000]}" if body.detail else "") + "\n")
+    return {"ok": True}
+
+
+@app.get("/api/version")
+def app_version_now():
+    return {"version": app_version.current(), "releases": app_version.RELEASES_URL}
+
+
+@app.post("/api/version/check")
+def app_version_check():
+    """Settings > About > Check for updates (only when pressed): the newest GitHub release and its installer."""
+    return app_version.check(force=True)
+
+
 @app.get("/api/app-window")
 def app_window_status():
     return {"overlay": app_window.overlay_status(), "browser": bool(app_window.find_browser())}

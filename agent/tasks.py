@@ -619,6 +619,14 @@ def chat_with_agent(req: shared.ChatRequest):
             shared.app_state["conversation"].append({"role": "assistant", "content": response["question"]})
             event_log.log_action(f"Clarification requested before execution: {response['question']}")
             return response
+        if isinstance(routed, intent_router.ChatIntent):
+            # The app closes the chat (back to Home; it stays in the chat list) - no tool, no approval, no model.
+            shared.app_state["intent_guard"] = None
+            shared.app_state["conversation"].append({"role": "user", "content": req.message})
+            message = "Closing this chat - it stays in your chat list if you want to come back to it."
+            shared.app_state["conversation"].append({"role": "assistant", "content": message})
+            event_log.log_action("Closed the chat on request.")
+            return {"status": "success", "verified": True, "message": message, "client": {"action": "close_chat"}}
         if isinstance(routed, intent_router.DesktopIntent):
             shared.app_state["intent_guard"] = {"expected_app": routed.app_name}
             shared.app_state["conversation"].append({"role": "user", "content": req.message})

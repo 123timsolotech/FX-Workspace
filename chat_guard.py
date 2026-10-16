@@ -64,11 +64,13 @@ producing content in one of these categories:
 - malware: working malicious code or step-by-step attacks against systems, accounts or people the user does
   not own or have permission to test.
 - self_harm: the user seeks methods to harm or kill themselves, or says they intend to.
-- abuse: the message is hostile insults, slurs, threats or harassment aimed at the assistant itself.
+- abuse: the message mainly insults or attacks the assistant itself - name-calling ("you're worthless", "stupid
+  bot", "idiot", "pathetic"), hatred, slurs, threats or harassment at it - rather than asking for anything.
 Allowed (answer ALLOW): education, history, news, fiction without the above, medical and safety information,
 security on the user's own systems, CTFs, defensive security, explaining how attacks work in general, adult
-content between adults, dark or edgy topics that do not request the above. Swearing, frustration ("this is
-useless", "you got it wrong again"), blunt criticism, venting about other things and jokes are ALLOW.
+content between adults, dark or edgy topics that do not request the above. Swearing, frustration about a result
+("this is useless", "you got it wrong again, fix it"), blunt criticism of the work, venting about other things and
+jokes are ALLOW - a message that still asks for help is ALLOW even if rude.
 Judge what is actually being asked, not single words. Answer with exactly one word:
 ALLOW, MINORS, MASS_HARM, MALWARE, SELF_HARM or ABUSE."""
 

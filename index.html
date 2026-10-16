@@ -25,7 +25,7 @@
   --bg: #faf9f5; --bg-sidebar: #f4f2ec; --surface: #ffffff; --surface-2: #f0eee6; --surface-3: #e8e5da;
   --hover: rgba(31, 30, 29, 0.05); --border: #e5e2d8; --border-strong: #d6d2c4;
   --text: #1f1e1d; --text-2: #3d3c38; --muted: #6d6b64; --faint: #8a877f;
-  --accent: #c96442; --accent-ink: #ffffff; --accent-soft: rgba(201, 100, 66, 0.12);
+  --accent: #c99016; --accent-ink: #1d1606; --accent-soft: rgba(201, 144, 22, 0.13);
   /* Accent-coloured TEXT (links, small buttons): the accent itself where it reads at 4.5:1 */
   --accent-text: var(--accent); --warn-text: var(--warn); --danger-text: var(--danger); --ok-text: var(--ok);   /* fitted at runtime: fitTextColors */
   --user-bubble: #efece3; --code-bg: #f3f1ea;
@@ -55,7 +55,7 @@
     --bg: #262624; --bg-sidebar: #1f1e1d; --surface: #30302e; --surface-2: #2b2a28; --surface-3: #393836;
     --hover: rgba(250, 249, 245, 0.06); --border: #3a3935; --border-strong: #4a4944;
     --text: #f5f4ee; --text-2: #d8d6cc; --muted: #a3a097; --faint: #7c7a72;
-    --accent: #d97757; --accent-soft: rgba(217, 119, 87, 0.16); --user-bubble: #1b1a19; --code-bg: #1f1e1d;
+    --accent: #f0b444; --accent-ink: #1d1606; --accent-soft: rgba(240, 180, 68, 0.15); --user-bubble: #1b1a19; --code-bg: #1f1e1d;
     --ok: #7fb069; --warn: #d9a54c; --danger: #e5675c; --info: #8fb3c9;
     --shadow: 0 1px 2px rgba(0,0,0,.25), 0 4px 16px rgba(0,0,0,.18); --shadow-lg: 0 16px 48px rgba(0,0,0,.45);
     --scrim: rgba(0, 0, 0, .55); color-scheme: dark;
@@ -65,19 +65,25 @@
   --bg: #262624; --bg-sidebar: #1f1e1d; --surface: #30302e; --surface-2: #2b2a28; --surface-3: #393836;
   --hover: rgba(250, 249, 245, 0.06); --border: #3a3935; --border-strong: #4a4944;
   --text: #f5f4ee; --text-2: #d8d6cc; --muted: #a3a097; --faint: #7c7a72;
-  --accent: #d97757; --accent-soft: rgba(217, 119, 87, 0.16); --user-bubble: #1b1a19; --code-bg: #1f1e1d;
+  --accent: #f0b444; --accent-ink: #1d1606; --accent-soft: rgba(240, 180, 68, 0.15); --user-bubble: #1b1a19; --code-bg: #1f1e1d;
   --ok: #7fb069; --warn: #d9a54c; --danger: #e5675c; --info: #8fb3c9;
   --shadow: 0 1px 2px rgba(0,0,0,.25), 0 4px 16px rgba(0,0,0,.18); --shadow-lg: 0 16px 48px rgba(0,0,0,.45);
   --scrim: rgba(0, 0, 0, .55); color-scheme: dark;
 }
 
-/* Classic's clay accent is too light for small text on light paper (3.4:1)
-   and slightly short on dark (4.2:1): text uses a deeper / lighter shade. */
-:root[data-skin="classic"]:not([data-look="operator"]) { --accent-text: #a5553a; }
+/* Classic's gold is too light for small text on light paper: text uses a deeper gold there, a softer one on dark. */
+:root[data-skin="classic"]:not([data-look="operator"]) { --accent-text: #8a620e; }
 @media (prefers-color-scheme: dark) {
-  :root[data-skin="classic"]:not([data-look="operator"]):not([data-theme="light"]) { --accent-text: #db8062; }
+  :root[data-skin="classic"]:not([data-look="operator"]):not([data-theme="light"]) { --accent-text: #f3c56a; }
 }
-:root[data-skin="classic"][data-theme="dark"]:not([data-look="operator"]) { --accent-text: #db8062; }
+:root[data-skin="classic"][data-theme="dark"]:not([data-look="operator"]) { --accent-text: #f3c56a; }
+/* The Fx mark: the logo's own gold gradient with the default accent; any other accent or theme colours it from its
+   accent (lighter at the top, deeper at the foot) - so the mark always belongs to the theme. */
+:root { --mark-1: #fff2ad; --mark-2: #f8c94a; --mark-3: #e79c1e; --mark-4: #b9740c; }
+:root:not([data-skin="classic"]), :root[data-accent="custom"], :root[data-look="operator"], :root[data-look="command"] {
+  --mark-1: color-mix(in srgb, var(--accent) 45%, #fff); --mark-2: color-mix(in srgb, var(--accent) 80%, #fff);
+  --mark-3: var(--accent); --mark-4: color-mix(in srgb, var(--accent) 70%, #000);
+}
 
 /* ---- Focus: reading & writing. Brighter paper by day, low-glare night. -- */
 :root[data-look="focus"] { --chat-width: 680px; --reply-size: 18px; --reply-lh: 1.72; --thread-gap: 30px; }
@@ -799,6 +805,39 @@ html.chat-locked .composer { opacity: .6; }
 .sb-empty .btn { margin-top: 8px; height: 28px; font-size: 12.5px; }
 .sidebar .sb-spacer { flex: 0 0 0; }
 .sb-row-act.run { color: var(--accent-text); }
+
+/* ---- The desktop app's window (desktop/, Electron): no system title bar - the top of the page is the title bar.
+   Its bars drag the window; their buttons and fields stay clickable. The window's own buttons (minimise, maximise,
+   close) sit over the top-right corner in the theme's colours (syncTitleBar), so whatever bar is there leaves
+   them room: the main top bar, or the side panel's header while it is open. ---- */
+:root.fx-desktop :is(.sb-top, .topbar, .panel-head) { -webkit-app-region: drag; }
+:root.fx-desktop :is(.sb-top, .topbar, .panel-head) :is(button, a, input, select, textarea, label, [role="button"], [role="tab"], [tabindex]) { -webkit-app-region: no-drag; }
+:root.fx-desktop .app.panel-closed .topbar { padding-right: 152px; }
+:root.fx-desktop .app:not(.panel-closed) .panel { position: relative; padding-top: 34px; }
+:root.fx-desktop .app:not(.panel-closed) .panel::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 34px; -webkit-app-region: drag; }
+
+/* ---- A lighter sidebar: slim one-line chats, a quiet New chat, one slim line each for the model and you ---- */
+.sb-plus { width: 20px; height: 20px; background: var(--accent-soft); color: var(--accent-text); }
+.sb-new:hover .sb-plus { background: var(--accent); color: var(--accent-ink); }
+.sb-group { padding: 12px 8px 3px; font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+.sb-list .sb-row { border-radius: 7px; }
+.sb-list .sb-row-main { padding: 5px 8px; }
+.sb-list .sb-row-title { font-size: 13px; color: var(--text-2); }
+.sb-list .sb-row.active { background: var(--hover); }
+.sb-list .sb-row.active .sb-row-title { color: var(--text); }
+.sb-list .sb-row.active::before { content: ""; position: absolute; left: 0; top: 7px; bottom: 7px; width: 2px; border-radius: 2px; background: var(--accent); }
+.sb-list .sb-row.active:not(:hover):not(:focus-within) .sb-row-acts { opacity: 0; }
+.sb-list .sb-row-act { width: 22px; height: 22px; }
+.sb-pc { margin: 2px 8px 0; padding: 4px 0 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; background: transparent; }
+.sb-pc .sb-nav { padding: 0; }
+.sb-pc .sb-item { padding: 5px 8px; font-size: 12.5px; }
+.sb-pc .sb-item .sb-label { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; }
+.sb-pc .sb-item .sb-label > :first-child { flex-shrink: 0; max-width: 60%; overflow: hidden; text-overflow: ellipsis; }
+.sb-pc .sb-item small { display: inline; overflow: hidden; text-overflow: ellipsis; color: var(--faint); }
+.sb-user { gap: 8px; padding: 5px 8px; margin: 2px 8px 8px; border-radius: 8px; }
+.sb-user .avatar { width: 24px; height: 24px; font-size: 11px; }
+.sb-user-text div { font-size: 13px; }
+.sb-user-text small { display: none; }
 .routine-offer { display: flex; align-items: center; gap: 8px; margin-top: 6px; font-size: 12.5px; color: var(--muted); flex-wrap: wrap; }
 .routine-offer .mini-btn { opacity: 1; }
 .rt-steps { display: grid; gap: 4px; max-height: 220px; overflow-y: auto; padding: 8px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
@@ -877,7 +916,7 @@ html.chat-locked .composer { opacity: .6; }
 /* ---- Home: the landing view ---------------------------------------------
    Greeting, the message box, and a dashboard of recent chats, projects and
    routines (renderHome). It scrolls when it is taller than the window. */
-.welcome { max-width: calc(var(--chat-width) + 48px); margin: 0 auto; padding: 24px 24px 12vh; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: safe center; flex: 1; gap: 24px; overflow-y: auto; min-height: 0; scrollbar-gutter: stable both-edges; }
+.welcome { max-width: calc(var(--chat-width) + 48px); margin: 0 auto; padding: 24px 24px 10px; width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: safe center; flex: 1; gap: 24px; overflow-y: auto; min-height: 0; scrollbar-gutter: stable both-edges; }
 .home { width: 100%; display: grid; gap: 10px; }
 .home:empty { display: none; }
 .home-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 2px; }
@@ -913,6 +952,11 @@ html.chat-locked .composer { opacity: .6; }
 .home-pic img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .3s var(--ease-out); }
 .home-pic:hover img { transform: scale(1.04); }
 .home-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); }
+.welcome > .greeting { margin-top: auto; }   /* with the credit's auto margin: the spare height splits above and below, so the box sits mid-screen */
+.update-card { margin-top: 10px; padding: 12px 14px; border: 1px solid var(--accent); border-radius: var(--radius); background: var(--accent-soft); font-size: 13.5px; }
+.update-card .cfg-actions { justify-content: flex-start; margin-top: 8px; }
+.ctx-help { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0 2px; }
+.ctx-help small { flex: 1 1 100%; color: var(--muted); font-size: 12px; line-height: 1.4; }
 .greeting { display: flex; align-items: center; gap: 14px; font-family: var(--serif); font-size: clamp(30px, 4.2vw, 40px); font-weight: 400; letter-spacing: -.015em; color: var(--text); text-align: center; margin: 0; text-wrap: balance; }
 .greeting svg { width: 34px; height: 34px; color: var(--accent); flex-shrink: 0; }
 .greeting svg:has(use[href="#mark"]) { display: none; }   /* the Fx mark lives in the sidebar; themes with their own symbol keep theirs */
@@ -2945,7 +2989,10 @@ select.input { padding-right: 6px; height: 30px; font-size: 12.5px; flex: 0 0 au
 .badge.bump { animation: bump .45s var(--ease-spring); }
 .overlay:not(.hidden) { animation: fade-in .2s ease-out; }
 .overlay:not(.hidden) .modal { animation: modal-in .34s var(--ease-spring); }
-.modal-content.tab-in { animation: settle .28s var(--ease-out); }
+/* A short slide, never a fade from invisible: when the window isn't drawing frames (behind another window,
+   minimised) a fade stays at its first frame and the page reads as blank. */
+.modal-content.tab-in { animation: tab-slide .22s var(--ease-out); }
+@keyframes tab-slide { from { transform: translateY(6px); } }
 .panel { animation: panel-in .3s var(--ease-out); }
 .plan-step.active .plan-mark { animation: pulse-ring 1.6s ease-out infinite; }
 .welcome:not(.hidden) > * { animation: settle .6s var(--ease-out) backwards; }
@@ -3891,6 +3938,8 @@ html.voice-on .voice-btn { color: var(--accent); }
   background: var(--bg); color: var(--text); }
 .voice-stage[hidden] { display: none; }
 .vs-close { position: absolute; top: 14px; right: 14px; z-index: 1; }
+/* The desktop app draws the window's own buttons over the top-right corner: the close button sits below them. */
+:root.fx-desktop .voice-stage:not([data-dock="mini"]) .vs-close { top: 60px; right: 16px; }
 .vs-temp { position: absolute; top: 20px; left: 20px; font-size: 12px; color: var(--muted); }
 .vs-center { display: flex; flex-direction: column; align-items: center; justify-content: safe center; gap: 8px; width: min(760px, 100%); min-height: 0; overflow-y: auto; }
 .vs-orb-wrap { position: relative; width: min(70vmin, 620px, 57vh); aspect-ratio: 1; flex-shrink: 0; transition: width .3s var(--ease); }
@@ -4330,7 +4379,7 @@ html.voice-on .idle-screen { display: none !important; }
     <!-- Original mark: a core with an orbit and a satellite - "an assistant around your work". -->
     <!-- The FX Workspace mark (by Fuxion): an F leaning right whose lower stem hollows out into two hairlines, and an
          x whose rising stroke thins the same way - one gold gradient across both. -->
-    <linearGradient id="fx-gold" gradientUnits="userSpaceOnUse" x1="18" y1="10" x2="104" y2="94"><stop offset="0" stop-color="#fff2ad"/><stop offset=".35" stop-color="#f8c94a"/><stop offset=".7" stop-color="#e79c1e"/><stop offset="1" stop-color="#b9740c"/></linearGradient>
+    <linearGradient id="fx-gold" gradientUnits="userSpaceOnUse" x1="18" y1="10" x2="104" y2="94"><stop offset="0" style="stop-color:var(--mark-1)"/><stop offset=".35" style="stop-color:var(--mark-2)"/><stop offset=".7" style="stop-color:var(--mark-3)"/><stop offset="1" style="stop-color:var(--mark-4)"/></linearGradient>
     <symbol id="mark" viewBox="0 0 108 100"><g transform="skewX(-12) translate(16 0)" fill="url(#fx-gold)" fill-rule="evenodd" stroke="none"><path d="M20 14 H66 V28 H36 V42 H58 V54 H36 V90 H20 Z M28 46 C27.2 60 23 76 21.4 88.6 H34.6 C33 76 28.8 60 28 46 Z"/><path d="M60 40 H76 L109 90 H93 Z"/><path d="M108 40 H92 L76 64 L59 90 H60.6 L79 66 C86 56 98 46 108 40 Z"/></g></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24"><path class="ip-turn" d="M12 5v14M5 12h14"/></symbol>
     <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
@@ -5174,6 +5223,19 @@ function fallbackCopy(text, done) { const ta = document.createElement('textarea'
 /* ===========================================================================
    Appearance
    =========================================================================== */
+// The desktop app's window buttons (minimise / maximise / close) match the bar under them. Their colours come
+// from the theme's own values (--bg, --text) - which change the moment the theme does - never from what is on
+// screen: that is mid-fade right after a switch, and under an open Settings window it's the dark scrim.
+function syncTitleBar() {
+  if (!window.fxDesktop || !window.fxDesktop.setTitleBar) return;
+  const cs = getComputedStyle(document.documentElement);
+  let bg = cs.getPropertyValue('--bg').trim();
+  if (!/^(#[0-9a-f]{3,8}|rgba?\()/i.test(bg)) bg = getComputedStyle(document.body).backgroundColor;   // a theme whose --bg isn't a plain colour
+  const fg = cs.getPropertyValue('--text').trim() || '#ece9e2';
+  window.fxDesktop.setTitleBar(bg, fg, S.panelOpen ? 34 : 52);
+}
+window.addEventListener('resize', () => { clearTimeout(syncTitleBar.t); syncTitleBar.t = setTimeout(syncTitleBar, 150); });
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => syncTitleBar());
 function applyAppearance() {
   const s = S.settings, root = document.documentElement;
   const look = LOOKS.includes(s.look) ? s.look : 'studio';
@@ -5203,8 +5265,12 @@ function applyAppearance() {
   if (scale === 1) root.style.removeProperty('--text-scale'); else root.style.setProperty('--text-scale', String(scale));
   root.dataset.contrast = store.get('contrast', false) ? 'high' : 'normal';
   // A custom accent recolors Light/Dark only; the other themes are built around their own light.
-  if (classic && !secret && s.accent && /^#[0-9a-f]{6}$/i.test(s.accent)) { root.style.setProperty('--accent', s.accent); root.style.setProperty('--accent-soft', s.accent + '24'); }
-  else { root.style.removeProperty('--accent'); root.style.removeProperty('--accent-soft'); }
+  if (classic && !secret && s.accent && /^#[0-9a-f]{6}$/i.test(s.accent)) {
+    const [r, g, b] = [1, 3, 5].map(i => parseInt(s.accent.slice(i, i + 2), 16) / 255).map(v => v <= .04045 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4);
+    root.style.setProperty('--accent', s.accent); root.style.setProperty('--accent-soft', s.accent + '24');
+    root.style.setProperty('--accent-ink', .2126 * r + .7152 * g + .0722 * b > .35 ? '#1d1606' : '#ffffff');
+    root.dataset.accent = 'custom';
+  } else { ['--accent', '--accent-soft', '--accent-ink'].forEach(p => root.style.removeProperty(p)); delete root.dataset.accent; }
   const name = (s.user_name || '').trim();
   $('user-name').textContent = name || 'You';
   $('avatar').textContent = name ? name[0].toUpperCase() : '·';
@@ -5213,6 +5279,7 @@ function applyAppearance() {
   renderAgentControls();
   if (lookChanged) applyLayout();
   Ambient.sync();   // the theme may add or remove moving background bodies
+  syncTitleBar();                           // the theme's values are already the new ones
   Overlay.layout();                         // the Studio look's Overlay layout
   if (Overlay.active()) Overlay.paint();
   SecretFx.sync();                          // Judaism Mode's effects (off unless it's on)
@@ -5223,22 +5290,32 @@ function applyAppearance() {
    theme or the chosen accent (a custom accent can be very light or very dark).
    --accent-text, --warn-text and --danger-text are the theme's own colors,
    moved toward the text color only as far as that takes. */
+// Text colours fitted to 4.5:1 on this theme's grounds. All reads first, then all writes: a write between reads
+// made the browser restyle the whole page for each read (~265 ms a call). Results are kept per theme, so a theme
+// seen before costs nothing.
+const fittedColors = new Map();
 function fitTextColors() {
-  const root = document.documentElement;
-  ['--accent-text', '--warn-text', '--danger-text', '--ok-text'].forEach(v => root.style.removeProperty(v));
-  const probe = document.createElement('i');
-  probe.style.display = 'none'; document.body.appendChild(probe);
-  const rgb = v => { probe.style.color = `var(${v})`; const m = getComputedStyle(probe).color.match(/[\d.]+/g) || [0, 0, 0]; return m.slice(0, 3).map(Number); };
-  const lum = c => { const [r, g, b] = c.map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
-  const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
-  const grounds = ['--bg', '--surface', '--surface-2'].map(rgb), ink = rgb('--text');
-  for (const [src, out] of [['--accent', '--accent-text'], ['--warn', '--warn-text'], ['--danger', '--danger-text'], ['--ok', '--ok-text']]) {
-    const base = rgb(src);
-    let t = 0, c = base;
-    while (t < 1 && Math.min(...grounds.map(g => ratio(c, g))) < 4.55) { t = Math.min(1, t + 0.04); c = base.map((x, i) => Math.round(x + (ink[i] - x) * t)); }
-    root.style.setProperty(out, `rgb(${c.join(', ')})`);
+  const root = document.documentElement, d = root.dataset;
+  const key = [d.skin, d.theme, d.look, d.tone, d.secret, d.contrast, root.style.getPropertyValue('--accent')].join('|');
+  let out = fittedColors.get(key);
+  if (!out) {
+    const probe = document.createElement('i');
+    probe.style.display = 'none'; document.body.appendChild(probe);
+    const cs = getComputedStyle(probe);
+    const rgb = v => { probe.style.color = `var(${v})`; const m = cs.color.match(/[\d.]+/g) || [0, 0, 0]; return m.slice(0, 3).map(Number); };
+    const lum = c => { const [r, g, b] = c.map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+    const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
+    const grounds = ['--bg', '--surface', '--surface-2'].map(rgb), ink = rgb('--text');
+    out = [['--accent', '--accent-text'], ['--warn', '--warn-text'], ['--danger', '--danger-text'], ['--ok', '--ok-text']].map(([src, name]) => {
+      const base = rgb(src);
+      let t = 0, c = base;
+      while (t < 1 && Math.min(...grounds.map(g => ratio(c, g))) < 4.55) { t = Math.min(1, t + 0.04); c = base.map((x, i) => Math.round(x + (ink[i] - x) * t)); }
+      return [name, `rgb(${c.join(', ')})`];
+    });
+    probe.remove();
+    fittedColors.set(key, out);
   }
-  probe.remove();
+  for (const [name, value] of out) if (root.style.getPropertyValue(name) !== value) root.style.setProperty(name, value);
 }
 function updateGreeting() {
   const h = new Date().getHours();
@@ -5257,12 +5334,21 @@ async function loadSettings() {
   applyAppearance();
 }
 // extra: sent with the request but not a setting (e.g. which model a per-model choice is for).
+// What the look depends on: applyAppearance runs again only when one of these changed (it costs a full restyle).
+const LOOK_KEYS = ['appearance', 'color_mode', 'theme', 'look', 'accent', 'layout', 'chat_font', 'studio_layout', 'user_name',
+                   'terminal_phosphor', 'unlocked_themes', 'effort', 'effort_by_model', 'prompt_prep', 'prompt_prep_by_model', 'response_mode'];
+const lookKey = s => JSON.stringify(LOOK_KEYS.map(k => (s || {})[k]));
 async function saveSettings(partial, extra) {
+  const before = lookKey(S.settings);
   Object.assign(S.settings, partial);
-  applyAppearance();
+  if (lookKey(S.settings) !== before) applyAppearance();       // a theme switch already applied it, with its transition
   try {
     const data = await api('/api/settings', { ...partial, ...(extra || {}) });
-    if (data.settings) { S.settings = data.settings; store.set('settings', S.settings); applyAppearance(); }
+    if (data.settings) {
+      const mine = lookKey(S.settings);
+      S.settings = data.settings; store.set('settings', S.settings);
+      if (lookKey(S.settings) !== mine) applyAppearance();     // the server changed something that shows
+    }
   } catch (e) { toast(`Could not save: ${e.message || 'is the server running?'}`); }
 }
 
@@ -5307,6 +5393,7 @@ function togglePanel(force, remember = true) {
   // Opening the Workspace panel yourself closes the design preview, which had taken its place.
   if (S.panelOpen && remember && !$('design-panel').hidden && !liveLook()) DesignPanel.close();
   $('app').classList.toggle('panel-closed', !S.panelOpen);
+  syncTitleBar();
   $('panel-btn').setAttribute('aria-pressed', String(S.panelOpen));
   if (remember) store.set('panelOpen2.' + look(), S.panelOpen);
   if (S.panelOpen) { drawTelemetry(); followActivity(); }
@@ -11181,6 +11268,7 @@ async function completeTurn(data) {
   if (data.chat && data.chat.id) { adoptChat(data.chat); syncTranscript(data.chat); }
   if (data.temporary_ended) endTemporaryChat();          // the server no longer has it (restarted or closed)
   Voice.finish(data);                                    // voice mode: say the rest of the reply
+  if (data.client && data.client.action === 'close_chat') setTimeout(() => goHome(), 1200);   // "close this chat": back to Home after the reply shows
   SecretFx.state(null);
   SecretFx.pulse(data.status === 'success' ? 'done' : data.status === 'error' ? 'error' : 'open');
   S.run = 'idle'; S.stopRequested = false;
@@ -12395,6 +12483,27 @@ function openRobloxInfo() { if (S.roblox && S.roblox.connected) openPanel('conte
 // Older links (and server suggestions) say "model" or "resources"; both now live in Models.
 // "General" (just your name) was folded into Appearance.
 const TAB_ALIAS = { model: 'models', resources: 'models', general: 'appearance' };
+// The page's own errors go to data/logs/client.log (POST /api/client-log), so a problem seen only in the desktop
+// window can be read afterwards.
+function clientLog(kind, message, detail = '') {
+  try { fetch('/api/client-log', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ kind, message: String(message).slice(0, 1000), detail: String(detail).slice(0, 3000) }) }).catch(() => {}); } catch (e) { /* never in the way */ }
+}
+window.addEventListener('error', e => clientLog('error', e.message, (e.error && e.error.stack) || `${e.filename}:${e.lineno}`));
+window.addEventListener('unhandledrejection', e => clientLog('rejection', (e.reason && e.reason.message) || e.reason, e.reason && e.reason.stack));
+// Settings open but showing nothing: what the page looks like then.
+function checkSettingsShown(tab) {
+  setTimeout(() => {
+    const box = $('settings'), body = $('settings-body');
+    if (!box || box.classList.contains('hidden') || S.settingsTab !== tab) return;
+    const r = body.getBoundingClientRect(), cs = getComputedStyle(body), first = body.firstElementChild;
+    if (body.innerText.trim().length > 20 && r.height > 50 && +cs.opacity > 0.5) return;
+    clientLog('settings-blank', `tab ${tab}`, JSON.stringify({ len: body.innerHTML.length, text: body.innerText.length, rect: [r.x, r.y, r.width, r.height],
+      opacity: cs.opacity, visibility: cs.visibility, display: cs.display, anim: cs.animationName + '/' + cs.animationPlayState, cls: body.className,
+      scroll: [body.scrollTop, body.scrollHeight], first: first ? [first.tagName, getComputedStyle(first).opacity, JSON.stringify(first.getBoundingClientRect())] : null,
+      settings: Object.keys(S.settings || {}).length, motion: document.documentElement.dataset.motion, look: document.documentElement.dataset.look,
+      skin: document.documentElement.dataset.skin, win: [innerWidth, innerHeight], head: body.innerHTML.slice(0, 200) }));
+  }, 1800);
+}
 function openSettings(tab) {
   if ($('app').classList.contains('drawer')) toggleSidebar(false);
   $('settings').classList.remove('hidden'); settingsTab(tab || S.settingsTab || 'appearance');
@@ -12613,7 +12722,20 @@ const SETTINGS_PAGES = [
 ];
 const pageOf = tab => (SETTINGS_PAGES.find(([, parts]) => parts.some(([id]) => id === tab)) || SETTINGS_PAGES[0]);
 function settingsTab(tab) {
+  try { return settingsTabNow(tab); }
+  catch (e) { settingsFailed(TAB_ALIAS[tab] || tab, e); }
+}
+function settingsFailed(tab, e) {
+  console.error('Settings page failed', tab, e);
+  clientLog('settings-failed', `tab ${tab}: ${(e && e.message) || e}`, e && e.stack);
+  const body = $('settings-body');
+  if (!body || (S.settingsTab && S.settingsTab !== tab)) return;
+  body.innerHTML = `<div class="state-card danger" role="alert"><span class="sc-ico">${icon('i-alert', 'sm')}</span><div class="grow"><b>This page couldn't load</b>
+    <p>${esc(String((e && e.message) || e).slice(0, 200))}</p><button type="button" class="btn sm" onclick="settingsTab('${esc(tab)}')">Try again</button></div></div>`;
+}
+function settingsTabNow(tab) {
   tab = TAB_ALIAS[tab] || tab;
+  checkSettingsShown(tab);
   S.settingsTab = tab;
   const [page, parts] = pageOf(tab);
   document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === page));
@@ -12627,7 +12749,13 @@ function settingsTab(tab) {
               images: renderImages, about: renderAbout }[tab];
   const body = $('settings-body');
   if (body.dataset.tab !== tab) { body.dataset.tab = tab; body.classList.remove('tab-in'); void body.offsetWidth; body.classList.add('tab-in'); body.scrollTop = 0; }
-  if (r) r();
+  if (!r) return;
+  // Never a blank page: opened before the settings arrived (the app still starting), they're loaded first; a page
+  // that fails to draw says so, with a way to try again.
+  (async () => {
+    if (!S.settings || !Object.keys(S.settings).length) { body.innerHTML = SKELETON_TEXT; await loadSettings(); }
+    if (S.settingsTab === tab) await r();
+  })().catch(e => settingsFailed(tab, e));
 }
 // What is on each page, so searching "dark", "seed" or "proxy" finds the right one.
 const SETTINGS_WORDS = {
@@ -12647,14 +12775,32 @@ const SETTINGS_WORDS = {
   diagnostics: 'diagnostics speed problems slow health logs checks storage disk space drive size folder',
   about: 'about credits author contact email support suggestions license apache version',
 };
-const APP_VERSION = '1.0.0';
+let APP_VERSION = '';                        // the VERSION file, from /api/version (shared with the installer)
+api('/api/version').then(d => { APP_VERSION = d.version || ''; const el = $('about-version'); if (el) el.textContent = APP_VERSION; }).catch(() => {});
+// Settings > About > Check for updates: asks GitHub only when pressed. Updating = run the new installer over this
+// one - it keeps chats, settings, keys and models (installer/FXWorkspace.iss).
+async function checkUpdates(btn) {
+  const out = $('about-update');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Checking…';
+  try {
+    const d = await api('/api/version/check', {});
+    if (d.error) out.innerHTML = `<p class="set-note">${esc(d.error)}</p>`;
+    else if (d.newer) out.innerHTML = `<div class="update-card"><b>Version ${esc(d.latest)} is out</b> - you have ${esc(d.current)}.
+        <p class="set-note">Download the installer and run it: it updates the app and keeps your chats, settings, keys and models as they are. Close FX Workspace first, or the installer closes it for you.</p>
+        <div class="cfg-actions">${d.installer ? `<a class="btn sm primary" href="${esc(d.installer)}" target="_blank" rel="noopener">Download the installer</a>` : ''}<a class="btn sm" href="${esc(d.url)}" target="_blank" rel="noopener">What's new</a></div></div>`;
+    else out.innerHTML = `<p class="set-note">You're up to date (${esc(d.current)}).</p>`;
+  } catch (e) { out.innerHTML = `<p class="set-note">${esc(e.message)}</p>`; }
+  btn.disabled = false; btn.textContent = 'Check for updates';
+}
 // The wordmark: the gold Fx mark, then "workspace" (also the welcome card's title and the About page's).
 const wordmark = (cls = '') => `<span class="fx-wordmark ${cls}"><svg aria-hidden="true"><use href="#mark"/></svg><span>workspace</span></span>`;
 // Settings > About: who made it, how to reach them, and the licenses (NOTICE, THIRD_PARTY.md).
 function renderAbout() {
   $('settings-body').innerHTML = `<h3>About</h3>
     <div class="set-group about-card">${wordmark('lg')}
-      <p class="lead">A private, local-first AI assistant for Windows. Version ${APP_VERSION}.</p>
+      <p class="lead">A private, local-first AI assistant for Windows. Version <span id="about-version">${esc(APP_VERSION || '…')}</span>.</p>
+      ${rowHtml('Updates', 'Checks GitHub for a newer version - only when you press the button.', '<button type="button" class="btn sm" onclick="checkUpdates(this)">Check for updates</button>')}
+      <div id="about-update"></div>
       ${rowHtml('Created by', '<span class="fx-sign">Fuxion</span>', '<a class="btn sm" href="mailto:fuxion64@gmail.com">fuxion64@gmail.com</a>')}
       <p class="set-note">If you want to support the project or have suggestions, email me.</p>
       <button type="button" class="af-link" onclick="FirstRun.show(true)">Show the welcome again</button></div>
@@ -12741,7 +12887,7 @@ function renderAppearance() {
     </div>`;
   const sketch = id => ({ studio: '<i class="s"></i><i class="m"></i><i class="p"></i>', focus: '<i class="m"></i><i class="r"></i>', operator: '<i class="s"></i><i class="p"></i><i class="m"></i>', command: '<i class="s"></i><i class="m"></i><i class="p"></i>' })[id];
   const lookCard = id => `<button class="opt-card look-card ${cur === id ? 'on' : ''}" onclick="changeAppearance({look:'${id}'}).then(renderAppearance)" aria-pressed="${cur === id}"><div class="lk lk-${id}" aria-hidden="true">${sketch(id)}</div><b>${LOOK_INFO[id].name}</b><small>${LOOK_INFO[id].desc}</small><div class="for">Best for: ${LOOK_INFO[id].for}</div></button>`;
-  const accents = [['#c96442', 'Clay'], ['#3d3c38', 'Ink'], ['#5f8a6b', 'Sage'], ['#4a7fa8', 'Sky'], ['#8a5a9e', 'Plum'], ['#b7862a', 'Ochre']];
+  const accents = [['', 'Gold (default)', '#e5a830'], ['#cc6a46', 'Terracotta'], ['#3d3c38', 'Ink'], ['#5f8a6b', 'Sage'], ['#4a7fa8', 'Sky'], ['#8a5a9e', 'Plum']];
   const op = cur === 'operator' || cur === 'command', opName = LOOK_INFO[cur].name;
   const dis = on => on ? ' disabled' : '';
   $('settings-body').innerHTML = `<h3>Appearance</h3><p class="lead">Colors, light or dark, and how the workspace is laid out.</p>
@@ -12756,7 +12902,7 @@ function renderAppearance() {
     <div class="set-group"><div class="gt">Look</div><div class="look-cards">${LOOKS.map(lookCard).join('')}</div></div>
     ${overlayGroup}
     <div class="set-group">
-      ${rowHtml('App window', 'Its own window with no tabs. Any browser also opens http://127.0.0.1:8000.', `<button class="btn sm" onclick="api('/api/app-window/open', {}).then(d => toast(d.opened === 'app' ? 'Opened in its own window.' : 'No Edge or Chrome found - opened in your browser.')).catch(e => toast(e.message))">Open a window</button>`)}
+      ${window.fxDesktop ? '' : rowHtml('App window', 'Its own window with no tabs. Any browser also opens http://127.0.0.1:8000.', `<button class="btn sm" onclick="api('/api/app-window/open', {}).then(d => toast(d.opened === 'app' ? 'Opened in its own window.' : 'No Edge or Chrome found - opened in your browser.')).catch(e => toast(e.message))">Open a window</button>`)}
     </div>
     </details>
     <div class="set-group">
@@ -12776,8 +12922,8 @@ function renderAppearance() {
       ${rowHtml('Try it', 'Sends one now.', `<button class="btn sm" onclick="notifyTest()">Send a test</button>`)}
     </div>
     <div class="set-group"${classic && !secret ? '' : ' style="opacity:.45;pointer-events:none"'}><div class="gt">Accent <small>· ${classic && !secret ? 'the assistant\'s color: the mark, Send, selections, and the "working" glow' : `${secret ? 'This theme' : APPEARANCE_INFO[fam].name} uses its own colors; accent applies to Classic`}</small></div><div class="swatches">
-      ${accents.map(([c, n]) => `<button class="swatch ${s.accent === c ? 'on' : ''}" style="background:${c}" title="${n}" aria-label="${n}" onclick="saveSettings({accent:'${c}'}).then(renderAppearance)"></button>`).join('')}
-      <input type="color" value="${esc(s.accent || '#c96442')}" onchange="saveSettings({accent:this.value}).then(renderAppearance)" style="width:32px;height:32px;border:0;background:none;padding:0;cursor:pointer" title="Custom color" aria-label="Custom accent color">
+      ${accents.map(([c, n, show]) => `<button class="swatch ${(s.accent || '') === c ? 'on' : ''}" style="background:${show || c}" title="${n}" aria-label="${n}" onclick="saveSettings({accent:'${c}'}).then(renderAppearance)"></button>`).join('')}
+      <input type="color" value="${esc(s.accent || '#e5a830')}" onchange="saveSettings({accent:this.value}).then(renderAppearance)" style="width:32px;height:32px;border:0;background:none;padding:0;cursor:pointer" title="Custom color" aria-label="Custom accent color">
     </div></div>`;
 }
 // Models: one row per local model - favorite it, load it now, or open its
@@ -12818,6 +12964,33 @@ async function renderModelsTab() {
   S.modelConfigs = (cfg && cfg.models) || []; S.modelDefaults = (cfg && cfg.defaults) || {};
   if (S.settingsTab !== 'models') return;
   renderModelsCached();
+  // The context limits come after (the first read of every model's header is slow); the page is usable meanwhile.
+  if (!S.ctxInfo) api('/api/local-models/ctx-info').then(d => {
+    S.ctxInfo = (d && d.models) || {};
+    const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest('#settings-body input');
+    if (S.settingsTab === 'models' && !typing) renderModelsCached();
+  }).catch(() => {});
+}
+// Under the Context box: the most the model was trained for, and the most that fits in this GPU with its current
+// settings - each a button that fills the box (Save keeps it). From /api/local-models/ctx-info (S.ctxInfo).
+function ctxHelp(c, i) {
+  const x = (S.ctxInfo || {})[c.name] || {}, n = v => Number(v).toLocaleString();
+  if (!x.trained && x.fits == null) return '';
+  const fits = x.fits, max = x.trained, fitsAll = max && fits != null && fits >= max;
+  const btn = (v, label, title) => `<button type="button" class="btn sm ghost" title="${esc(title)}" onclick="setCtxBox(${i}, ${v})">${label}</button>`;
+  const parts = [];
+  if (max) parts.push(btn(max, `Max context (${n(max)})`, fitsAll ? 'The most it was trained for - and it fits on this GPU' : 'The most it was trained for - more than fits on this GPU: the rest spills into RAM and runs slower'));
+  if (fits && !fitsAll) parts.push(btn(fits, `Max that fits on GPU (${n(fits)})`, `The largest context that keeps it all on the GPU with a ${x.cache} cache`));
+  const note = fits === 0 ? (x.cpu_moe ? `Even with ${x.cpu_moe} layers' experts in RAM it needs more VRAM than is free, so some of it spills into RAM at any context - a bigger context only adds to that.` : 'Its weights alone are more than this GPU has free, so part of it always runs from RAM.')
+    : fitsAll ? `Its full ${n(max)} tokens fit on this GPU.`
+    : fits ? `Trained for ${max ? n(max) : '?'} tokens · about ${n(fits)} fit on this GPU (${x.cache} cache${c.ctx_size && c.ctx_size > fits ? ` - the ${n(c.ctx_size)} set now spills into RAM` : ''}).`
+    : max ? `Trained for ${n(max)} tokens.` : '';
+  return `<div class="ctx-help"><small>${note}</small>${parts.join('')}</div>`;
+}
+function setCtxBox(i, v) {
+  const el = $(`cfg-ctx-${i}`); if (!el) return;
+  el.value = v; el.focus();
+  toast(`Context set to ${Number(v).toLocaleString()} - press Save to keep it.`);
 }
 function renderModelsCached() {
   const s = S.settings, d = S.modelDefaults || {};
@@ -12835,7 +13008,7 @@ function renderModelsCached() {
         <div class="field"><label for="cfg-ctx-${i}">Context</label><input class="input" type="number" min="512" step="512" id="cfg-ctx-${i}" value="${eff(c.ctx_size, d.ctx_size)}"></div>
         <div class="field"><label for="cfg-batch-${i}">Batch</label><input class="input" type="number" min="16" id="cfg-batch-${i}" value="${eff(c.batch_size, d.batch_size)}"></div>
         <div class="field"><label for="cfg-threads-${i}">CPU threads</label><input class="input" type="number" min="1" id="cfg-threads-${i}" value="${eff(c.threads, d.threads)}"></div>
-      </div><div class="cfg-actions"><button class="btn sm" ${S.bench.running ? 'disabled title="A benchmark is running"' : ''} onclick="saveModelConfig(${i}, true)">Save and load</button><button class="btn sm primary" onclick="saveModelConfig(${i}, false)">Save</button></div></div>`
+      </div>${ctxHelp(c, i)}<div class="cfg-actions"><button class="btn sm" ${S.bench.running ? 'disabled title="A benchmark is running"' : ''} onclick="saveModelConfig(${i}, true)">Save and load</button><button class="btn sm primary" onclick="saveModelConfig(${i}, false)">Save</button></div></div>`
       : `<div class="model-cfg empty-note">Not in models.ini, so it loads with llama-server's defaults.</div>`;
     const br = (S.bench.results || {})[m.id];
     const missing = c && c.file_found === false;          // models.ini points at a file that isn't on disk
@@ -16822,7 +16995,7 @@ function chatRow(c) {
   const sub = [fmtAgo(c.updated), c.turns ? `${c.turns} message${c.turns === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
   // Drag it onto a project to move it there; right-click (or …) for the rest.
   return `<div class="sb-row${active ? ' active' : ''}${c.pinned ? ' pinned' : ''}" role="listitem" draggable="true" data-chat="${esc(c.id)}" oncontextmenu="chatMenu(event,'${jsArg(c.id)}')" ondragstart="sbDrag(event,'${jsArg(c.id)}')">
-    <button class="sb-row-main" onclick="openChat('${jsArg(c.id)}')" ${active ? 'aria-current="true"' : ''} title="${esc(c.title)}"><span class="sb-row-title">${c.pinned ? icon('i-pin', 'xs pin-mark') : ''}${esc(c.title)}</span><small>${esc(c.snippet || sub)}</small></button>
+    <button class="sb-row-main" onclick="openChat('${jsArg(c.id)}')" ${active ? 'aria-current="true"' : ''} title="${esc(c.title)}&#10;${esc(sub)}"><span class="sb-row-title">${c.pinned ? icon('i-pin', 'xs pin-mark') : ''}${esc(c.title)}</span>${c.snippet ? `<small>${esc(c.snippet)}</small>` : ''}</button>
     <span class="sb-row-acts"><button class="sb-row-act" onclick="renameChat('${jsArg(c.id)}','${jsArg(c.title)}')" aria-label="Rename ${esc(c.title)}" title="Rename">${icon('i-edit', 'xs')}</button><button class="sb-row-act" onclick="chatMenu(event,'${jsArg(c.id)}')" aria-label="More for ${esc(c.title)}" title="Pin, move, archive, delete" aria-haspopup="menu">${icon('i-dots', 'xs')}</button></span>
   </div>`;
 }

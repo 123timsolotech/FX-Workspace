@@ -12,9 +12,9 @@ tokenizers>=0.21,<1
 jinja2>=3.1,<4
 aiohttp>=3.11,<4
 python-dotenv>=1,<2
-pywinauto>=0.6.9,<1
-pywin32>=308
-comtypes>=1.4,<2
+pywinauto>=0.6.9,<1; sys_platform == "win32"
+pywin32>=308; sys_platform == "win32"
+comtypes>=1.4,<2; sys_platform == "win32"
 psutil>=6,<8
 sherpa-onnx==1.13.8   # voice.py: Kokoro (natural voice), live captions, Parakeet (accurate listener) - on the CPU
 phonikud==0.4.1

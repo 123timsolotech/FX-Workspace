@@ -379,7 +379,8 @@ class AwarenessEngine:
                            kind=win_signals.app_kind(exe), title=title, idle=idle, hwnd=fg.get("hwnd"))
 
     def _is_self(self, obs: Observation) -> bool:
-        return any(h in obs.title.lower() for h in SELF_TITLE_HINTS)
+        # The desktop app's own exe (desktop/, Electron) is always this app, whatever its page title says.
+        return (obs.exe or "").lower() in ("fx workspace.exe", "fx-workspace") or any(h in obs.title.lower() for h in SELF_TITLE_HINTS)
 
     def _update_timeline(self, obs: Observation):
         now = obs.t
