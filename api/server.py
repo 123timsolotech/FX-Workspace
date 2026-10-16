@@ -3030,7 +3030,9 @@ def labs_datasets():
 @app.post("/api/labs/datasets")
 def labs_add_dataset(body: LabsDatasetBody):
     fn = {"text": lambda: labs.add_text(body.name, body.text), "folder": lambda: labs.add_folder(body.name, body.path),
-          "sample_text": labs.add_sample_text, "sample_shapes": labs.add_sample_shapes}.get(body.kind)
+          "chat": lambda: labs.add_chat(body.name, body.text),
+          "sample_text": labs.add_sample_text, "sample_shapes": labs.add_sample_shapes,
+          "sample_chat": labs.add_sample_chat}.get(body.kind)
     if not fn:
         return {"ok": False, "message": "Unknown kind of dataset."}
 
@@ -3083,9 +3085,117 @@ def labs_delete_run(rid: str):
     return _labs(lambda: labs.delete_run(rid), f"Labs: run {rid} moved to the Labs trash.")
 
 
+class LabsTraceBody(BaseModel):
+    prompt: str = ""
+    picture: str = ""
+
+
+@app.post("/api/labs/runs/{rid}/trace")
+def labs_trace(rid: str, body: LabsTraceBody):
+    """One real pass through the checkpoint - what each layer did with this input."""
+    return _labs(lambda: labs.trace(rid, body.prompt, body.picture))
+
+
 @app.post("/api/labs/runs/{rid}/try")
 def labs_try(rid: str, body: LabsTryBody):
     return _labs(lambda: labs.try_it(rid, body.prompt, body.length, body.temperature))
+
+
+class LabsModelBody(BaseModel):
+    template: str
+    name: str = ""
+    dataset: str | None = None
+    size: str | None = None
+
+
+class LabsDraftEdit(BaseModel):
+    name: str | None = None
+    dataset: str | None = None
+    size: str | None = None
+    steps: int | None = None
+    settings: dict | None = None
+
+
+@app.get("/api/labs/models")
+def labs_models():
+    """Every model with its versions (runs) - Labs' main list."""
+    return {"models": labs.models(), "running": labs.status()["running"]}
+
+
+@app.post("/api/labs/models")
+def labs_new_model(body: LabsModelBody):
+    return _labs(lambda: {"run": labs.new_model(body.template, body.name, body.dataset, body.size)}, "Labs: new model.")
+
+
+@app.post("/api/labs/models/{mid}/delete")
+def labs_delete_model(mid: str):
+    return _labs(lambda: {"count": labs.delete_model(mid)}, f"Labs: model {mid} moved to the Labs trash.")
+
+
+@app.post("/api/labs/runs/{rid}/draft")
+def labs_edit_draft(rid: str, body: LabsDraftEdit):
+    """The Data and Design steps: change a version that hasn't trained yet (checked by labs.validate_settings)."""
+    return _labs(lambda: {"run": labs.update_draft(rid, body.model_dump(exclude_none=True))})
+
+
+@app.post("/api/labs/runs/{rid}/start")
+def labs_start(rid: str):
+    return _labs(lambda: {"run": labs.start(rid)}, f"Labs: started run {rid}.")
+
+
+@app.post("/api/labs/runs/{rid}/version")
+def labs_new_version(rid: str):
+    """The next version of a model, continuing from this one's weights."""
+    return _labs(lambda: {"run": labs.new_version(rid)}, f"Labs: new version from {rid}.")
+
+
+@app.post("/api/labs/build/cancel")
+def labs_build_cancel():
+    return {"ok": True, "build": labs.build_cancel()}
+
+
+@app.post("/api/labs/runs/{rid}/port")
+def labs_port(rid: str):
+    """Finalize a fine-tune into a Workspace model (merge, GGUF, quantize, models.ini)."""
+    return _labs(lambda: {"port": labs.port(rid)}, f"Labs: porting run {rid} to Workspace.")
+
+
+class LabsBuildBody(BaseModel):
+    name: str = ""
+    docs: list = []                   # [{"name", "data": base64}]
+    per_section: int = 4
+    model: str | None = None
+
+
+class LabsDraftBody(BaseModel):
+    name: str = ""
+    pairs: list = []
+
+
+@app.post("/api/labs/build")
+def labs_build(body: LabsBuildBody):
+    return _labs(lambda: {"build": labs.build_start(body.name, body.docs, body.per_section, body.model)},
+                 f"Labs: building training examples from {len(body.docs)} document(s).")
+
+
+@app.get("/api/labs/drafts")
+def labs_drafts():
+    return {"drafts": labs.drafts(), "build": labs.build_status()}
+
+
+@app.get("/api/labs/drafts/{bid}")
+def labs_draft(bid: str):
+    return _labs(lambda: {"draft": labs.draft(bid)})
+
+
+@app.post("/api/labs/drafts/{bid}/save")
+def labs_draft_save(bid: str, body: LabsDraftBody):
+    return _labs(lambda: {"dataset": labs.draft_save(bid, body.name, body.pairs)}, "Labs: saved reviewed examples as a dataset.")
+
+
+@app.post("/api/labs/drafts/{bid}/delete")
+def labs_draft_delete(bid: str):
+    return _labs(lambda: labs.draft_delete(bid))
 
 
 @app.get("/api/labs/runs/{rid}/samples/{name}")

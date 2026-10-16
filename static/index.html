@@ -186,6 +186,9 @@ a { color: var(--accent-text); }
 :root { --font-wordmark: 'Space Grotesk', 'Bahnschrift', 'Segoe UI Variable Display', 'Segoe UI', sans-serif; }
 .brand { position: relative; display: flex; align-items: center; gap: 4px; min-width: 0; padding: 2px 6px 2px 0; border: 0; border-radius: 8px; background: none; color: inherit; cursor: pointer; text-align: left; }
 .brand-mark { width: 30px; height: 28px; flex-shrink: 0; color: var(--accent); overflow: visible; }
+.beta-tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; line-height: 1.5; vertical-align: 2px; color: var(--accent-text, var(--accent)); background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); font-family: var(--sans, inherit); }
+.brand-beta { margin-left: 4px; align-self: center; }
+:root:not([data-app="labs"]) .brand-beta, .app.sidebar-collapsed .brand-beta { display: none; }
 .brand-name { font-family: var(--font-wordmark); font-weight: 300; font-size: 19px; letter-spacing: .04em; white-space: nowrap; }
 .brand-by { position: absolute; left: 34px; top: calc(100% + 4px); z-index: 30; padding: 3px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 11.5px; white-space: nowrap; box-shadow: var(--shadow); opacity: 0; transform: translateY(-3px); pointer-events: none; transition: opacity .16s ease, transform .16s ease; }
 .brand:is(:hover, :focus-visible) .brand-by { opacity: 1; transform: none; }
@@ -366,126 +369,371 @@ html.temp-chat #chat-title { color: var(--incog); }
 .brand:hover .brand-chev { color: var(--text); }
 body:has(.mode-pop) .brand-by { opacity: 0 !important; }
 body:has(.mode-pop) .brand-chev { transform: rotate(180deg); }
-.mode-pop { min-width: 290px; }
+.mode-pop { min-width: 300px; }
+.mode-item { align-items: center; }
 .mode-item.on { background: var(--accent-soft); }
 .mode-item > .icon:last-child { margin-left: auto; color: var(--accent-text, var(--accent)); }
+.mode-item .ic-anim { color: var(--accent-text, var(--accent)); }
+/* the two mode icons: still by default, moving while the menu shows them */
+.ic-anim { width: 24px; height: 24px; overflow: visible; flex: none; }
+.ic-anim * { animation-play-state: paused; }
+.mode-pop .ic-anim * { animation-play-state: running; }
+.fl-b, .fl-wave, .fl-bob, .fl-shake, .fl-puff, .tl { transform-box: fill-box; transform-origin: center; }
+.fl-shake { animation: fl-shake .28s linear infinite; }
+.fl-wave { animation: fl-wave 1.1s linear infinite; }
+.fl-bob { animation: fl-bob .5s ease-in-out infinite alternate; }
+.fl-b { animation: fl-rise var(--d) ease-in infinite; animation-delay: var(--t); fill: currentColor; fill-opacity: .25; }
+.fl-puff { animation: fl-puff 1.3s ease-out infinite; opacity: 0; }
+@keyframes fl-shake { 0%, 100% { transform: translate(0, 0) } 20% { transform: translate(.5px, -.4px) } 40% { transform: translate(-.5px, .3px) } 60% { transform: translate(.4px, .4px) } 80% { transform: translate(-.4px, -.3px) } }
+@keyframes fl-wave { from { transform: translateX(-9px) } to { transform: translateX(0) } }
+@keyframes fl-bob { from { transform: translateY(0) } to { transform: translateY(-.45px) } }
+@keyframes fl-rise { 0% { transform: translate(0, 0) scale(.6); opacity: 0 } 15% { opacity: 1 } 80% { opacity: 1 } 100% { transform: translate(var(--dx), var(--h)) scale(1.15); opacity: 0 } }
+@keyframes fl-puff { 0% { transform: translateY(1px); opacity: 0 } 30% { opacity: .9 } 100% { transform: translateY(-2px); opacity: 0 } }
+.tl { fill: currentColor; fill-opacity: 0; animation: tl-walk 2.4s ease-in-out infinite; animation-delay: var(--t); }
+@keyframes tl-walk { 0%, 30%, 100% { fill-opacity: 0; transform: scale(1) } 8%, 22% { fill-opacity: .35; transform: scale(.86) } }
+@media (prefers-reduced-motion: reduce) { .ic-anim * { animation: none !important; } }
+:root:is([data-motion="reduced"], [data-motion="off"]) .ic-anim * { animation: none !important; }
+
+/* sidebar in Labs */
 :root[data-app="labs"] .sb-ws { display: none !important; }
 :root:not([data-app="labs"]) :is(.sb-labs, .sb-lab-live) { display: none !important; }
-.sb-lab-live { padding: 4px 8px 0; }
-.sb-labs .lab-dot { margin-left: auto; }
 :root[data-app="labs"] .sb-pc { margin-top: auto; }
-.lab-runs.empty { grid-template-columns: 1fr; }
-.lab-runs.empty .lab-list { position: static; max-height: none; }
-.lab-runs.empty .lab-detail { display: none; }
-.sb-lab-card { width: 100%; display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
-.sb-lab-card b { font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sb-lab-card small { color: var(--muted); font-size: 11.5px; }
-.sb-lab-card .bar { margin-top: 4px; }
-.sb-lab-card .bar > i, .lab-prog .bar > i, .lab-barrow .bar > i { background: var(--accent); opacity: 1; }
-/* Labs pages */
-.lab { max-width: 1240px; margin: 0 auto; padding: 0 20px 40px; display: flex; flex-direction: column; gap: 14px; }
+.sb-labs .lab-dot-w { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+.sb-lab-live { padding: 4px 8px 0; }
+.sb-lab-card { width: 100%; display: flex; flex-direction: column; gap: 4px; text-align: left; padding: 10px 12px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; }
+.sb-lab-card b { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-lab-card small { color: var(--muted); font-size: 12px; }
+.lab .bar > i, .sb-lab-card .bar > i { background: var(--accent); opacity: 1; }
+
+/* the page (inside the app's .place-wrap) */
+.lab { max-width: 1120px; }
 .lab .grow { flex: 1; min-width: 0; }
-.lab-banner { margin: 0; }
-.lab-card { border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 12px; }
-#lab-page > .lab-card + .lab-card { margin-top: 14px; }
-.lab-h { display: flex; align-items: center; gap: 7px; margin: 0; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-.lab-h3 { margin: 6px 0 0; font-size: 12.5px; font-weight: 600; color: var(--text-2); }
-.lab-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.lab-facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; font-size: 13px; }
-.lab-facts dt { color: var(--muted); }
-.lab-facts dd { margin: 0; }
-.lab-setup { display: flex; gap: 12px; align-items: flex-start; }
-.lab-log { margin: 8px 0 0; max-height: 160px; overflow: auto; font-size: 11.5px; background: var(--surface-2); border-radius: 8px; padding: 8px 10px; white-space: pre-wrap; color: var(--text-2); }
-.lab-add { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
-.lab-add-b { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px; border-radius: 10px; border: 1px dashed var(--border-strong); background: var(--surface-2); color: var(--text); cursor: pointer; text-align: left; }
-.lab-add-b:hover { border-color: var(--accent); }
-.lab-add-b .icon { color: var(--accent-text, var(--accent)); }
-.lab-add-b small { color: var(--muted); font-size: 11.5px; }
-.lab-folder { display: flex; gap: 8px; flex-wrap: wrap; }
-.lab-folder .input { height: 34px; }
-.lab-ds-list { display: flex; flex-direction: column; gap: 6px; }
-.lab-ds { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px; background: var(--surface-2); }
-.lab-ds > .icon { color: var(--muted); }
-.lab-ds b { display: block; font-size: 13.5px; }
-.lab-ds small { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.lab-tpls { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
-.lab-tpl { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; text-align: left; }
-.lab-tpl.on { border-color: var(--accent); background: var(--accent-soft); }
-.lab-tpl .icon { color: var(--accent-text, var(--accent)); }
-.lab-tpl small { color: var(--muted); font-size: 12px; }
-.lab-set { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 9px 0; border-bottom: 1px dashed var(--border); flex-wrap: wrap; }
-.lab-set-l { display: flex; flex-direction: column; min-width: 180px; }
-.lab-set-l b { font-size: 13px; font-weight: 600; }
-.lab-set-l small { color: var(--muted); font-size: 11.5px; }
-.lab-set-c { display: flex; align-items: center; gap: 8px; }
-.lab-set-c select.input, .lab-set-c input.input { height: 32px; width: auto; min-width: 200px; }
-.lab-set-c .lab-num { min-width: 0; width: 110px; }
-.lab-adv summary { cursor: pointer; color: var(--muted); font-size: 12.5px; padding: 6px 0; }
-.lab-go { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding-top: 4px; font-size: 12.5px; }
-.lab-runs { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 16px; align-items: start; }
-.lab-list { position: sticky; top: 12px; display: flex; flex-direction: column; gap: 2px; max-height: calc(100vh - 160px); overflow-y: auto; border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); background: var(--surface); padding: 8px; }
-.lab-run { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 9px 10px; border-radius: 10px; border: 0; background: none; color: var(--text); cursor: pointer; }
-.lab-run:hover { background: var(--surface-2); }
-.lab-run.on { background: var(--accent-soft); }
-.lab-run b { display: block; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lab-run small { display: block; color: var(--muted); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.lab-state { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--faint); }
-.lab-state.s-running { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); animation: halo-breathe 1.4s ease-in-out infinite; }
-.lab-state.s-done { background: var(--ok); }
-.lab-state.s-failed { background: var(--danger); }
-.lab-empty { text-align: center; padding: 26px 10px; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 8px; }
-.lab-empty b { color: var(--text); }
-.lab-empty p { margin: 0; font-size: 12.5px; }
-.lab-detail { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.lab-d-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.lab-title { flex: 1; min-width: 200px; font: inherit; font-size: 20px; font-weight: 650; color: var(--text); background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 4px 8px; margin-left: -8px; }
+.lab h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.lab h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: var(--text-2); }
+.lab-sub { margin: 0; font-size: 13px; color: var(--text-2); line-height: 1.5; }
+#lab-step, #lab-design-top, .lab-stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+#lab-step > :empty, #lab-design-top:empty { display: none; }
+.lab-card { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.lab-card-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; min-height: 28px; }
+.lab-card-head .muted { font-size: 13px; }
+.lab-pill { display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--border); font-size: 13px; color: var(--text-2); }
+.lab-gate { display: flex; align-items: center; gap: 16px; padding: 16px; border-radius: var(--radius); border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border)); background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+.lab-gate > .icon { width: 24px; height: 24px; color: var(--accent-text, var(--accent)); }
+.lab-gate b { font-size: 14px; }
+.lab-gate p { margin: 2px 0 0; font-size: 13px; color: var(--text-2); }
+.lab-split { display: grid; grid-template-columns: 236px minmax(0, 1fr); gap: 16px; align-items: start; }
+.lab-split.solo { grid-template-columns: minmax(0, 1fr); }
+.lab-split.solo .lab-list { display: none; }
+.lab-list { display: flex; flex-direction: column; gap: 2px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); padding: 8px; position: sticky; top: 12px; max-height: calc(100vh - 140px); overflow-y: auto; }
+.lab-list:empty { display: none; }
+.lab-list-head { display: flex; align-items: center; gap: 8px; padding: 8px 8px 4px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+.lab-list-head b { font-weight: 600; }
+.lab-list-head .spinner { margin-left: auto; }
+.lab-list-empty { padding: 4px 8px; margin: 0; font-size: 13px; }
+.lab-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 8px; border-radius: 8px; border: 0; background: none; color: var(--text); cursor: pointer; }
+.lab-row:hover { background: var(--hover); }
+.lab-row.on { background: var(--accent-soft); }
+.lab-row-ic { width: 32px; height: 32px; flex: none; border-radius: 8px; display: grid; place-items: center; background: var(--surface-2); color: var(--accent-text, var(--accent)); }
+.lab-row b { display: block; font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lab-sdot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; background: var(--faint); }
+.lab-sdot.s-running { background: var(--accent); } .lab-sdot.s-done { background: var(--ok); } .lab-sdot.s-failed { background: var(--danger); } .lab-sdot.s-draft { background: var(--info); }
+.lab-row small { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lab-chip { flex: none; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--surface-3); color: var(--text-2); }
+.lab-chip.s-running { background: var(--accent-soft); color: var(--accent-text, var(--accent)); }
+.lab-chip.s-done { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok-text, var(--ok)); }
+.lab-chip.s-failed { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger-text, var(--danger)); }
+.lab-chip.s-draft { background: color-mix(in srgb, var(--info) 14%, transparent); color: var(--text-2); }
+.lab-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.lab-build-mini { display: flex; flex-direction: column; gap: 6px; padding: 4px 8px 8px; }
+.lab-build-mini small { font-size: 12px; color: var(--text-2); }
+.lab-build-mini .btn { align-self: flex-start; }
+/* new model */
+.lab-jobs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.lab-job { display: flex; flex-direction: column; gap: 4px; padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-2); }
+.lab-job > .icon { width: 24px; height: 24px; color: var(--accent-text, var(--accent)); margin-bottom: 4px; }
+.lab-job b { font-size: 15px; }
+.lab-job p { margin: 4px 0 8px; font-size: 13px; color: var(--text-2); line-height: 1.5; flex: 1; }
+.lab-job-acts { display: flex; flex-direction: column; gap: 8px; }
+.lab-job-acts .btn { width: 100%; }
+/* model header + steps */
+.lab-mhead { display: flex; align-items: flex-start; gap: 12px; }
+.lab-mhead-l { flex: 1; min-width: 0; display: flex; align-items: flex-start; gap: 12px; }
+.lab-mhead-l > .icon { width: 24px; height: 24px; margin-top: 8px; color: var(--accent-text, var(--accent)); flex: none; }
+.lab-title { width: 100%; font: inherit; font-family: var(--serif); font-size: 24px; color: var(--text); background: transparent; border: 1px solid transparent; border-radius: 8px; padding: 2px 8px; margin-left: -8px; }
 .lab-title:hover { border-color: var(--border); }
-.lab-title:focus { outline: none; border-color: var(--accent); background: var(--surface-2); }
-.lab-d-acts { display: flex; gap: 6px; align-items: center; }
-.lab-prog { display: flex; align-items: center; gap: 12px; font-size: 12.5px; flex-wrap: wrap; }
-.lab-prog .bar { min-width: 140px; height: 6px; }
-.lab-pill { padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--surface-3); color: var(--text-2); }
-.lab-pill.s-running { background: var(--accent-soft); color: var(--accent-text, var(--accent)); }
-.lab-pill.s-done { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok-text, var(--ok)); }
-.lab-pill.s-failed { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger-text, var(--danger)); }
-.lab-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
-.lab-tile { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
-.lab-tile small { color: var(--muted); font-size: 11.5px; }
-.lab-tile b { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
-.lab-chart-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.lab-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--text-2); }
+.lab-title:focus { outline: none; border-color: var(--accent); background: var(--surface); }
+.lab-meta-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; color: var(--muted); margin-top: 2px; }
+.lab-meta-line > span:not(.lab-chip) + span:not(.lab-chip)::before, .lab-meta-line > span:first-child + select::before { content: ''; }
+.lab-ver { height: 26px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text-2); font-size: 12.5px; padding: 0 6px; }
+.lab-steps { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--border); }
+.lab-step { display: flex; align-items: center; justify-content: center; gap: 8px; height: 40px; border-radius: 8px; border: 0; background: none; color: var(--muted); font-size: 13.5px; font-weight: 500; cursor: pointer; }
+.lab-step:hover { color: var(--text); background: var(--hover); }
+.lab-step.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.lab-step.later { opacity: .6; }
+.lab-step-n { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; border: 1px solid var(--border-strong); }
+.lab-step.done .lab-step-n { border-color: transparent; background: color-mix(in srgb, var(--ok) 22%, transparent); color: var(--ok-text, var(--ok)); }
+.lab-step.on .lab-step-n { border-color: var(--accent); color: var(--accent-text, var(--accent)); }
+.lab-step.now .lab-step-n { border-color: transparent; }
+.lab-foot { display: flex; align-items: center; gap: 12px; padding-top: 4px; }
+.lab-why { font-size: 13px; color: var(--muted); text-align: right; }
+.lab-note { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: var(--radius); background: var(--surface-2); border: 1px solid var(--border); font-size: 13px; color: var(--text-2); }
+.lab-note > .icon { flex: none; color: var(--muted); }
+.lab-note span { flex: 1; }
+.lab-warn { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--warn-text, var(--warn)); line-height: 1.45; }
+.lab-warn .icon { flex: none; margin-top: 2px; }
+.lab-row-acts { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lab-two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+.lab-picks { display: flex; flex-direction: column; gap: 8px; }
+.lab-pick { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; }
+.lab-pick:hover { border-color: var(--border-strong); }
+.lab-pick.on { border-color: var(--accent); background: var(--accent-soft); }
+.lab-pick input { accent-color: var(--accent); }
+.lab-pick b { display: block; font-size: 13.5px; }
+.lab-pick small { display: block; font-size: 12.5px; color: var(--muted); }
+.lab-empty-s { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 24px 8px; color: var(--muted); }
+.lab-empty-s .icon { width: 24px; height: 24px; }
+.lab-empty-s b { color: var(--text); }
+.lab-empty-s p { margin: 0; font-size: 13px; max-width: 40ch; }
+.lab-facts { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; font-size: 13.5px; }
+.lab-facts dt { color: var(--muted); }
+.lab-facts dd { margin: 0; color: var(--text); font-variant-numeric: tabular-nums; }
+.lab-quote { padding: 12px; border-radius: 8px; background: var(--surface-2); font-size: 13px; color: var(--text-2); }
+.lab-quote small { display: block; font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+.lab-path { margin: 0; font-size: 12px; word-break: break-all; }
+/* design */
+.lab-sizes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+#lab-sizes-row { display: flex; flex-direction: column; gap: 8px; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+.lab-sizes-l { display: flex; gap: 8px; align-items: baseline; font-size: 13px; }
+.lab-sizes-l b { font-weight: 600; }
+#lab-sizes-row .lab-size { padding: 8px 12px; }
+.lab-size { display: flex; flex-direction: column; gap: 2px; padding: 12px; text-align: left; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; }
+.lab-size:hover:not(:disabled) { border-color: var(--border-strong); }
+.lab-size.on { border-color: var(--accent); background: var(--accent-soft); }
+.lab-size:disabled { cursor: default; opacity: .7; }
+.lab-size.on:disabled { opacity: 1; }
+.lab-size b { font-size: 13.5px; }
+.lab-size small { font-size: 12.5px; color: var(--muted); }
+.lab-switch { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; }
+.lab-switch input { accent-color: var(--accent); }
+.lab-net-wrap { display: flex; flex-direction: column; gap: 16px; }
+.lab-net { min-width: 0; overflow-x: auto; }
+.lab-net-side { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px 24px; align-items: start; padding-top: 16px; border-top: 1px solid var(--border); }
+.lab-net-side > :is(h3, .lab-part, .lab-more, .lab-tgs) { grid-column: 1 / -1; }
+.lab-net-side > h3 { margin: 0; }
+.lab-net-side .lab-tgs { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.lab-more-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px 24px; }
+.lab-ctl { display: flex; flex-direction: column; gap: 6px; }
+.lab-ctl > label, .lab-ctl > span { font-size: 13px; font-weight: 500; color: var(--text); }
+.lab-ctl small { font-size: 12.5px; color: var(--muted); line-height: 1.4; }
+.lab-ctl .seg { align-self: flex-start; flex-wrap: wrap; }
+.lab-ctl .input { flex: none; width: 100%; max-width: 360px; }
+.lab-stepper { display: inline-flex; align-items: center; align-self: flex-start; border: 1px solid var(--border-strong); border-radius: 9px; overflow: hidden; }
+.lab-stepper button { width: 34px; height: 32px; border: 0; background: var(--surface-2); color: var(--text); font-size: 16px; cursor: pointer; }
+.lab-stepper button:disabled { color: var(--faint); cursor: default; }
+.lab-stepper span { min-width: 40px; text-align: center; font-size: 13.5px; }
+.lab-tgs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.lab-tg { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; text-align: left; border-radius: 8px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); cursor: pointer; }
+.lab-tg b { font-size: 13px; color: var(--text-2); }
+.lab-tg small { font-size: 11.5px; }
+.lab-tg.on { border-color: color-mix(in srgb, var(--viz-2) 70%, var(--border)); background: color-mix(in srgb, var(--viz-2) 12%, var(--surface)); }
+.lab-tg.on b { color: var(--text); }
+.lab-tg:disabled { cursor: default; }
+.lab-part { padding: 12px; border-radius: 8px; background: var(--surface-2); display: flex; flex-direction: column; gap: 4px; }
+.lab-part b { font-size: 13.5px; }
+.lab-part small { font-size: 12.5px; color: var(--text-2); line-height: 1.45; }
+.lab-more summary { cursor: pointer; font-size: 13px; color: var(--text-2); padding: 4px 0; }
+.lab-more[open] summary { margin-bottom: 8px; }
+.lab-more .lab-ctl + .lab-ctl { margin-top: 12px; }
+.lab-plan { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+.lab-plan-c { display: flex; flex-direction: column; gap: 2px; padding: 12px; border-radius: 8px; background: var(--surface-2); min-width: 0; }
+.lab-plan-c small { font-size: 12px; color: var(--muted); }
+.lab-plan-c b { font-size: 20px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.lab-plan-c.warn b { color: var(--warn-text, var(--warn)); }
+.lab-plan-c.bad b { color: var(--danger-text, var(--danger)); }
+.lab-plan-c .input { flex: none; width: 100%; height: 30px; margin: 2px 0; }
+/* the network drawing */
+.nv { width: 100%; height: auto; display: block; font-family: var(--sans, inherit); }
+.nv text { fill: var(--text-2); text-anchor: middle; pointer-events: none; }
+.nv .nv-t { font-size: 13px; font-weight: 600; fill: var(--text); }
+.nv .nv-s { font-size: 11.5px; fill: var(--muted); }
+.nv .nv-s.left, .nv .nv-n { text-anchor: start; }
+.nv .nv-n { font-size: 12px; font-weight: 600; fill: var(--muted); }
+.nv .nv-p { font-size: 11.5px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+.nv-wire { stroke: var(--border-strong); stroke-width: 2; }
+.nn { --nn-in: #f59a3a; --nn-hid: #1e9be6; --nn-attn: #8b6cf0; --nn-out: #e5394d; }
+.nn { --nn-pos: #3b9cff; --nn-neg: #ff8a3d; }
+.nn .nn-e line { stroke: var(--border-strong); stroke-width: 1; stroke-linecap: round; }
+.nn .nn-e.tr line.pos { stroke: var(--nn-pos); } .nn .nn-e.tr line.neg { stroke: var(--nn-neg); }
+.nn .nn-e.tr line:hover { stroke-opacity: 1; }
+.nn .nn-e.off { opacity: .3; }
+svg.nn .nn-col .nn-n.val { fill: color-mix(in srgb, var(--nn-c, var(--nn-hid)) calc(var(--a) * 100%), var(--surface-2)); }
+.nn-col.in { --nn-c: var(--nn-in); } .nn-col.hid { --nn-c: var(--nn-hid); } .nn-col.out { --nn-c: var(--nn-out); }
+svg.nn .nn-col .nn-n.neg { fill: color-mix(in srgb, var(--nn-neg) calc(var(--a) * 100%), var(--surface-2)); }
+.nn-col.heat .nn-n { stroke: var(--viz-2); stroke-width: calc(1px + var(--h, 0%) / 100% * 3px); stroke-opacity: calc(.2 + var(--h, 0%) / 100% * .8); }
+.nn .nn-sub { font-size: 10.5px; fill: var(--muted); }
+.nn .nn-name.end { text-anchor: end; font-family: var(--mono, monospace); }
+.nn .nn-name.top { font-weight: 700; fill: var(--text); }
+.nn.reveal .nn-e, .nn.reveal .nn-ns, .nn.reveal .nn-name { animation: nn-in .45s ease-out both; }
+@keyframes nn-in { from { opacity: 0; } to { opacity: 1; } }
+.nn-add { cursor: pointer; } .nn-add circle { fill: var(--surface-2); stroke: var(--border-strong); stroke-dasharray: 3 3; } .nn-add:hover circle { stroke: var(--accent); }
+.nn-add text { font-size: 15px; fill: var(--text-2); }
+.lab-trace { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.lab-trace .input { flex: 1; min-width: 200px; height: 32px; font-family: var(--mono, monospace); font-size: 13px; }
+.lab-trace-v { flex-basis: 100%; font-size: 12.5px; } .lab-trace-v b { color: var(--text); font-family: var(--mono, monospace); }
+.lab-trace-pics { display: flex; gap: 6px; flex-wrap: wrap; }
+.lab-trace-pics button { padding: 0; border: 2px solid transparent; border-radius: 6px; background: none; cursor: pointer; line-height: 0; }
+.lab-trace-pics button.on, .lab-trace-pics button:hover { border-color: var(--accent); }
+.lab-trace-pics img { width: 40px; height: 40px; border-radius: 4px; display: block; }
+.lab-layer-ed { display: flex; flex-direction: column; gap: 12px; padding: 12px 16px; border: 1px solid var(--accent); border-radius: var(--radius); background: var(--accent-soft); }
+.lab-layer-h { display: flex; align-items: baseline; gap: 8px; }
+.lab-wgrid-w { display: flex; flex-direction: column; gap: 6px; } .lab-wgrid-w small { color: var(--muted); font-size: 12px; }
+.lab-wgrid { display: grid; gap: 1px; max-width: 136px; } .lab-wgrid i { aspect-ratio: 1; border-radius: 2px; }
+.lab-wgrid i.pos { background: #3b9cff; } .lab-wgrid i.neg { background: #ff8a3d; }
+.nn .nn-skip, .nn .nn-dots { stroke: var(--muted); stroke-width: 1.6; stroke-dasharray: 2 6; stroke-linecap: round; }
+.nn .nn-arrow { stroke: var(--text-2); stroke-width: 1.6; }
+.nn .nn-mk { fill: var(--text-2); }
+.nn-col { cursor: pointer; outline: none; }
+.nn-col .nn-hit { fill: transparent; stroke: none; transition: fill .15s; }
+.nn-col:hover .nn-hit, .nn-col:focus-visible .nn-hit { fill: var(--hover); }
+.nn-col.sel .nn-hit { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; }
+.nn-col .nn-n { stroke: var(--surface); stroke-width: 2; transition: fill .3s, opacity .3s; }
+.nn-col.in .nn-n { fill: var(--nn-in); } .nn-col.hid .nn-n { fill: var(--nn-hid); } .nn-col.hid.attn .nn-n { fill: var(--nn-attn); } .nn-col.out .nn-n { fill: var(--nn-out); }
+.nn-col.off .nn-n { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1.4; }
+.nn-col .nn-glow { fill: var(--viz-2); opacity: calc(var(--h, 0%) / 100% * .45); transition: opacity .6s; }
+.nn text { fill: var(--text-2); text-anchor: middle; pointer-events: none; }
+.nn .nn-l { font-size: 11px; fill: var(--muted); }
+.nn .nn-gap { font-size: 20px; fill: var(--muted); }
+.nn .nn-name { font-size: 11.5px; text-anchor: start; fill: var(--text-2); }
+.nn-pill rect { stroke: none; }
+.nn-pill text { font-size: 12.5px; font-weight: 600; }
+.nn-pill.in rect { fill: color-mix(in srgb, var(--nn-in) 22%, transparent); } .nn-pill.in text { fill: color-mix(in srgb, var(--nn-in) 70%, var(--text)); }
+.nn-pill.hid rect { fill: color-mix(in srgb, var(--nn-hid) 20%, transparent); } .nn-pill.hid text { fill: color-mix(in srgb, var(--nn-hid) 60%, var(--text)); }
+.nn-pill.out rect { fill: color-mix(in srgb, var(--nn-out) 20%, transparent); } .nn-pill.out text { fill: color-mix(in srgb, var(--nn-out) 60%, var(--text)); }
+.nn-ex rect { stroke: none; } .nn-ex rect.in { fill: color-mix(in srgb, var(--nn-in) 14%, transparent); } .nn-ex rect.out { fill: color-mix(in srgb, var(--nn-out) 14%, transparent); }
+.nn .nn-ex-t { font-size: 12.5px; font-weight: 600; fill: var(--text); } .nn .nn-ex-s { font-size: 11px; fill: var(--muted); }
+:root[data-motion="off"] .nn .nn-p, :root[data-motion="off"] .nn .nn-act { display: none; }
+.nv-part { cursor: pointer; outline: none; }
+.nv-part rect { fill: var(--surface-2); stroke: var(--border-strong); stroke-width: 1.2; transition: stroke .15s; }
+.nv-part.blk rect { fill: color-mix(in srgb, var(--viz-1) 13%, var(--surface)); stroke: color-mix(in srgb, var(--viz-1) 55%, var(--border)); }
+.nv-part.blk.more rect { stroke-dasharray: 4 3; }
+.nv-part.emb rect { fill: var(--surface-3); }
+.nv-part.io rect { fill: none; stroke-dasharray: 3 3; }
+.nv-part.frozen rect { fill: var(--surface-2); stroke: var(--border); }
+.nv-part:hover rect, .nv-part:focus-visible rect { stroke: var(--text-2); }
+.nv-part.sel rect { stroke: var(--accent); stroke-width: 2; }
+.nv-heat { fill: var(--viz-2) !important; stroke: none !important; opacity: calc(var(--h, 0%) / 100% * .55); transition: opacity .6s; }
+.nv-cell { cursor: pointer; outline: none; }
+.nv-cell .nv-cbg { fill: var(--surface-2); stroke: var(--border); transition: stroke .15s; }
+.nv-cell.attn .nv-cbg { stroke: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.nv-cell:hover .nv-cbg, .nv-cell:focus-visible .nv-cbg { stroke: var(--text-2); }
+.nv-cell.sel .nv-cbg { stroke: var(--accent); stroke-width: 2; }
+.nv-cell:not(.on) { opacity: .5; }
+.nv-m { fill: var(--surface); stroke: var(--border-strong); stroke-dasharray: 3 2; }
+.nv-m.ad { fill: color-mix(in srgb, var(--viz-2) calc(12% + var(--h, 0%) * .55), var(--surface)); stroke: color-mix(in srgb, var(--viz-2) 70%, var(--border)); stroke-dasharray: none; transition: fill .6s; }
+/* train */
+.lab-status { display: flex; align-items: center; gap: 16px; padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); }
+.lab-status b { display: block; font-size: 15px; font-variant-numeric: tabular-nums; }
+.lab-status small { display: block; font-size: 13px; color: var(--muted); margin: 2px 0 8px; }
+.lab-status .bar { height: 6px; }
+.lab-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-2); }
 .lab-key { display: inline-flex; align-items: center; gap: 6px; }
-.lab-cmp { height: 30px; width: auto; max-width: 240px; }
+.lab-cmp { flex: none; width: auto; max-width: 240px; height: 30px; }
 .lab-chart { position: relative; height: 260px; }
 .lab-chart canvas { position: absolute; inset: 0; display: block; cursor: crosshair; }
-.lab-tip { position: absolute; top: 8px; pointer-events: none; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px; box-shadow: var(--shadow); padding: 7px 10px; font-size: 12px; color: var(--text); display: flex; flex-direction: column; gap: 3px; min-width: 180px; }
+.lab-tip { position: absolute; top: 8px; pointer-events: none; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 8px; box-shadow: var(--shadow); padding: 8px 12px; font-size: 12.5px; display: flex; flex-direction: column; gap: 4px; min-width: 190px; }
 .lab-tip div { display: flex; align-items: center; gap: 6px; color: var(--text-2); }
-.lab-tip .mono { margin-left: auto; color: var(--text); padding-left: 12px; }
-.lab-table summary { cursor: pointer; color: var(--muted); font-size: 12px; }
-.lab-tbl { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12.5px; }
-.lab-tbl th, .lab-tbl td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border); }
+.lab-tip .mono { margin-left: auto; padding-left: 12px; color: var(--text); }
+.lab-tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.lab-tbl th, .lab-tbl td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }
 .lab-tbl th { color: var(--muted); font-weight: 500; }
-.lab-text { margin: 0; white-space: pre-wrap; font-family: var(--mono, ui-monospace, monospace); font-size: 12.5px; line-height: 1.55; background: var(--surface-2); border-radius: 10px; padding: 12px 14px; max-height: 320px; overflow: auto; }
+/* check */
+.lab-check { display: flex; flex-direction: column; gap: 16px; }
+.lab-try-row { display: flex; gap: 8px; align-items: flex-start; }
+.lab-try-row textarea { flex: 1; resize: vertical; min-height: 44px; height: auto; padding: 8px 12px; font-size: 13.5px; }
+.lab-ba-cols.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lab-check > div { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.lab-slide { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+.lab-slide input { width: 180px; accent-color: var(--accent); }
+.lab-ba { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+.lab-ba-q { display: flex; gap: 8px; align-items: baseline; font-weight: 600; font-size: 13.5px; }
+.lab-ba-cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.lab-ba-col { border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13px; white-space: pre-wrap; background: var(--surface); max-height: 240px; overflow: auto; line-height: 1.45; }
+.lab-ba-col small { display: block; color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; white-space: normal; }
+.lab-ba-col.tuned { border-color: color-mix(in srgb, var(--viz-1) 60%, var(--border)); }
+.lab-ba-col.expected { background: var(--surface-2); }
+.lab-text { margin: 0; white-space: pre-wrap; font-family: var(--mono, ui-monospace, monospace); font-size: 13px; line-height: 1.55; background: var(--surface-2); border-radius: 8px; padding: 12px 16px; max-height: 360px; overflow: auto; }
 .lab-prompt { color: var(--accent-text, var(--accent)); font-weight: 600; }
-.lab-slide { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: var(--muted); }
-.lab-slide input { flex: 1; max-width: 360px; accent-color: var(--accent); }
-.lab-try { display: flex; flex-direction: column; gap: 8px; }
-.lab-try textarea { resize: vertical; font-family: var(--mono, ui-monospace, monospace); font-size: 12.5px; }
-.lab-pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
-.lab-pics figure { margin: 0; border-radius: 10px; overflow: hidden; background: var(--surface-2); border: 2px solid transparent; }
-.lab-pics figure.hit { border-color: color-mix(in srgb, var(--ok) 55%, transparent); }
-.lab-pics figure.miss { border-color: color-mix(in srgb, var(--danger) 60%, transparent); }
-.lab-pics img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; image-rendering: auto; }
-.lab-pics figcaption { display: flex; gap: 5px; align-items: flex-start; padding: 6px 8px; font-size: 12px; }
+.lab-pics { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 8px; }
+.lab-pics figure { margin: 0; border-radius: 8px; overflow: hidden; background: var(--surface-2); border: 2px solid transparent; }
+.lab-pics figure.hit { border-color: color-mix(in srgb, var(--ok) 50%, transparent); }
+.lab-pics figure.miss { border-color: color-mix(in srgb, var(--danger) 65%, transparent); }
+.lab-pics img { display: block; width: 100%; aspect-ratio: 1; object-fit: cover; }
+.lab-pics figcaption { display: flex; gap: 6px; align-items: flex-start; padding: 6px 8px; font-size: 12.5px; }
 .lab-pics figure.hit .icon { color: var(--ok); }
 .lab-pics figure.miss .icon { color: var(--danger); }
 .lab-pics small { display: block; color: var(--muted); }
-.lab-bars { display: flex; flex-direction: column; gap: 6px; }
-.lab-barrow { display: grid; grid-template-columns: minmax(80px, 160px) 1fr 56px; gap: 10px; align-items: center; font-size: 12.5px; }
+.lab-h3 { margin: 4px 0 0; font-size: 13px; font-weight: 600; color: var(--text-2); }
+.lab-bars { display: flex; flex-direction: column; gap: 8px; }
+.lab-barrow { display: grid; grid-template-columns: minmax(80px, 160px) 1fr 64px; gap: 12px; align-items: center; font-size: 13px; }
 .lab-barrow .bar { height: 8px; }
-.lab-notes { min-height: 70px; resize: vertical; }
-.lab-meta { margin: 0; font-size: 12px; }
-@media (max-width: 900px) { .lab-runs { grid-template-columns: 1fr; } .lab-list { position: static; max-height: 260px; } .lab { padding: 0 12px 32px; } }
+.lab-barrow .mono { text-align: right; }
+.lab-about summary { font-size: 13px; }
+.lab-notes { min-height: 72px; resize: vertical; flex: none; width: 100%; padding: 8px 12px; height: auto; }
+.lab-about p { font-size: 12.5px; margin: 8px 0 0; }
+/* use */
+.lab-use { flex-direction: row; align-items: flex-start; gap: 16px; padding: 24px; }
+.lab-use-ic { width: 48px; height: 48px; flex: none; border-radius: 12px; display: grid; place-items: center; background: var(--surface-2); color: var(--accent-text, var(--accent)); }
+.lab-use-ic.ok { background: color-mix(in srgb, var(--ok) 18%, transparent); color: var(--ok-text, var(--ok)); }
+.lab-use .grow { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.lab-use p { margin: 0; font-size: 13.5px; color: var(--text-2); line-height: 1.55; max-width: 62ch; }
+.lab-stages { margin: 4px 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: var(--muted); }
+.lab-stages li { display: flex; align-items: center; gap: 8px; }
+.lab-stages li::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); }
+.lab-stages li.done { color: var(--text-2); }
+.lab-stages li.done::before { display: none; }
+.lab-stages li.now { color: var(--text); font-weight: 600; }
+.lab-stages li.now::before { background: var(--accent); }
+/* data */
+.lab-adds { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.lab-add-b { display: flex; align-items: flex-start; gap: 12px; padding: 12px; text-align: left; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface-2); color: var(--text); cursor: pointer; }
+.lab-add-b:hover { border-color: var(--border-strong); }
+.lab-add-b.on { border-color: var(--accent); background: var(--accent-soft); }
+.lab-add-b > .icon { flex: none; color: var(--accent-text, var(--accent)); margin-top: 2px; }
+.lab-add-b b { display: block; font-size: 13.5px; }
+.lab-add-b small { display: block; font-size: 12.5px; color: var(--muted); }
+.lab-form { display: flex; flex-direction: column; gap: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.lab-drop { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 24px 16px; border-radius: var(--radius); border: 1.5px dashed var(--border-strong); background: var(--surface-2); cursor: pointer; transition: border-color .15s, background .15s; }
+.lab-drop:hover, .lab-drop.over { border-color: var(--accent); background: var(--accent-soft); }
+.lab-drop .icon { width: 22px; height: 22px; color: var(--muted); transform: rotate(180deg); }
+.lab-drop b { font-size: 13.5px; }
+.lab-drop small { font-size: 12.5px; color: var(--muted); max-width: 56ch; }
+.lab-drop input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.lab-or { margin: -4px 0; text-align: center; font-size: 12.5px; color: var(--muted); }
+.lab-samples { margin: 0; font-size: 13px; }
+.lab .link { border: 0; background: none; padding: 0; color: var(--accent-text, var(--accent)); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; font: inherit; }
+.lab-pairs { display: flex; flex-direction: column; gap: 8px; max-height: 62vh; overflow-y: auto; padding-right: 4px; }
+.lab-pair { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border-radius: 8px; background: var(--surface-2); }
+.lab-pair-n { width: 24px; flex: none; padding-top: 8px; font-size: 12px; color: var(--muted); }
+.lab-pair .grow { display: flex; flex-direction: column; gap: 6px; }
+.lab-pair textarea { resize: vertical; font-size: 13px; flex: none; width: 100%; height: auto; padding: 8px 10px; }
+.lab-pair .lab-q { font-weight: 600; }
+.lab-review-go .input { flex: 1; min-width: 200px; }
+/* machine */
+.lab-mrow { display: grid; grid-template-columns: 140px minmax(0, 1fr) auto; gap: 12px; align-items: center; font-size: 13.5px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.lab-mrow:last-child { border-bottom: 0; }
+.lab-mrow > span:first-child { color: var(--muted); }
+.lab-mrow b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; }
+.lab-setup { display: flex; gap: 12px; align-items: flex-start; }
+.lab-log { margin: 8px 0 0; max-height: 160px; overflow: auto; font-size: 12px; background: var(--surface-2); border-radius: 8px; padding: 8px 12px; white-space: pre-wrap; color: var(--text-2); }
+@media (max-width: 1100px) {
+  .lab-split, .lab-two, .lab-check, .lab-net-wrap { grid-template-columns: minmax(0, 1fr); }
+  .lab-list { position: static; max-height: none; flex-direction: row; overflow-x: auto; overflow-y: hidden; gap: 4px; padding: 6px; scroll-snap-type: x proximity; }
+  .lab-list .lab-list-head, .lab-list .lab-list-empty { display: none; }
+  .lab-list .lab-row { flex: none; width: 220px; scroll-snap-align: start; }
+  .lab-plan { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lab-jobs { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 700px) { .lab-ba-cols, .lab-adds, .lab-sizes { grid-template-columns: minmax(0, 1fr); } .lab-step { font-size: 0; gap: 0; } }
 .peek-bar { position: sticky; top: 8px; z-index: 3; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 12px 0 8px; padding: 9px 12px;
   border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface, var(--bg)); box-shadow: 0 4px 16px rgba(0,0,0,.12); font-size: 13px; }
 #composer-dock.peeking { display: none; }
@@ -681,8 +929,8 @@ html.chat-locked .composer { opacity: .6; }
 .sb-newrow .sb-temp { width: 34px; height: 34px; color: var(--muted); }
 .sb-newrow .sb-temp[aria-pressed="true"] { color: var(--accent-text); background: var(--accent-soft); }
 .sb-places { padding-top: 0; }
-.sb-places .sb-item.on { background: var(--surface-3); color: var(--text); }
-.sb-places .sb-item.on .icon { color: var(--text); }
+:is(.sb-places, .sb-labs) .sb-item.on { background: var(--surface-3); color: var(--text); }
+:is(.sb-places, .sb-labs) .sb-item.on .icon { color: var(--text); }
 .sb-places .sb-item .icon { color: var(--muted); }
 .sb-count { margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .sb-count:empty { display: none; }
@@ -4195,7 +4443,7 @@ html.voice-on .idle-screen { display: none !important; }
   <!-- ================= Sidebar: start a chat, see connections, open settings ================= -->
   <aside class="sidebar" id="sidebar" aria-label="Navigation">
     <div class="sb-top">
-      <button type="button" class="brand" onclick="AppMode.menu(this)" aria-haspopup="menu" aria-label="FX Workspace by Fuxion - switch between Workspace and Labs" title="Workspace or Labs"><svg class="brand-mark" aria-hidden="true"><use href="#mark"/></svg><span class="brand-name" id="brand-name">workspace</span><svg class="icon brand-chev" aria-hidden="true"><use href="#i-chev"/></svg><span class="brand-by" aria-hidden="true">by Fuxion</span></button>
+      <button type="button" class="brand" onclick="AppMode.menu(this)" aria-haspopup="menu" aria-label="FX Workspace by Fuxion - switch between Workspace and Labs" title="Workspace or Labs"><svg class="brand-mark" aria-hidden="true"><use href="#mark"/></svg><span class="brand-name" id="brand-name">workspace</span><span class="beta-tag brand-beta" title="Labs is in beta - expect rough edges">Beta</span><svg class="icon brand-chev" aria-hidden="true"><use href="#i-chev"/></svg><span class="brand-by" aria-hidden="true">by Fuxion</span></button>
       <button class="icon-btn sb-collapse" onclick="toggleSidebar()" aria-label="Collapse sidebar" title="Collapse sidebar"><svg class="icon"><use href="#i-sidebar"/></svg></button>
     </div>
     <!-- The revamp: New chat (with a temporary one beside it), then places - Home, Images, Projects,
@@ -4216,10 +4464,9 @@ html.voice-on .idle-screen { display: none !important; }
       <button class="sb-item" id="sb-browser" onclick="BrowserPanel.toggle()" title="The assistant's browser, beside the chat"><svg class="icon"><use href="#i-globe"/></svg><span class="sb-label">Browser</span></button>
     </nav>
     <nav class="sb-nav sb-labs" id="sb-labs" aria-label="Labs">
-      <button class="sb-item" id="sb-lab-new" onclick="LabsView.go('new')" title="Train a model"><svg class="icon"><use href="#i-plus"/></svg><span class="sb-label">New run</span></button>
-      <button class="sb-item" id="sb-lab-runs" onclick="LabsView.go('runs')" title="Every run, with its curves and samples"><svg class="icon"><use href="#i-trend"/></svg><span class="sb-label">Runs</span><span class="sb-count" id="sb-lab-runs-n"></span></button>
-      <button class="sb-item" id="sb-lab-data" onclick="LabsView.go('data')" title="Texts and picture folders to train on"><svg class="icon"><use href="#i-layers"/></svg><span class="sb-label">Datasets</span></button>
-      <button class="sb-item" id="sb-lab-engine" onclick="LabsView.go('engine')" title="PyTorch, in Labs' own Python"><svg class="icon"><use href="#i-cpu"/></svg><span class="sb-label">Engine</span><span class="dot lab-dot" id="lab-dot"></span></button>
+      <button class="sb-item" id="sb-lab-models" onclick="LabsView.go('models')" title="What you make - each model from its data to using it"><svg class="icon"><use href="#i-flask"/></svg><span class="sb-label">Models</span><span class="sb-count" id="sb-lab-models-n"></span></button>
+      <button class="sb-item" id="sb-lab-data" onclick="LabsView.go('data')" title="Texts, chat examples and picture folders models learn from"><svg class="icon"><use href="#i-layers"/></svg><span class="sb-label">Data</span></button>
+      <button class="sb-item" id="sb-lab-machine" onclick="LabsView.go('machine')" title="The engine Labs trains with"><svg class="icon"><use href="#i-cpu"/></svg><span class="sb-label">Machine</span><span class="lab-dot-w"><span class="dot lab-dot" id="lab-dot"></span><span id="lab-dot-l"></span></span></button>
     </nav>
     <div class="sb-lab-live" id="sb-lab-live" hidden></div>
     <div class="sb-proj sb-ws hidden" id="sb-proj"></div>
@@ -6432,15 +6679,31 @@ setTimeout(() => MusicView.poll(), 3000);          // the sidebar's Music count 
 
 /* ---- Workspace | Labs: the logo is the switch -------------------------------------------------------------
    Workspace is everything made for using models (chats, pictures, video, music); Labs is for making them (labs.py).
-   The mode follows the view: Labs is a place of its own, every other view is Workspace. */
+   The mode follows the view: Labs is a place of its own, every other view is Workspace. The two icons move while
+   the menu is open: a board whose tiles light in turn (Workspace: the tools side by side) and a flask on the boil. */
+const MODE_ICONS = {
+  workspace: `<svg class="ic-anim ic-tiles" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <rect class="tl" style="--t:0s" x="3.9" y="3.9" width="6.2" height="6.2" rx="1.6"/><rect class="tl" style="--t:.6s" x="13.9" y="3.9" width="6.2" height="6.2" rx="1.6"/>
+    <rect class="tl" style="--t:1.2s" x="13.9" y="13.9" width="6.2" height="6.2" rx="1.6"/><rect class="tl" style="--t:1.8s" x="3.9" y="13.9" width="6.2" height="6.2" rx="1.6"/></svg>`,
+  labs: `<svg class="ic-anim ic-flask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <defs><clipPath id="fx-flask-body"><path d="M10 9 4.7 18.3A2 2 0 0 0 6.4 21.3H17.6A2 2 0 0 0 19.3 18.3L14 9Z"/></clipPath></defs>
+    <g class="fl-shake"><path d="M9 3h6M10 3v6L4.7 18.3A2 2 0 0 0 6.4 21.3h11.2a2 2 0 0 0 1.7-3L14 9V3"/>
+      <g clip-path="url(#fx-flask-body)" stroke-width="1.2">
+        <g class="fl-bob"><g class="fl-wave"><path d="M-6 14.5q2.25-1.6 4.5 0t4.5 0 4.5 0 4.5 0 4.5 0 4.5 0 4.5 0 4.5 0 4.5 0V23H-6Z" fill="currentColor" fill-opacity=".18" stroke="none"/></g></g>
+        <circle class="fl-b" style="--d:1.1s;--t:-.2s;--h:-5px;--dx:.6px" cx="9.4" cy="20.2" r="1.1"/>
+        <circle class="fl-b" style="--d:.8s;--t:-.55s;--h:-4.6px;--dx:-.5px" cx="13" cy="20.4" r=".7"/>
+        <circle class="fl-b" style="--d:1.4s;--t:-.9s;--h:-5.4px;--dx:.4px" cx="15.4" cy="19.8" r="1.35"/>
+        <circle class="fl-b" style="--d:.95s;--t:-.35s;--h:-4.4px;--dx:-.4px" cx="11.6" cy="19" r=".55"/></g>
+      <path class="fl-puff" d="M12 1.6q.9-.9 0-1.8" stroke-width="1.2"/></g></svg>`,
+};
 const AppMode = {
   menu(anchor) {
     if (popEl && popEl._anchor === anchor) { closePopover(); return; }
     const labs = S.view === 'labs';
-    const item = (on, ic, name, about, run) => `<button type="button" class="pop-item mode-item${on ? ' on' : ''}" role="menuitemradio" aria-checked="${on}" onclick="${run}">${icon(ic)}<span class="pop-main"><b>${name}</b><small>${about}</small></span>${on ? icon('i-check', 'sm') : ''}</button>`;
+    const item = (on, ic, name, about, run) => `<button type="button" class="pop-item mode-item${on ? ' on' : ''}" role="menuitemradio" aria-checked="${on}" onclick="${run}">${ic}<span class="pop-main"><b>${name}</b><small>${about}</small></span>${on ? icon('i-check', 'sm') : ''}</button>`;
     openPopover(anchor, `<div role="menu" aria-label="Mode">
-      ${item(!labs, 'i-home', 'Workspace', 'Chat, pictures, video and music with your models', "AppMode.set('workspace')")}
-      ${item(labs, 'i-flask', 'Labs', 'Train, fine-tune and test your own models', "AppMode.set('labs')")}
+      ${item(!labs, MODE_ICONS.workspace, 'Workspace', 'Chat, pictures, video and music with your models', "AppMode.set('workspace')")}
+      ${item(labs, MODE_ICONS.labs, 'Labs <span class="beta-tag">Beta</span>', 'Train, fine-tune and test your own models', "AppMode.set('labs')")}
       <div class="pop-sep"></div>
       <button type="button" class="pop-item" role="menuitem" onclick="closePopover();openSettings('about')">${icon('i-info')}<span class="pop-main"><b>About FX Workspace</b><small>by Fuxion</small></span></button></div>`, 'mode-pop');
   },
@@ -6457,96 +6720,143 @@ function syncAppMode() {
 }
 
 /* ---- Fx Labs (labs.py) ------------------------------------------------------------------------------------
-   Pages: Runs (every run, its live loss chart and what it makes), New run, Datasets, Engine (PyTorch). One run
-   trains at a time; the page follows it a few times a second while it trains. */
+   Built around the model you make. Models: each model goes Data -> Design -> Train -> Check -> Use, and has
+   versions (a new version continues from the last one's weights). Design is the network itself - its parts are
+   drawn from the real architecture and every control on it is a real training setting (labs.validate_settings
+   checks them again). Data: what models learn from. Machine: the engine. One run trains at a time (8 GB). */
+const JOBS = {
+  lora: { name: 'Answer like I want', what: 'Fine-tune a chat model', icon: 'i-sparkle', data: 'chat', sample: 'sample_chat',
+          about: 'Teach an existing Qwen 3.5 chat model your answers - a voice, a format, what to know. It can then be used in Workspace.' },
+  gpt: { name: 'Write like my text', what: 'Train a small GPT', icon: 'i-feed', data: 'text', sample: 'sample_text',
+         about: 'Train a small language model from scratch on one text - it learns to write like it, one character at a time.' },
+  cnn: { name: 'Sort my pictures', what: 'Train a picture classifier', icon: 'i-image', data: 'images', sample: 'sample_shapes',
+         about: 'Train a small network to tell kinds of pictures apart - one folder per kind.' },
+};
+const LAB_STEPS = [['data', 'Data'], ['design', 'Design'], ['train', 'Train'], ['check', 'Check'], ['use', 'Use']];
 const LabsView = (() => {
-  const st = { page: 'runs', status: null, runs: null, datasets: null, sel: null, cmp: '', metric: 'loss', mounted: false,
-               form: { template: 'gpt', dataset: '', size: 'small', steps: '', name: '', lr: '', batch: '', seed: '' },
-               starting: false, tryOut: null, trying: false, folderForm: false, sampleAt: -1 };
-  const data = {};                                   // run id -> { rows: [], samples: [], run, next }
-  let pollT = 0, hover = null;
-  const STATE = { queued: 'Waiting', running: 'Training', done: 'Done', stopped: 'Stopped', failed: 'Failed' };
-  const num = (v, d = 3) => v == null || !isFinite(v) ? '–' : (+v).toFixed(d);
+  const st = { page: 'models', status: null, models: null, datasets: null, drafts: null, sel: null, ver: null, step: null,
+               newOpen: false, part: null, view: (() => { try { return localStorage.getItem('aw.labs.netView'); } catch (e) { return null; } })() || 'nodes', cmp: '',
+               trace: null, tracing: false, tracePrompt: null, metric: 'loss', tryOut: null, trying: false, sampleAt: -1,
+               dsSel: null, adding: null, review: null, busy: false, mounted: false, saving: 0 };
+  const data = {};
+  let pollT = 0, hover = null, saveT = 0;
+  const STATE = { draft: 'Not trained', queued: 'Waiting', running: 'Training', done: 'Trained', stopped: 'Stopped', failed: 'Failed' };
+  const num = (v, d = 3) => v == null || !isFinite(v) ? '–' : Math.abs(v) < 0.0005 ? '≈ 0' : (+v).toFixed(d);
   const pct = v => v == null || !isFinite(v) ? '–' : `${(v * 100).toFixed(1)}%`;
-  const big = n => n >= 1e6 ? `${(n / 1e6).toFixed(1)} M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)} k` : String(n);
-  const dur = s => { s = Math.max(0, Math.round(s || 0)); return s < 60 ? `${s} s` : s < 3600 ? `${Math.floor(s / 60)} min ${s % 60} s` : `${Math.floor(s / 3600)} h ${Math.round(s % 3600 / 60)} min`; };
-  const tpl = k => ((st.status || {}).templates || {})[k] || {};
-  const running = () => (st.status || {}).running || null;
+  const big = n => n == null || !isFinite(n) ? '–' : n >= 1e9 ? `${(n / 1e9).toFixed(2)} B` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} M` : n >= 1e3 ? `${(n / 1e3).toFixed(1)} k` : String(Math.round(n));
+  const gb = b => `${(b / 2 ** 30).toFixed(b < 2 ** 30 ? 2 : 1)} GB`;
+  const dur = s => { s = Math.max(0, Math.round(s || 0)); return s < 60 ? `${s} s` : s < 3600 ? `${Math.floor(s / 60)} min${s % 60 ? ` ${s % 60} s` : ''}` : `${Math.floor(s / 3600)} h ${Math.round(s % 3600 / 60)} min`; };
+  const when = t => { if (!t) return ''; const d = new Date(t * 1000), n = new Date(); return d.toDateString() === n.toDateString() ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : d.toLocaleDateString([], { day: 'numeric', month: 'short' }); };
   const eng = () => (st.status || {}).engine || {};
+  const running = () => (st.status || {}).running || null;
+  const tpl = k => ((st.status || {}).templates || {})[k] || {};
+  const model = () => (st.models || []).find(m => m.id === st.sel);
+  const version = () => { const m = model(); return m && (m.versions.find(v => v.id === st.ver) || m.versions[m.versions.length - 1]); };
+  const live = r => r && r.id === running();
+  const stateOf = r => live(r) ? 'running' : r.state;
+  const dsOf = id => (st.datasets || []).find(d => d.id === id);
 
-  function go(page, opts = {}) {
-    if (page) st.page = page;
-    if (opts.run) st.sel = opts.run;
-    const pickData = () => { const d = opts.dataset && (st.datasets || []).find(x => x.id === opts.dataset); if (d) { st.form.dataset = d.id; st.form.template = d.kind === 'images' ? 'cnn' : 'gpt'; } };
-    pickData();
-    if (S.view !== 'labs') showPlace('labs'); else paint();
-    markNav();
-    // The lists can change outside this page (another tab, a dataset just added): fresh on every visit.
-    if (st.page === 'new' || st.page === 'data') loadDatasets().then(() => { pickData(); paint(); });
-  }
-  function markNav() {
-    [['new', 'sb-lab-new'], ['runs', 'sb-lab-runs'], ['data', 'sb-lab-data'], ['engine', 'sb-lab-engine']].forEach(([p, id]) => {
-      const b = $(id); if (b) { b.classList.toggle('on', S.view === 'labs' && st.page === p); b.setAttribute('aria-current', S.view === 'labs' && st.page === p ? 'page' : 'false'); }
-    });
-  }
+  /* ---- data from the server ---- */
   async function poll() {
     clearTimeout(pollT);
     try {
-      const [s, r] = await Promise.all([api('/api/labs'), api('/api/labs/runs')]);
-      st.status = s; st.runs = r.runs || [];
+      const [s, m] = await Promise.all([api('/api/labs'), api('/api/labs/models')]);
+      st.status = s; st.models = m.models || [];
     } catch (_) {}
-    const live = running();
-    if (st.sel && (live === st.sel || !data[st.sel])) await loadRun(st.sel);
+    const v = version();
+    if (v && (live(v) || !data[v.id])) await loadRun(v.id);
     paintSidebar();
     if (S.view === 'labs') paint();
-    const settingUp = ((st.status || {}).setup || {}).state === 'running';
-    pollT = setTimeout(poll, live || settingUp ? 1500 : document.hidden ? 60000 : 15000);
+    const s = st.status || {};
+    const fast = running() || (s.setup || {}).state === 'running' || (s.build || {}).state === 'running' || Object.values(s.ports || {}).some(p => p.state === 'running');
+    pollT = setTimeout(poll, fast ? 1500 : document.hidden ? 60000 : 15000);
   }
   async function loadRun(rid) {
     const d = data[rid] || (data[rid] = { rows: [], samples: [], run: null, next: 0 });
     try {
       const r = await api(`/api/labs/runs/${encodeURIComponent(rid)}?since=${d.next}`);
-      if (!r.ok) { if (r.code === 'missing') { delete data[rid]; if (st.sel === rid) st.sel = null; } return; }
+      if (!r.ok) { if (r.code === 'missing') delete data[rid]; return; }
       d.rows.push(...r.rows); d.next = r.next; d.samples = r.samples; d.run = r.run;
     } catch (_) {}
   }
-  async function loadDatasets() {
-    try { st.datasets = (await api('/api/labs/datasets')).datasets || []; } catch (e) { st.datasets = []; }
+  async function loadDatasets() { try { const r = await api('/api/labs/datasets'); st.datasets = r.datasets || []; } catch (_) { st.datasets = []; } }
+  async function loadDrafts() { try { st.drafts = (await api('/api/labs/drafts')).drafts || []; } catch (_) { st.drafts = []; } }
+  async function call(url, body, okMsg) {
+    let r; try { r = await api(url, body || {}); } catch (e) { r = { ok: false, message: e.message }; }
+    if (!r.ok) { toast(r.message || "That didn't work."); return null; }
+    if (okMsg) toast(okMsg);
+    return r;
+  }
+
+  /* ---- navigation ---- */
+  function go(page, opts = {}) {
+    if (page) st.page = page;
+    if (opts.model) { st.sel = opts.model; st.ver = opts.version || null; st.step = opts.step || null; st.newOpen = false; }
+    if (opts.dataset) st.dsSel = opts.dataset;
+    if (S.view !== 'labs') showPlace('labs'); else paint();
+    markNav();
+    if (!st.datasets || page === 'data' || opts.model) loadDatasets().then(paint);
+    if (page === 'data') loadDrafts().then(paint);
+  }
+  function markNav() {
+    [['models', 'sb-lab-models'], ['data', 'sb-lab-data'], ['machine', 'sb-lab-machine']].forEach(([p, id]) => {
+      const b = $(id); if (b) { const on = S.view === 'labs' && st.page === p; b.classList.toggle('on', on); b.setAttribute('aria-current', on ? 'page' : 'false'); }
+    });
   }
   function paintSidebar() {
-    const n = $('sb-lab-runs-n'); if (n) n.textContent = st.runs && st.runs.length ? String(st.runs.length) : '';
-    const dot = $('lab-dot'); if (dot) dot.className = 'dot' + (running() ? ' busy' : eng().installed ? ' on' : '');
-    const live = $('sb-lab-live'), r = running() && (st.runs || []).find(x => x.id === running());
-    if (!live) return;
-    live.hidden = !r;
+    const n = $('sb-lab-models-n'); if (n) n.textContent = st.models && st.models.length ? String(st.models.length) : '';
+    const e = eng(), dot = $('lab-dot'), lbl = $('lab-dot-l');
+    if (dot) dot.className = 'dot lab-dot' + (running() ? ' busy' : e.installed ? ' on' : '');
+    if (lbl) lbl.textContent = running() ? 'Busy' : e.installed ? 'Ready' : 'Set up';
+    const box = $('sb-lab-live'); if (!box) return;
+    const r = running() && (st.models || []).flatMap(m => m.versions).find(v => v.id === running());
+    box.hidden = !r;
     if (r) {
       const last = r.last || {}, p = Math.min(1, (last.step || 0) / (r.steps || 1));
-      setHtmlIfChanged(live, `<button type="button" class="sb-lab-card" onclick="LabsView.go('runs',{run:'${jsArg(r.id)}'})"><b>${esc(r.name)}</b><small>Training · ${Math.round(p * 100)}%${last.loss != null ? ` · loss ${num(last.loss)}` : ''}</small><span class="bar"><i style="width:${Math.max(2, p * 100)}%"></i></span></button>`);
+      setHtmlIfChanged(box, `<button type="button" class="sb-lab-card" onclick="LabsView.go('models',{model:'${jsArg(r.model || r.id)}',version:'${jsArg(r.id)}',step:'train'})"><b>${esc(r.name)}</b><small>Training · ${Math.round(p * 100)}%</small><span class="bar"><i style="width:${Math.max(2, p * 100)}%"></i></span></button>`);
     }
   }
 
+  /* ---- the page ---- */
   function render() {
     const root = $('place');
     if (!st.mounted || !root.querySelector('#lab-root')) {
-      root.innerHTML = `<div class="lab" id="lab-root"><div class="place-head" id="lab-head"></div><div id="lab-banner"></div><div id="lab-page"></div></div>`;
+      root.innerHTML = `<div class="place-wrap lab" id="lab-root"><div class="place-head" id="lab-head"></div><div id="lab-gate"></div><div id="lab-page"></div></div>`;
       st.mounted = true;
     }
-    if (!st.status) poll(); else { paint(); poll(); }
+    paint(); poll();
     if (!st.datasets) loadDatasets().then(paint);
     markNav();
   }
+  const TITLES = {
+    models: ['Models', 'What you make here - each one goes from data to a model you can use.'],
+    data: ['Data', 'Texts, chat examples and picture folders that models learn from.'],
+    machine: ['Machine', 'The engine Labs trains with, on this PC.'],
+  };
   function paint() {
     if (S.view !== 'labs' || !$('lab-root')) return;
+    const [title, lead] = TITLES[st.page];
+    const acts = st.page === 'models' && st.models && st.models.length ? `<button type="button" class="btn primary" onclick="LabsView.newModel()">${icon('i-plus', 'xs')}New model</button>`
+      : st.page === 'data' ? `<button type="button" class="btn primary" onclick="LabsView.addData()">${icon('i-plus', 'xs')}Add data</button>` : '';
+    setHtmlIfChanged($('lab-head'), `<div><h1 class="place-title">${title}</h1><p class="place-lead">${lead}</p></div><div class="place-acts">${machinePill()}${acts}</div>`);
+    setHtmlIfChanged($('lab-gate'), gate());
+    ({ models: paintModels, data: paintData, machine: paintMachine })[st.page]();
+  }
+  function machinePill() {
     const e = eng(), su = (st.status || {}).setup || {};
-    const pill = !st.status ? `<span class="iv-engine"><span class="spinner"></span>Checking…</span>`
-      : su.state === 'running' ? `<span class="iv-engine busy"><span class="spinner"></span>Setting up</span>`
-      : !e.installed ? `<button type="button" class="iv-engine err" onclick="LabsView.go('engine')">${icon('i-alert', 'xs')}Engine not set up</button>`
-      : running() ? `<span class="iv-engine busy"><span class="dot busy"></span>Training</span>`
-      : `<span class="iv-engine on"><span class="dot on"></span>${esc(e.gpu || 'PyTorch')} ready</span>`;
-    setHtmlIfChanged($('lab-head'), `<div><h1 class="place-title">Labs</h1><p class="place-lead">Train models on this PC - every run is kept, with its curves and what it makes.</p></div>
-      <div class="place-acts">${pill}<button type="button" class="btn primary" onclick="LabsView.go('new')">${icon('i-plus', 'xs')}New run</button></div>`);
-    setHtmlIfChanged($('lab-banner'), st.status && !e.installed && st.page !== 'engine' ? `<div class="state-card lab-banner"><span class="sc-ico">${icon('i-flask', 'sm')}</span><div class="grow"><b>Set up the Labs engine to train</b><p>PyTorch with CUDA, in Labs' own Python - about 3 GB, once.</p></div><button type="button" class="btn primary" onclick="LabsView.go('engine')">Set up</button></div>` : '');
-    ({ runs: paintRuns, new: paintNew, data: paintData, engine: paintEngine })[st.page]();
+    if (!st.status) return `<span class="lab-pill">${icon('i-cpu', 'xs')}Checking…</span>`;
+    if (su.state === 'running') return `<span class="lab-pill busy"><span class="spinner"></span>Setting up</span>`;
+    if (!e.installed) return '';
+    if (running()) return `<span class="lab-pill busy"><span class="dot busy"></span>Training - the GPU is busy</span>`;
+    return `<span class="lab-pill"><span class="dot on"></span>${esc((e.gpu || 'GPU').replace('NVIDIA GeForce ', ''))} ready</span>`;
+  }
+  // Nothing trains without the engine: one clear card at the top of Models and Data until it is set up.
+  function gate() {
+    const e = eng(), su = (st.status || {}).setup || {};
+    if (!st.status || e.installed || st.page === 'machine') return '';
+    return `<section class="lab-gate">${icon('i-cpu')}<div class="grow"><b>${su.state === 'running' ? esc(su.part || 'Setting up') : 'Set up the Labs engine first'}</b>
+      <p>${su.state === 'running' ? 'This takes a few minutes - you can keep using the app.' : su.state === 'error' ? esc(su.error) : 'PyTorch with CUDA in Labs\' own Python - about 5 GB on the Labs drive, once.'}</p></div>
+      ${su.state === 'running' ? '<span class="spinner"></span>' : `<button type="button" class="btn primary" onclick="LabsView.setup()">${su.state === 'error' ? 'Try again' : 'Set up'}</button>`}</section>`;
   }
   function page(mode, html) {
     const el = $('lab-page');
@@ -6555,244 +6865,634 @@ const LabsView = (() => {
     return el;
   }
 
-  /* ---- Engine ---- */
-  function paintEngine() {
-    const e = eng(), su = (st.status || {}).setup || {};
-    let body;
-    if (su.state === 'running') body = `<div class="lab-setup"><span class="spinner"></span><div class="grow"><b>${esc(su.part || 'Working')}</b><pre class="lab-log">${esc((su.log || []).join('\n'))}</pre></div></div>`;
-    else if (e.installed) body = `<dl class="lab-facts"><dt>PyTorch</dt><dd class="mono">${esc(e.torch)}</dd><dt>GPU</dt><dd>${e.cuda ? esc(e.gpu) : '<span class="danger-text">Not visible - training would run on the CPU</span>'}</dd><dt>Folder</dt><dd class="mono">${esc(e.dir)}</dd></dl>
-      <div class="lab-row"><button type="button" class="btn" onclick="LabsView.setup()">${icon('i-retry', 'xs')}Repair or update</button></div>`;
-    else body = `<p>Training needs PyTorch with CUDA. Labs gets its own Python for it, so nothing changes in the app's. About 3 GB, downloaded once through your network route.</p>
-      <div class="lab-row"><button type="button" class="btn primary" onclick="LabsView.setup()">${icon('i-download', 'xs')}Set up the engine</button><span class="muted mono">${esc(e.dir || '')}</span></div>`;
-    if (su.state === 'error') body += `<div class="state-card danger" role="alert"><span class="sc-ico">${icon('i-alert', 'sm')}</span><div class="grow"><b>Setup didn't finish</b><p>${esc(su.error)}</p></div></div>`;
-    else if (su.state === 'done' && su.error) body += `<div class="state-card" role="status"><span class="sc-ico">${icon('i-alert', 'sm')}</span><div class="grow"><p>${esc(su.error)}</p></div></div>`;
-    page('engine', `<section class="lab-card"><h2 class="lab-h">${icon('i-cpu', 'sm')}Labs engine</h2>${body}</section>`);
-  }
-  async function setup() {
-    try { const r = await api('/api/labs/setup', {}); st.status = { ...(st.status || {}), setup: r.setup }; } catch (e) { toast(e.message); }
-    paint(); poll();
-  }
-
-  /* ---- Datasets ---- */
-  function paintData() {
-    const list = st.datasets;
-    const card = d => `<article class="lab-ds">${icon(d.kind === 'text' ? 'i-feed' : 'i-image', 'sm')}<div class="grow"><b>${esc(d.name)}</b>
-        <small>${d.kind === 'text' ? `${big(d.chars)} characters · ${d.vocab} different` : `${d.count} pictures · ${Object.keys(d.classes || {}).length} kinds: ${esc(Object.keys(d.classes || {}).slice(0, 6).join(', '))}${Object.keys(d.classes || {}).length > 6 ? '…' : ''}`}</small>
-        ${d.path ? `<small class="mono">${esc(d.path)}</small>` : ''}</div>
-        <button type="button" class="btn sm" onclick="LabsView.go('new',{dataset:'${jsArg(d.id)}'})">${icon('i-play', 'xs')}Train on it</button>
-        <button type="button" class="icon-btn" onclick="LabsView.delData('${jsArg(d.id)}')" aria-label="Move ${esc(d.name)} to the trash">${icon('i-trash', 'sm')}</button></article>`;
-    page('data', `<section class="lab-card"><h2 class="lab-h">${icon('i-plus', 'sm')}Add a dataset</h2>
-        <div class="lab-add">
-          <button type="button" class="lab-add-b" onclick="$('lab-file').click()">${icon('i-feed')}<b>A text file</b><small>.txt - for the GPT</small></button>
-          <button type="button" class="lab-add-b" onclick="LabsView.folderForm()">${icon('i-folder')}<b>A picture folder</b><small>one subfolder per kind - for the classifier</small></button>
-          <button type="button" class="lab-add-b" onclick="LabsView.sample('sample_text')">${icon('i-book')}<b>Sample: Shakespeare</b><small>1 MB of plays, downloaded</small></button>
-          <button type="button" class="lab-add-b" onclick="LabsView.sample('sample_shapes')">${icon('i-image')}<b>Sample: shapes</b><small>900 pictures, made here</small></button>
-        </div>
-        <input type="file" id="lab-file" accept=".txt,.md,.csv,.json,.py,.js,text/*" hidden onchange="LabsView.upload(this)">
-        ${st.folderForm ? `<form class="lab-folder" onsubmit="event.preventDefault();LabsView.addFolder()"><input class="input grow" id="lab-folder-path" placeholder="C:\\path\\to\\pictures" aria-label="Picture folder" autocomplete="off"><input class="input" id="lab-folder-name" placeholder="Name (optional)" aria-label="Name"><button class="btn primary">Add</button><button type="button" class="btn ghost" onclick="LabsView.folderForm(false)">Cancel</button></form>` : ''}
-      </section>
-      <section class="lab-card"><h2 class="lab-h">${icon('i-layers', 'sm')}Your datasets${list ? ` <span class="muted">${list.length}</span>` : ''}</h2>
-        ${!list ? SKELETON_ROWS : list.length ? `<div class="lab-ds-list">${list.map(card).join('')}</div>` : `<p class="muted">None yet - add one above. The samples are the quickest way to try Labs.</p>`}</section>`);
-  }
-  async function addData(body, done) {
-    let r; try { r = await api('/api/labs/datasets', body); } catch (e) { r = { ok: false, message: e.message }; }
-    if (!r.ok) { toast(r.message); return false; }
-    await loadDatasets(); st.folderForm = false; paint(); toast(done || `Added "${r.dataset.name}".`);
-    return true;
-  }
-  function upload(input) {
-    const f = input.files && input.files[0]; input.value = '';
-    if (!f) return;
-    if (f.size > 64 * 1048576) { toast('That file is over 64 MB - use a part of it.'); return; }
-    const rd = new FileReader();
-    rd.onload = () => addData({ kind: 'text', name: f.name.replace(/\.[^.]+$/, ''), text: String(rd.result || '') });
-    rd.onerror = () => toast("Couldn't read that file.");
-    rd.readAsText(f);
-  }
-
-  /* ---- New run ---- */
-  function paintNew() {
-    const f = st.form, t = tpl(f.template), kind = t.data || 'text';
-    const sets = (st.datasets || []).filter(d => d.kind === kind);
-    if (!sets.some(d => d.id === f.dataset)) f.dataset = sets[0] ? sets[0].id : '';
-    const tcard = k => { const x = tpl(k); return `<button type="button" class="lab-tpl${f.template === k ? ' on' : ''}" aria-pressed="${f.template === k}" onclick="LabsView.set('template','${k}')">${icon(k === 'gpt' ? 'i-feed' : 'i-image')}<b>${esc(x.name || k)}</b><small>${esc(x.about || '')}</small></button>`; };
-    const sizes = Object.entries(t.sizes || {});
-    const size = (t.sizes || {})[f.size] || {};
-    const why = !eng().installed ? 'Set up the engine first (Labs › Engine).' : running() ? 'Another run is training - one at a time.' : !f.dataset ? `Add ${kind === 'text' ? 'a text' : 'a picture folder'} dataset first.` : '';
-    page('new', `<section class="lab-card lab-new">
-        <h2 class="lab-h">${icon('i-flask', 'sm')}What to train</h2>
-        <div class="lab-tpls">${tcard('gpt')}${tcard('cnn')}</div>
-        <div class="lab-set"><div class="lab-set-l"><b>Dataset</b><small>${kind === 'text' ? 'A text to learn from' : 'A picture folder, one subfolder per kind'}</small></div>
-          <div class="lab-set-c">${sets.length ? `<select class="input" onchange="LabsView.set('dataset',this.value)">${sets.map(d => `<option value="${esc(d.id)}"${d.id === f.dataset ? ' selected' : ''}>${esc(d.name)}</option>`).join('')}</select>` : ''}
-            <button type="button" class="btn sm ghost" onclick="LabsView.go('data')">${icon('i-plus', 'xs')}Add one</button></div></div>
-        <div class="lab-set"><div class="lab-set-l"><b>Size</b><small>${esc(size.about || '')}</small></div>
-          <div class="lab-set-c"><div class="seg" role="group" aria-label="Size">${sizes.map(([k, v]) => `<button type="button" class="${f.size === k ? 'on' : ''}" aria-pressed="${f.size === k}" onclick="LabsView.set('size','${k}')">${esc(v.label)}</button>`).join('')}</div></div></div>
-        <div class="lab-set"><div class="lab-set-l"><b>Steps</b><small>How long it trains - more steps, better (to a point)</small></div>
-          <div class="lab-set-c"><input class="input lab-num" type="number" min="100" max="200000" step="100" placeholder="${size.steps || ''}" value="${esc(f.steps)}" onchange="LabsView.set('steps',this.value)"></div></div>
-        <div class="lab-set"><div class="lab-set-l"><b>Name</b><small>Shown in the run list</small></div>
-          <div class="lab-set-c"><input class="input" maxlength="100" placeholder="${esc(`${t.name || ''} on ${((st.datasets || []).find(d => d.id === f.dataset) || {}).name || '…'}`)}" value="${esc(f.name)}" onchange="LabsView.set('name',this.value)"></div></div>
-        <details class="lab-adv"><summary>Advanced</summary>
-          <div class="lab-set"><div class="lab-set-l"><b>Learning rate</b><small>Empty: the size's own</small></div><div class="lab-set-c"><input class="input lab-num" type="number" step="0.0001" min="0.00001" max="0.1" placeholder="auto" value="${esc(f.lr)}" onchange="LabsView.set('lr',this.value)"></div></div>
-          <div class="lab-set"><div class="lab-set-l"><b>Batch</b><small>Examples per step - lower it if the GPU runs out of memory</small></div><div class="lab-set-c"><input class="input lab-num" type="number" min="1" max="512" placeholder="auto" value="${esc(f.batch)}" onchange="LabsView.set('batch',this.value)"></div></div>
-          <div class="lab-set"><div class="lab-set-l"><b>Seed</b><small>Same seed, same data, same settings: the same run</small></div><div class="lab-set-c"><input class="input lab-num" type="number" min="0" placeholder="0" value="${esc(f.seed)}" onchange="LabsView.set('seed',this.value)"></div></div>
-        </details>
-        <div class="lab-go">${why ? `<span class="muted">${esc(why)}</span>` : '<span class="muted">The GPU is freed for it first; pictures, video and music wait while it trains.</span>'}
-          <button type="button" class="btn primary" onclick="LabsView.start()" ${why || st.starting ? 'disabled' : ''}>${st.starting ? '<span class="spinner"></span>Starting…' : `${icon('i-play', 'xs')}Start training`}</button></div>
-      </section>`);
-  }
-  async function start() {
-    const f = st.form; if (st.starting) return;
-    st.starting = true; paint();
-    const settings = {}; if (f.lr) settings.lr = +f.lr; if (f.batch) settings.batch = +f.batch; if (f.seed !== '') settings.seed = +f.seed;
-    let r; try { r = await api('/api/labs/runs', { template: f.template, dataset: f.dataset, size: f.size, name: f.name, steps: f.steps ? +f.steps : null, settings }); } catch (e) { r = { ok: false, message: e.message }; }
-    st.starting = false;
-    if (!r.ok) { toast(r.message); paint(); return; }
-    f.name = ''; f.steps = '';
-    st.sel = r.run.id; st.page = 'runs'; st.cmp = ''; st.sampleAt = -1; st.tryOut = null;
-    await poll(); markNav();
-  }
-
-  /* ---- Runs ---- */
-  function bestVal(r) { return r.last && r.last.val_loss != null ? r.last.val_loss : null; }
-  function paintRuns() {
-    const list = st.runs;
-    if (list && list.length && !list.some(r => r.id === st.sel)) { st.sel = list[0].id; loadRun(st.sel).then(paint); }
-    const row = r => {
-      const last = r.last || {}, state = r.id === running() ? 'running' : r.state;
-      return `<button type="button" class="lab-run${r.id === st.sel ? ' on' : ''}" onclick="LabsView.pick('${jsArg(r.id)}')">
-        <span class="lab-state s-${state}" aria-hidden="true"></span><span class="grow"><b>${esc(r.name)}</b>
-        <small>${esc(STATE[state] || state)} · ${esc((tpl(r.template).sizes || {})[r.size] ? tpl(r.template).sizes[r.size].label : r.size)} · ${big(last.step || 0)}/${big(r.steps)}${bestVal(r) != null ? ` · val ${num(bestVal(r))}` : ''}</small></span></button>`;
+  /* ===================================== Models ===================================== */
+  function paintModels() {
+    const list = st.models;
+    if (list && list.length && !st.newOpen && !model()) { st.sel = list[0].id; st.ver = null; }
+    const el = page('models');
+    if (!el.querySelector('#lab-mlist')) el.innerHTML = `<div class="lab-split"><aside class="lab-list" id="lab-mlist" aria-label="Your models"></aside><section class="lab-main" id="lab-mmain"></section></div>`;
+    el.querySelector('.lab-split').classList.toggle('solo', !!list && !list.length);
+    const row = m => {
+      const v = m.versions[m.versions.length - 1], s = stateOf(v), j = JOBS[m.template] || {};
+      return `<button type="button" class="lab-row${m.id === st.sel && !st.newOpen ? ' on' : ''}" onclick="LabsView.open('${jsArg(m.id)}')">
+        <span class="lab-row-ic">${icon(j.icon || 'i-flask', 'sm')}</span><span class="grow"><b>${esc(m.name)}</b>
+        <small><span class="lab-sdot s-${s}"></span>${STATE[s] || s}${m.versions.length > 1 ? ` · v${v.version || m.versions.length}` : ''} · ${when(m.updated)}</small></span></button>`;
     };
-    const el = page('runs');
-    if (!el.querySelector('#lab-runs')) el.innerHTML = `<div class="lab-runs"><aside class="lab-list" id="lab-runs" aria-label="Runs"></aside><section class="lab-detail" id="lab-detail"></section></div>`;
-    el.querySelector('.lab-runs').classList.toggle('empty', !!list && !list.length);
-    setHtmlIfChanged($('lab-runs'), !list ? SKELETON_ROWS : list.length ? list.map(row).join('')
-      : `<div class="lab-empty">${icon('i-flask')}<b>No runs yet</b><p>Start one from New run - the samples in Datasets make a first run quick.</p><button type="button" class="btn primary" onclick="LabsView.go('new')">${icon('i-plus', 'xs')}New run</button></div>`);
-    paintDetail();
+    setHtmlIfChanged($('lab-mlist'), !list ? SKELETON_ROWS : list.length ? `<div class="lab-list-head"><b>Your models</b><span class="muted">${list.length}</span></div>${list.map(row).join('')}` : '');
+    const main = $('lab-mmain');
+    if (!list) { setHtmlIfChanged(main, SKELETON_TEXT); return; }
+    if (st.newOpen || !list.length) { main.dataset.mode = 'new'; setHtmlIfChanged(main, jobChooser(!list.length)); return; }
+    paintModel(main);
   }
-  function paintDetail() {
-    const box = $('lab-detail'); if (!box) return;
-    const d = st.sel && data[st.sel], r = d && d.run;
-    if (!r) { box.innerHTML = st.sel ? SKELETON_TEXT : ''; box.dataset.run = ''; return; }
-    if (box.dataset.run !== r.id) {
-      box.dataset.run = r.id; hover = null;
-      box.innerHTML = `<div class="lab-d-head"><input class="lab-title" id="lab-name" value="${esc(r.name)}" aria-label="Run name" maxlength="100" onchange="LabsView.rename(this.value)" onkeydown="if(event.key==='Enter')this.blur()"><div class="lab-d-acts" id="lab-acts"></div></div>
-        <div id="lab-prog"></div><div class="lab-tiles" id="lab-tiles"></div>
-        <section class="lab-card lab-chart-card"><div class="lab-chart-top" id="lab-chart-top"></div>
-          <div class="lab-chart" id="lab-chart"><canvas id="lab-cv" role="img" aria-label="Loss over training steps"></canvas><div class="lab-tip" id="lab-tip" hidden></div></div>
-          <details class="lab-table"><summary>Show the numbers</summary><div id="lab-numbers"></div></details></section>
-        <section class="lab-card" id="lab-samples"></section>
-        <section class="lab-card"><h2 class="lab-h">${icon('i-edit', 'sm')}Notes</h2><textarea class="input lab-notes" placeholder="What you changed, what you noticed…" onchange="LabsView.notes(this.value)">${esc(r.notes || '')}</textarea>
-          <p class="muted lab-meta" id="lab-meta"></p></section>`;
-      const cv = $('lab-cv');
-      cv.addEventListener('mousemove', e => { hover = e.offsetX; drawChart(); });
-      cv.addEventListener('mouseleave', () => { hover = null; drawChart(); });
-      new ResizeObserver(() => drawChart()).observe($('lab-chart'));
+  function jobChooser(first) {
+    const card = ([k, j]) => `<article class="lab-job">${icon(j.icon)}<b>${j.name}</b><small class="muted">${j.what}</small><p>${j.about}</p>
+      <div class="lab-job-acts"><button type="button" class="btn primary sm" onclick="LabsView.create('${k}')" ${eng().installed ? '' : 'disabled'}>Use my data</button>
+      <button type="button" class="btn sm" onclick="LabsView.create('${k}', true)" ${eng().installed ? '' : 'disabled'}>Try with a sample</button></div></article>`;
+    return `<section class="lab-card"><div class="lab-card-head"><h2>${first ? 'Make your first model' : 'New model'}</h2><span class="grow"></span>${first ? '' : `<button type="button" class="btn ghost sm" onclick="LabsView.cancelNew()">Cancel</button>`}</div>
+      <p class="lab-sub">What should it do? You can change everything about it in the next steps.</p>
+      <div class="lab-jobs">${Object.entries(JOBS).map(card).join('')}</div></section>`;
+  }
+
+  /* ---- one model: header, versions, the five steps ---- */
+  function stepState(v, k) {
+    const s = stateOf(v), trained = ['done', 'stopped', 'failed', 'running'].includes(s) || (v.last && v.last.step);
+    const ds = (v.dataset || {}).id || (v.dataset || {}).path;
+    return { data: ds ? 'done' : 'todo', design: s !== 'draft' ? 'done' : ds ? 'todo' : 'later',
+             train: s === 'running' ? 'now' : trained ? 'done' : 'later', check: trained ? (s === 'done' ? 'done' : 'todo') : 'later',
+             use: v.ported ? 'done' : s === 'done' || s === 'stopped' ? 'todo' : 'later' }[k];
+  }
+  function defaultStep(v) {
+    const s = stateOf(v);
+    if (s === 'running') return 'train';
+    if (s === 'draft') return (v.dataset || {}).id || (v.dataset || {}).path ? 'design' : 'data';
+    return 'check';
+  }
+  function paintModel(main) {
+    const m = model(), v = version();
+    if (!m || !v) { setHtmlIfChanged(main, SKELETON_TEXT); return; }
+    if (!st.step) st.step = defaultStep(v);
+    if (main.dataset.mode !== v.id) {
+      main.dataset.mode = v.id; main._html = null; hover = null;
+      main.innerHTML = `<header class="lab-mhead" id="lab-mhead"></header><nav class="lab-steps" id="lab-steps" aria-label="Steps"></nav><div id="lab-step"></div>`;
     }
-    const live = r.id === running(), state = live ? 'running' : r.state, rows = d.rows, start = rows.find(x => x.event === 'start') || {};
-    const steps = rows.filter(x => x.loss != null), vals = rows.filter(x => x.val_loss != null);
-    const last = steps[steps.length - 1] || {}, lastVal = vals[vals.length - 1] || {};
-    const step = last.step || 0, frac = Math.min(1, step / (r.steps || 1));
+    const s = stateOf(v), j = JOBS[m.template] || {};
+    const verOpts = m.versions.map(x => `<option value="${esc(x.id)}"${x.id === v.id ? ' selected' : ''}>Version ${x.version || 1} · ${STATE[stateOf(x)] || x.state}</option>`).join('');
+    setHtmlIfChanged($('lab-mhead'), `<div class="lab-mhead-l">${icon(j.icon || 'i-flask')}<div class="grow">
+        <input class="lab-title" value="${esc(m.name)}" aria-label="Model name" maxlength="100" onchange="LabsView.rename(this.value)" onkeydown="if(event.key==='Enter')this.blur()">
+        <div class="lab-meta-line"><span>${esc(j.name || m.template)}</span>${m.versions.length > 1 ? `<select class="lab-ver" aria-label="Version" onchange="LabsView.pickVersion(this.value)">${verOpts}</select>` : '<span>Version 1</span>'}<span class="lab-chip s-${s}">${STATE[s] || s}</span></div></div></div>
+      <button type="button" class="icon-btn" onclick="LabsView.modelMenu(this)" aria-label="More for this model" aria-haspopup="menu">${icon('i-dots', 'sm')}</button>`);
+    setHtmlIfChanged($('lab-steps'), LAB_STEPS.map(([k, label], i) => {
+      const ss = stepState(v, k);
+      return `<button type="button" class="lab-step ${ss}${st.step === k ? ' on' : ''}" onclick="LabsView.step('${k}')" ${st.step === k ? 'aria-current="step"' : ''}>
+        <span class="lab-step-n">${ss === 'done' ? icon('i-check', 'xs') : ss === 'now' ? '<span class="dot busy"></span>' : i + 1}</span>${label}</button>`;
+    }).join(''));
+    const box = $('lab-step');
+    if (box.dataset.mode !== st.step) { box.dataset.mode = st.step; box._html = null; box.innerHTML = ''; }
+    ({ data: stepData, design: stepDesign, train: stepTrain, check: stepCheck, use: stepUse })[st.step](box, m, v);
+  }
+  function footer(back, next) {
+    return `<footer class="lab-foot">${back ? `<button type="button" class="btn ghost" onclick="LabsView.step('${back[0]}')">${icon('i-arrow-left', 'xs')}${back[1]}</button>` : '<span></span>'}
+      <span class="grow"></span>${next || ''}</footer>`;
+  }
+  const isDraft = v => v.state === 'draft';
+  function lockedNote(v) {
+    return isDraft(v) ? '' : `<div class="lab-note">${icon('i-info', 'sm')}<span>This version has trained - its data and network are what it learned with. To change them, make a new version.</span>
+      <button type="button" class="btn sm" onclick="LabsView.newVersion()">New version</button></div>`;
+  }
+
+  /* ---- 1 Data ---- */
+  function stepData(box, m, v) {
+    const j = JOBS[m.template], kind = j.data, mine = (st.datasets || []).filter(d => d.kind === kind), cur = (v.dataset || {}).id;
+    const pick = d => `<label class="lab-pick${d.id === cur ? ' on' : ''}"><input type="radio" name="lab-ds" value="${esc(d.id)}" ${d.id === cur ? 'checked' : ''} ${isDraft(v) ? '' : 'disabled'} onchange="LabsView.useData(this.value)">
+      <span class="grow"><b>${esc(d.name)}</b><small>${dataLine(d)}</small></span></label>`;
+    const sel = dsOf(cur);
+    setHtmlIfChanged(box, `${lockedNote(v)}<div class="lab-two"><section class="lab-card"><div class="lab-card-head"><h2>What it learns from</h2></div>
+        <p class="lab-sub">${{ chat: 'Questions with the answers it should give.', text: 'One text it learns to write like.', images: 'A folder with one subfolder per kind of picture.' }[kind]}</p>
+        ${!st.datasets ? SKELETON_ROWS : mine.length ? `<div class="lab-picks">${mine.map(pick).join('')}</div>` : `<p class="muted">None yet.</p>`}
+        ${isDraft(v) ? `<div class="lab-row-acts"><button type="button" class="btn sm" onclick="LabsView.addData('${kind}')">${icon('i-plus', 'xs')}Add ${{ chat: 'chat examples', text: 'a text', images: 'a picture folder' }[kind]}</button>
+          <button type="button" class="btn ghost sm" onclick="LabsView.sample('${j.sample}', true)">Use the sample</button></div>` : ''}</section>
+      <section class="lab-card">${sel ? health(sel) : `<div class="lab-empty-s">${icon('i-layers')}<b>Pick the data on the left</b><p>Its health check shows here - how much there is, what will be held back to test it, and anything to fix.</p></div>`}</section></div>
+      ${footer(null, `<button type="button" class="btn primary" onclick="LabsView.step('design')" ${cur ? '' : 'disabled'}>Next: Design ${icon('i-arrow-right', 'xs')}</button>`)}`);
+  }
+  function dataLine(d) {
+    if (d.kind === 'chat') return `${d.count} examples`;
+    if (d.kind === 'text') return `${big(d.chars)} characters · ${d.vocab} different`;
+    return `${d.count} pictures · ${Object.keys(d.classes || {}).length} kinds`;
+  }
+  // What the data is like, against what training needs - every limit stated, with the reason.
+  function health(d) {
+    const rows = [], warn = [];
+    if (d.kind === 'chat') {
+      const held = d.count >= 10 ? Math.max(1, Math.min(30, Math.floor(d.count / 10))) : 1;
+      rows.push(['Examples', d.count], ['Held out to test it', `${held} - it never trains on these`], ['Learns from', d.count - held]);
+      if (d.count < 50) warn.push(`Only ${d.count} examples - it will learn the style, but more (50+) teaches it better.`);
+    } else if (d.kind === 'text') {
+      rows.push(['Characters', big(d.chars)], ['Different characters', d.vocab], ['Held out to test it', 'the last 10%']);
+      if (d.chars < 100000) warn.push('Under 100k characters it will mostly memorise the text; a few MB gives it room to learn.');
+    } else {
+      const cls = Object.entries(d.classes || {}), mx = Math.max(...cls.map(c => c[1]), 1), mn = Math.min(...cls.map(c => c[1]));
+      rows.push(['Pictures', d.count], ['Kinds', cls.length], ['Held out to test it', 'about 1 in 7']);
+      if (mn < 20) warn.push('A kind with under 20 pictures will be guessed poorly - add more of it.');
+      if (mx > mn * 4) warn.push('Some kinds have far more pictures than others - it may favour them.');
+      return `<div class="lab-card-head"><h2>${esc(d.name)}</h2></div>${facts(rows)}<div class="lab-bars">${cls.map(([k, n]) => `<div class="lab-barrow"><span>${esc(k)}</span><div class="bar"><i style="width:${(n / mx) * 100}%"></i></div><span class="mono">${n}</span></div>`).join('')}</div>${warns(warn)}`;
+    }
+    return `<div class="lab-card-head"><h2>${esc(d.name)}</h2></div>${facts(rows)}${d.preview ? `<div class="lab-quote"><small>First example</small>${esc(d.preview)}</div>` : ''}${warns(warn)}`;
+  }
+  const facts = rows => `<dl class="lab-facts">${rows.map(([k, v]) => `<dt>${k}</dt><dd>${typeof v === 'number' ? v.toLocaleString() : v}</dd>`).join('')}</dl>`;
+  const warns = w => w.map(x => `<div class="lab-warn">${icon('i-alert', 'xs')}<span>${esc(x)}</span></div>`).join('');
+
+  /* ---- 2 Design: the network you set up ---- */
+  function cfgOf(v) {
+    const p = (((st.status || {}).presets || {})[v.template] || {})[v.size] || {};
+    return { ...p, ...(v.settings || {}) };
+  }
+  function stepDesign(box, m, v) {
+    const t = tpl(v.template), cfg = cfgOf(v), ds = dsOf((v.dataset || {}).id), est = estimate(v, cfg, ds), edit = isDraft(v) && !v.locked;
+    const sizes = Object.entries(t.sizes || {});
+    if (!box.querySelector('#lab-net')) box.innerHTML = `<div id="lab-design-top"></div><section class="lab-card lab-net-card"><div class="lab-card-head"><h2 id="lab-net-title">The network</h2><span class="grow"></span>
+        <div id="lab-view-seg"></div></div>
+        <div id="lab-sizes-row"></div><div id="lab-trace-bar"></div><div class="lab-net-wrap"><div class="lab-net" id="lab-net"></div><aside class="lab-net-side" id="lab-net-side"></aside></div><div class="lab-plan" id="lab-plan"></div></section><div id="lab-design-foot"></div>`;
+    setHtmlIfChanged($('lab-design-top'), lockedNote(v) + (v.locked && isDraft(v) ? `<div class="lab-note">${icon('i-info', 'sm')}<span>This version continues from version ${(model().versions.find(x => x.id === v.parent) || {}).version || 'before'}'s weights, so its network stays as it is - you can change how long and how fast it trains.</span></div>` : '')
+);
+    setHtmlIfChanged($('lab-sizes-row'), `<div class="lab-sizes-l"><b>${v.template === 'lora' ? 'Base model' : 'Start from'}</b><span class="muted">${v.template === 'lora' ? 'the chat model it fine-tunes' : 'a preset - then change any part below'}</span></div>
+      <div class="lab-sizes">${sizes.map(([k, x]) => `<button type="button" class="lab-size${v.size === k ? ' on' : ''}" ${edit ? `onclick="LabsView.setSize('${k}')"` : 'disabled'}><b>${esc(x.label)}</b><small>${esc(x.about)}</small></button>`).join('')}</div>`);
+    setHtmlIfChanged($('lab-view-seg'), viewSeg(true));
+    const tr = st.view === 'nodes' && st.trace && st.trace.rid === v.id ? st.trace : null;
+    setHtmlIfChanged($('lab-trace-bar'), st.view === 'nodes' ? traceBar(v) : '');
+    setHtmlIfChanged($('lab-net'), st.view === 'table' ? netTable(v, cfg, ds) : st.view === 'blocks' ? netSvg(v, cfg, ds, null) : nodeSvg(v, cfg, ds, null, { edit, trace: tr && tr.data, reveal: tr && tr.fresh }));
+    bindNet(v);
+    setHtmlIfChanged($('lab-net-side'), sidePanel(v, cfg, ds, edit));
+    setHtmlIfChanged($('lab-plan'), planBox(v, est));
+    const why = !(v.dataset || {}).id && !(v.dataset || {}).path ? 'Pick its data first.' : !eng().installed ? 'Set up the engine first.' : running() ? 'Another model is training - one at a time on this GPU.' : est.errors.length ? est.errors[0] : '';
+    setHtmlIfChanged($('lab-design-foot'), footer(['data', 'Data'], isDraft(v)
+      ? `${why ? `<span class="lab-why">${esc(why)}</span>` : `<span class="lab-why">${st.saving ? 'Saving…' : 'The GPU is freed for it; pictures, video and music wait.'}</span>`}<button type="button" class="btn primary" onclick="LabsView.start()" ${why || st.busy ? 'disabled' : ''}>${st.busy ? '<span class="spinner"></span>Starting…' : `${icon('i-play', 'xs')}Start training`}</button>`
+      : `<button type="button" class="btn primary" onclick="LabsView.step('train')">Training ${icon('i-arrow-right', 'xs')}</button>`));
+  }
+  function planBox(v, est) {
+    const cell = (label, value, sub, cls = '') => `<div class="lab-plan-c ${cls}"><small>${label}</small><b>${value}</b><small>${sub}</small></div>`;
+    return cell(v.template === 'lora' ? 'Learns' : 'Parameters', big(est.trainable), v.template === 'lora' ? `of ${big(est.total)} - the rest stays frozen` : 'all of them learn')
+      + cell('Memory on the GPU', `≈ ${gb(est.vram)}`, est.vram > 7.5 * 2 ** 30 ? 'more than this card has - make it smaller' : est.vram > 6 * 2 ** 30 ? 'tight with other apps open' : 'fits this card', est.vram > 7.5 * 2 ** 30 ? 'bad' : est.vram > 6 * 2 ** 30 ? 'warn' : '')
+      + cell('Time', `≈ ${dur(est.secs)}`, est.measured ? `${v.steps.toLocaleString()} steps · from your last run` : `${v.steps.toLocaleString()} steps · rough estimate`)
+      + `<div class="lab-plan-c lab-steps-in"><small>Steps</small><input class="input" type="number" min="10" step="${v.template === 'lora' ? 10 : 100}" value="${v.steps}" aria-label="Steps" ${isDraft(v) ? '' : 'disabled'} onchange="LabsView.setSteps(this.value)"><small>${v.template === 'lora' ? 'each learns from 8 examples' : 'more = better, to a point'}</small></div>`;
+  }
+
+  /* -- architecture maths (the same formulas the worker's shapes give; checked against its measured counts) -- */
+  function loraDims(size) {
+    const b = ((st.status || {}).bases || {})[size] || { hidden: 1024, inter: 3584, layers: 24, heads: 8, kv: 2, head_dim: 256, lin_k_heads: 16, lin_v_heads: 16, lin_dim: 128, vocab: 248320, interval: 4 };
+    const h = b.hidden, kd = b.lin_k_heads * b.lin_dim, vd = b.lin_v_heads * b.lin_dim;
+    return { b, mods: {
+      delta: [['in_proj_qkv', h, 2 * kd + vd], ['in_proj_z', h, vd], ['out_proj', vd, h]],
+      gates: [['in_proj_a', h, b.lin_v_heads], ['in_proj_b', h, b.lin_v_heads]],
+      attn: [['q_proj', h, b.heads * b.head_dim * 2], ['k_proj', h, b.kv * b.head_dim], ['v_proj', h, b.kv * b.head_dim], ['o_proj', b.heads * b.head_dim, h]],
+      mlp: [['gate_proj', h, b.inter], ['up_proj', h, b.inter], ['down_proj', b.inter, h]] } };
+  }
+  const layerKind = (b, i) => (i + 1) % (b.interval || 4) === 0 ? 'attn' : 'delta';
+  function estimate(v, cfg, ds) {
+    const out = { trainable: 0, total: 0, vram: 0, secs: 0, errors: [], measured: false };
+    if (v.template === 'gpt') {
+      const d = cfg.n_embd, bl = archOf(v, cfg), L = bl.length, V = (ds && ds.vocab) || 65, T = cfg.block, B = cfg.batch || ({ tiny: 32, small: 32, medium: 24 })[v.size] || 32;
+      const mlpAvg = bl.reduce((s, b) => s + b.mlp, 0) / L;
+      out.total = out.trainable = bl.reduce((s, b) => s + blkParams(d, b), 0) + (V + T) * d + 2 * d + (cfg.tie === false ? V * d : 0);
+      out.vram = out.total * 16 + B * T * d * L * (18 + 4 * mlpAvg) + B * T * V * 8 + 400 * 2 ** 20;
+      bl.forEach((b, i) => { if (d % b.heads || d / b.heads < 8) out.errors.push(`Block ${i + 1}: the width (${d}) must split evenly into its ${b.heads} heads.`); });
+    } else if (v.template === 'cnn') {
+      const sts = archOf(v, cfg), C = ds ? Object.keys(ds.classes || {}).length || 2 : 2, px = cfg.px, B = cfg.batch || 64, last = sts[sts.length - 1].ch;
+      out.total = out.trainable = stageParams(sts).reduce((s, n) => s + n, 0) + last * C + C;
+      out.vram = out.total * 16 + sts.reduce((s, st_, i) => s + B * (px >> i) * (px >> i) * st_.ch * st_.convs * 10, 0) + 300 * 2 ** 20;
+      const halv = sts.length - 1;
+      if (px % 2 ** halv || px / 2 ** halv < 2) out.errors.push(`With ${sts.length} stages the picture size must be a multiple of ${2 ** halv}.`);
+    } else {
+      const { b, mods } = loraDims(v.size), r = cfg.rank || 16, tg = cfg.targets || {}, layers = cfg.layers;
+      let linear = 0;
+      for (let i = 0; i < b.layers; i++) {
+        const k = layerKind(b, i), parts = [k === 'attn' ? 'attn' : 'delta', ...(k === 'attn' ? [] : ['gates']), 'mlp'];
+        for (const p of parts) for (const [, a, c] of mods[p]) { linear += a * c; if (tg[p] && (!layers || layers.includes(i))) out.trainable += r * (a + c); }
+      }
+      out.total = linear + b.vocab * b.hidden;
+      out.vram = linear * 0.56 + b.vocab * b.hidden * 2 + out.trainable * 16 + (cfg.max_len || 1024) * b.hidden * b.layers * 6 + 450 * 2 ** 20;
+      if (!Object.values(tg).some(Boolean)) out.errors.push('Pick at least one part of the network to fine-tune.');
+      if (layers && !layers.length) out.errors.push('Pick at least one layer to fine-tune.');
+    }
+    // Time: seconds a step measured on this PC by the last run of the same kind and size, else a rough guess.
+    const past = (st.models || []).flatMap(mm => mm.versions).filter(x => x.template === v.template && x.size === v.size && x.last && x.last.t && x.last.step && x.id !== v.id);
+    const sps = past.length ? past[0].last.t / Math.max(1, past[0].last.step - (past[0].from_step || 0)) : ({ gpt: { tiny: .03, small: .12, medium: .3 }, cnn: { tiny: .03, small: .05, medium: .12 }, lora: { '0.8b': 7, '2b': 14, '4b': 28 } }[v.template] || {})[v.size] || .1;
+    out.measured = !!past.length;
+    out.secs = sps * (v.steps - (v.from_step || 0));
+    return out;
+  }
+
+  /* -- the drawing: SVG from the config, no layout engine. Parts are focusable buttons. -- */
+  const H = s => esc(String(s));
+  function viewSeg(table) {
+    const b = (k, label) => `<button type="button" class="${st.view === k || (!table && k === 'blocks' && st.view === 'table') ? 'on' : ''}" onclick="LabsView.netView('${k}')" aria-pressed="${st.view === k}">${label}</button>`;
+    return `<div class="seg sm" role="group" aria-label="Draw the network as">${b('nodes', 'Nodes')}${b('blocks', 'Blocks')}${table ? b('table', 'Table') : ''}</div>`;
+  }
+  function netSvg(v, cfg, ds, heat) {
+    if (v.template === 'lora') return loraSvg(v, cfg, heat);
+    const parts = v.template === 'gpt' ? gptParts(cfg, ds) : cnnParts(cfg, ds);
+    const W = 720, gap = 10, n = parts.length, bw = Math.min(118, (W - gap * (n - 1)) / n), Hh = 156, y0 = 4;
+    let x = (W - (bw * n + gap * (n - 1))) / 2, svg = '';
+    parts.forEach((p, i) => {
+      const h = p.h ? Math.max(36, p.h * 120) : 120, y = y0 + (120 - h) / 2, sel = st.part === p.id, hv = heat ? (v.template === 'cnn' && /^stage/.test(p.id) ? cnnHeat(heat, +p.id.slice(5)) : heat[p.heat]) : null;
+      if (i) svg += `<line class="nv-wire" x1="${x - gap}" y1="${y0 + 60}" x2="${x}" y2="${y0 + 60}"/>`;
+      svg += `<g class="nv-part ${p.kind}${sel ? ' sel' : ''}" data-part="${H(p.id)}" role="button" tabindex="0" aria-pressed="${sel}" aria-label="${H(p.label)}, ${H(p.shape)}, ${H(big(p.params))} parameters" style="${hv != null ? `--h:${Math.round(hv * 100)}%` : ''}">
+        <rect x="${x}" y="${y}" width="${bw}" height="${h}" rx="9"/>${hv != null ? `<rect class="nv-heat" x="${x}" y="${y}" width="${bw}" height="${h}" rx="9"/>` : ''}
+        <text class="nv-t" x="${x + bw / 2}" y="${y + h / 2 - 6}">${H(p.label)}</text><text class="nv-s" x="${x + bw / 2}" y="${y + h / 2 + 10}">${H(p.shape)}</text>
+        <text class="nv-p" x="${x + bw / 2}" y="${y0 + 120 + 20}">${p.params ? `${H(big(p.params))} params` : ''}</text></g>`;
+      x += bw + gap;
+    });
+    return `<svg class="nv" viewBox="0 0 ${W} ${Hh}" role="group" aria-label="The network, left to right">${svg}</svg>`;
+  }
+  // The network as a list of layers, each with its own amounts - what the worker builds (labs_worker GPT / CNN).
+  function archOf(v, cfg) {
+    if (v.template === 'gpt') return (cfg.blocks && cfg.blocks.length ? cfg.blocks : Array.from({ length: cfg.n_layer || 4 }, () => ({ heads: cfg.n_head || 4, mlp: 4 }))).map(b => ({ heads: b.heads, mlp: b.mlp || 4 }));
+    if (v.template === 'cnn') { const w = cfg.width || 32; return (cfg.stages && cfg.stages.length ? cfg.stages : [{ ch: w, convs: 2 }, { ch: 2 * w, convs: 2 }, { ch: 4 * w, convs: 2 }, { ch: 8 * w, convs: 1 }]).map(s => ({ ch: s.ch, convs: s.convs || 1 })); }
+    return [];
+  }
+  const blkParams = (d, b) => 4 * d * d + 4 * d + 2 * b.mlp * d * d + b.mlp * d + d + 4 * d;
+  const cv = (a, b) => 9 * a * b + 2 * b;
+  function stageParams(stages) {
+    let cin = 3; return stages.map(s => { let n = 0; for (let k = 0; k < s.convs; k++) { n += cv(cin, s.ch); cin = s.ch; } return n; });
+  }
+  function gptParts(c, ds) {
+    const d = c.n_embd, V = (ds && ds.vocab) || 65, T = c.block, bl = archOf({ template: 'gpt' }, c), L = bl.length;
+    const show = L <= 6 ? [...Array(L).keys()] : [0, 1, -1, L - 2, L - 1];
+    const blocks = show.map(i => i < 0 ? { id: 'more', kind: 'blk more', label: `× ${L - 4} more`, shape: 'blocks', params: bl.slice(2, L - 2).reduce((s, b) => s + blkParams(d, b), 0) }
+      : { id: `block${i}`, heat: `block${i}`, kind: 'blk', label: `Block ${i + 1}`, shape: `${bl[i].heads} heads · MLP ×${bl[i].mlp}`, params: blkParams(d, bl[i]) });
+    return [{ id: 'in', kind: 'io', label: 'Text in', shape: `${T} characters`, h: .7 },
+            { id: 'embed', heat: 'embed', kind: 'emb', label: 'Embedding', shape: `${V} × ${d}`, params: (V + T) * d },
+            ...blocks, { id: 'head', heat: 'head', kind: 'emb', label: 'Output', shape: `${d} → ${V}`, params: 2 * d + (c.tie === false ? V * d : 0) },
+            { id: 'out', kind: 'io', label: 'Next char', shape: `1 of ${V}`, h: .7 }];
+  }
+  function cnnParts(c, ds) {
+    const px = c.px, C = ds ? Object.keys(ds.classes || {}).length || 2 : 2, sts = archOf({ template: 'cnn' }, c), ps = stageParams(sts), last = sts[sts.length - 1].ch;
+    return [{ id: 'in', kind: 'io', label: 'Picture', shape: `${px}×${px}×3`, h: 1 },
+            ...sts.map((s, i) => ({ id: `stage${i}`, heat: `stage${i}`, kind: 'blk', label: `Conv × ${s.convs}`, shape: `${px >> i}×${px >> i}×${s.ch}`, params: ps[i], h: Math.max(.35, 1 - i * .2) })),
+            { id: 'head', heat: 'head', kind: 'emb', label: 'Decide', shape: `${last} → ${C} kinds`, params: last * C + C, h: .4 },
+            { id: 'out', kind: 'io', label: 'Kind', shape: `1 of ${C}`, h: .4 }];
+  }
+  // Old picture runs logged heat per conv (conv0..conv6); new ones per stage.
+  const cnnHeat = (heat, i) => heat ? heat[`stage${i}`] ?? Math.max(heat[`conv${2 * i}`] || 0, heat[`conv${2 * i + 1}`] || 0) : null;
+  // Qwen 3.5: rows of 4 layers (3 Gated DeltaNet + 1 full attention); each cell shows its mixer and its MLP, filled
+  // where adapters go, and glows with how hard that part is learning (live) or has learned (finished).
+  function loraSvg(v, cfg, heat) {
+    const { b } = loraDims(v.size), tg = cfg.targets || {}, layers = cfg.layers, rows = Math.ceil(b.layers / 4);
+    const W = 720, cw = 166, chh = 40, gx = 10, gy = 8, x0 = (W - (cw * 4 + gx * 3)) / 2, y0 = 54, Hh = y0 + rows * (chh + gy) + 46;
+    let svg = `<g class="nv-part emb frozen" data-part="embed" role="button" tabindex="0" aria-label="Embedding ${b.vocab} by ${b.hidden}, frozen"><rect x="${x0}" y="10" width="${cw * 4 + gx * 3}" height="28" rx="8"/><text class="nv-s" x="${W / 2}" y="28">Word table · ${b.vocab.toLocaleString()} tokens × ${b.hidden} · stays as it is (also used for the output)</text></g>`;
+    for (let i = 0; i < b.layers; i++) {
+      const r = Math.floor(i / 4), c = i % 4, x = x0 + c * (cw + gx), y = y0 + r * (chh + gy), k = layerKind(b, i);
+      const on = !layers || layers.includes(i), mixOn = on && (k === 'attn' ? tg.attn : tg.delta || tg.gates), mlpOn = on && tg.mlp;
+      const hm = heat ? Math.max(heat[`${i}.${k}`] || 0, k === 'delta' ? heat[`${i}.gates`] || 0 : 0) : null, hp = heat ? heat[`${i}.mlp`] || 0 : null;
+      const sel = st.part === `L${i}`;
+      svg += `<g class="nv-cell ${k}${on ? ' on' : ''}${sel ? ' sel' : ''}" data-part="L${i}" role="button" tabindex="0" aria-pressed="${on}" aria-label="Layer ${i + 1}, ${k === 'attn' ? 'full attention' : 'DeltaNet'}, ${on ? 'fine-tuned' : 'frozen'}">
+        <rect class="nv-cbg" x="${x}" y="${y}" width="${cw}" height="${chh}" rx="8"/>
+        <text class="nv-n" x="${x + 10}" y="${y + 27}">${i + 1}</text>
+        <rect class="nv-m${mixOn ? ' ad' : ''}" x="${x + 34}" y="${y + 9}" width="${(cw - 46) * .55}" height="${chh - 18}" rx="5" style="${hm != null ? `--h:${Math.round(hm * 100)}%` : ''}"/>
+        <text class="nv-s left" x="${x + 40}" y="${y + 26}">${k === 'attn' ? 'Attention' : 'DeltaNet'}</text>
+        <rect class="nv-m${mlpOn ? ' ad' : ''}" x="${x + 34 + (cw - 46) * .55 + 6}" y="${y + 9}" width="${(cw - 46) * .45 - 6}" height="${chh - 18}" rx="5" style="${hp != null ? `--h:${Math.round(hp * 100)}%` : ''}"/>
+        <text class="nv-s left" x="${x + 40 + (cw - 46) * .55 + 6}" y="${y + 26}">MLP</text></g>`;
+    }
+    const yb = y0 + rows * (chh + gy) + 4;
+    svg += `<g class="nv-part emb frozen" data-part="head"><rect x="${x0}" y="${yb}" width="${cw * 4 + gx * 3}" height="28" rx="8"/><text class="nv-s" x="${W / 2}" y="${yb + 18}">Norm → output to ${b.vocab.toLocaleString()} tokens · frozen</text></g>`;
+    return `<svg class="nv nv-lora" viewBox="0 0 ${W} ${Hh + 8}" role="group" aria-label="Qwen layers: click a layer to fine-tune it or leave it frozen">${svg}</svg>`;
+  }
+  // The node view. Two modes, both real:
+  //  - Structure: the network you set up - a column per layer, nodes = its heads / filters, sized by its amounts;
+  //    while training, each column's colour is how hard it is learning (gradient size from the worker).
+  //  - Trace: one input sent through the trained checkpoint (labs.trace). Nodes are the units that fired hardest,
+  //    coloured by their real value; wires are what actually flowed (activation × weight path), blue adds, orange
+  //    takes away, thicker = more. It lights up once, layer by layer, in the order it computed.
+  function latestWeights(rows) {
+    for (let i = (rows || []).length - 1; i >= 0; i--) if (rows[i].event === 'weights' && rows[i].w) return { w: rows[i].w, step: rows[i].step };
+    return null;
+  }
+  function structCols(v, cfg, ds, heat) {
+    const cols = [], clampN = (n, lo, hi) => Math.max(lo, Math.min(hi, Math.round(n)));
+    if (v.template === 'gpt') {
+      const V = (ds && ds.vocab) || 65, d = cfg.n_embd;
+      cols.push({ id: 'embed', heat: 'embed', kind: 'in', n: 3, label: 'Text in', sub: `${cfg.block} chars` });
+      archOf(v, cfg).forEach((b, i) => cols.push({ id: `block${i}`, heat: `block${i}`, kind: 'hid', n: clampN(b.heads, 1, 10), label: `Block ${i + 1}`, sub: `${b.heads} heads · ×${b.mlp}` }));
+      cols.push({ id: 'head', heat: 'head', kind: 'out', n: 3, label: 'Next char', sub: `1 of ${V}` });
+    } else if (v.template === 'cnn') {
+      const names = ds ? Object.keys(ds.classes || {}) : [];
+      cols.push({ id: 'in', kind: 'in', n: 3, label: 'Picture', sub: `${cfg.px} px` });
+      archOf(v, cfg).forEach((s, i) => cols.push({ id: `stage${i}`, hv: cnnHeat(heat, i), kind: 'hid', n: clampN(Math.log2(s.ch) - 1, 2, 8), label: `Stage ${i + 1}`, sub: `${s.ch} filters × ${s.convs}` }));
+      cols.push({ id: 'head', heat: 'head', kind: 'out', n: Math.max(2, Math.min(6, names.length || 2)), names, label: 'Kind', sub: '' });
+    } else {
+      const { b } = loraDims(v.size), layers = cfg.layers;
+      cols.push({ id: 'embed', kind: 'in', n: 3, label: 'Tokens', sub: '' });
+      for (let i = 0; i < b.layers; i++) {
+        const k = layerKind(b, i), h = heat ? Math.max(heat[`${i}.${k}`] || 0, heat[`${i}.mlp`] || 0, k === 'delta' ? heat[`${i}.gates`] || 0 : 0) : null;
+        cols.push({ id: `L${i}`, hv: h, kind: 'hid', cls: k, off: !!(layers && !layers.includes(i)), n: 4, label: String(i + 1), sub: '' });
+      }
+      cols.push({ id: 'head', kind: 'out', n: 3, label: 'Next token', sub: '' });
+    }
+    cols.forEach(c => { if (c.hv == null) c.hv = heat && c.heat ? heat[c.heat] ?? null : null; });
+    return cols;
+  }
+  function traceCols(tr) {
+    return tr.cols.map((c, k) => {
+      const mx = Math.max(1e-9, ...c.nodes.map(n => Math.abs(n.value)));
+      const kind = k === 0 ? 'in' : k === tr.cols.length - 1 ? 'out' : 'hid';
+      return { id: c.id, kind, label: c.label, n: c.nodes.length, tnodes: c.nodes.map(n => ({ ...n, mag: Math.abs(n.value) / mx })), edges: c.edges,
+        sub: kind === 'hid' && c.units ? `top ${c.nodes.length} of ${c.units}` : kind === 'out' ? 'its answer' : '' };
+    });
+  }
+  function nodeSvg(v, cfg, ds, heat, opts = {}) {
+    const tr = opts.trace, cols = tr ? traceCols(tr) : structCols(v, cfg, ds, heat), edit = !!opts.edit;
+    const W = 720, m = cols.length, top = 44, area = tr ? 230 : 190, mid = top + area / 2;
+    const padL = tr && cols[0].tnodes ? 70 : 64, padR = tr || (cols[m - 1].names && cols[m - 1].names.length) ? 110 : 64;
+    const xL = padL, xR = W - padR, g = Math.max((xR - xL) / (m - 1), 80), dx = m > 3 ? (xR - xL - 2 * g) / (m - 3) : g;
+    const r0 = Math.max(5, Math.min(11, dx * .2)), gapY = n => Math.min(Math.max(r0 * 2.9, 24), (area - 2 * r0) / Math.max(1, n - 1));
+    cols.forEach((c, i) => {
+      c.x = i === 0 ? xL : i === m - 1 ? xR : xL + g + (i - 1) * dx; c.r = Math.min(r0, gapY(c.n) * .42 || r0);
+      c.ys = [...Array(c.n).keys()].map(j => mid + (j - (c.n - 1) / 2) * gapY(c.n));
+    });
+    const reveal = tr && opts.reveal, hop = .32, del = k => reveal ? ` style="animation-delay:${(k * hop).toFixed(2)}s"` : '';
+    let edges = '', nodes = '', labels = '';
+    for (let k = 1; k < m; k++) {
+      const a = cols[k - 1], b = cols[k];
+      let e = '';
+      if (tr && b.edges) {
+        const mx = Math.max(1e-9, ...b.edges.flat().map(Math.abs));
+        b.ys.forEach((y2, j) => a.ys.forEach((y1, i) => {
+          const val = (b.edges[j] || [])[i]; if (val == null) return;
+          const s = Math.abs(val) / mx; if (s < .04) return;
+          e += `<line class="${val >= 0 ? 'pos' : 'neg'}" x1="${a.x}" y1="${y1}" x2="${b.x}" y2="${y2}" stroke-width="${(.6 + 3.4 * s).toFixed(2)}" stroke-opacity="${(.2 + .75 * s).toFixed(2)}"><title>${H(a.tnodes[i].name)} → ${H(b.tnodes[j].name)}: ${val >= 0 ? '+' : ''}${val.toFixed(4)}${k === 1 && tr.kind === 'gpt' ? ' (how much this block read that character)' : ''}</title></line>`;
+        }));
+      } else b.ys.forEach(y2 => a.ys.forEach(y1 => { e += `<line x1="${a.x}" y1="${y1}" x2="${b.x}" y2="${y2}"/>`; }));
+      edges += `<g class="nn-e${tr ? ' tr' : ''}${b.off ? ' off' : ''}"${del(k - .5)}>${e}</g>`;
+    }
+    cols.forEach((c, k) => {
+      const sel = st.part === c.id, learn = !tr && c.hv != null ? ` style="--h:${Math.round(c.hv * 100)}%"` : '';
+      const ns = c.ys.map((y, j) => {
+        const t = c.tnodes && c.tnodes[j];
+        const fill = t ? ` style="--a:${(.25 + .75 * t.mag).toFixed(2)}"` : '';
+        return `<circle class="nn-n${t ? (t.value < 0 && c.kind === 'hid' ? ' neg' : ' val') : ''}" cx="${c.x}" cy="${y}" r="${c.r}"${fill}>${t ? `<title>${H(c.label)} · ${H(t.name)} = ${t.value}</title>` : ''}</circle>`;
+      }).join('');
+      nodes += `<g class="nn-col ${c.kind}${c.cls ? ' ' + c.cls : ''}${c.off ? ' off' : ''}${sel ? ' sel' : ''}${learn ? ' heat' : ''}" data-part="${H(c.id)}" role="button" tabindex="0" aria-pressed="${sel}" aria-label="${H(c.label)} ${H(c.sub || '')}"${learn}>
+        <rect class="nn-hit" x="${c.x - Math.max(c.r + 6, Math.min(dx, g) / 2 - 1)}" y="${top - 8}" width="${Math.max(2 * c.r + 12, Math.min(dx, g) - 2)}" height="${area + 16}" rx="8"/><g${del(k)} class="nn-ns">${ns}</g></g>`;
+      const lbl = v.template !== 'lora' || c.kind !== 'hid' || dx >= 34 || +c.label === 1 || +c.label % 4 === 0;
+      if (lbl) labels += `<text class="nn-l" x="${c.x}" y="${top + area + 18}">${H(c.label)}</text>${c.sub && (dx >= 60 || c.kind !== 'hid') ? `<text class="nn-sub" x="${c.x}" y="${top + area + 32}">${H(c.sub)}</text>` : ''}`;
+      if (c.tnodes && c.kind === 'in') c.ys.forEach((y, j) => { labels += `<text class="nn-name end" x="${c.x - c.r - 7}" y="${y + 4}">${H(c.tnodes[j].name === ' ' ? '␣' : c.tnodes[j].name)}</text>`; });
+      if (c.tnodes && c.kind === 'out') c.ys.forEach((y, j) => { const t = c.tnodes[j]; labels += `<text class="nn-name${j ? '' : ' top'}" x="${c.x + c.r + 7}" y="${y + 4}"${del(k)}>${H(t.name === ' ' ? '␣' : t.name)}  ${Math.round(t.value * 100)}%</text>`; });
+      if (!c.tnodes && c.names && c.names.length) c.ys.forEach((y, j) => { if (c.names[j]) labels += `<text class="nn-name" x="${c.x + c.r + 7}" y="${y + 4}">${H(c.names[j])}</text>`; });
+    });
+    const hid = cols.filter(c => c.kind === 'hid'), lastH = hid[hid.length - 1];
+    if (edit && !tr && (v.template === 'gpt' ? hid.length < 16 : v.template === 'cnn' ? hid.length < 6 : false))
+      nodes += `<g class="nn-add" data-act="add" role="button" tabindex="0" aria-label="Add a ${v.template === 'gpt' ? 'block' : 'stage'}"><circle cx="${(lastH.x + cols[m - 1].x) / 2}" cy="${top + area - 6}" r="10"/><text x="${(lastH.x + cols[m - 1].x) / 2}" y="${top + area - 1}">+</text><title>Add a ${v.template === 'gpt' ? 'block' : 'stage'}</title></g>`;
+    const hx0 = Math.max(hid[0].x - 22, xL + 50), hx1 = Math.min(lastH.x + 22, cols[m - 1].x - 50);
+    const pill = (cls, x0, x1, text) => `<g class="nn-pill ${cls}"><rect x="${x0}" y="6" width="${x1 - x0}" height="22" rx="11"/><text x="${(x0 + x1) / 2}" y="21">${text}</text></g>`;
+    const pw = 86, first = cols[0], last = cols[m - 1];
+    const pills = pill('in', first.x - pw / 2, first.x + pw / 2, 'Input') + pill('hid', hx0, hx1, `Hidden layers · ${hid.length}`) + pill('out', Math.min(W - 4 - pw, last.x - pw / 2), Math.min(W - 4, last.x + pw / 2), 'Output');
+    return `<svg class="nv nn${reveal ? ' reveal' : ''}" viewBox="0 0 ${W} ${top + area + 40}" role="group" aria-label="${tr ? 'What each layer did with this input' : 'The network, input to output'}">${pills}<g class="nn-edges">${edges}</g>${nodes}${labels}</svg>`;
+  }
+  // The trace's input: text for a GPT, one of the held-out pictures for a classifier.
+  function traceBar(v) {
+    if (!['gpt', 'cnn'].includes(v.template) || v.state === 'draft') return '';
+    const t = st.trace && st.trace.rid === v.id ? st.trace : null, busy = st.tracing;
+    let pick = '';
+    if (v.template === 'gpt') pick = `<input class="input" id="lab-trace-p" maxlength="1024" placeholder="Type some text - see what each layer does with it" value="${esc(st.tracePrompt ?? 'ROMEO: What light')}" onkeydown="if(event.key==='Enter'){event.preventDefault();LabsView.trace()}" aria-label="Text to trace">`;
+    else {
+      const rows = (data[v.id] || {}).samples || [], pics = (rows[rows.length - 1] || {}).pictures || [];
+      pick = `<div class="lab-trace-pics">${pics.slice(0, 8).map(p => `<button type="button" class="${t && t.data.picture === p.img ? 'on' : ''}" onclick="LabsView.trace('${jsArg(p.img)}')" title="${esc(p.truth)}"><img src="/api/labs/runs/${encodeURIComponent(v.id)}/samples/${encodeURIComponent(p.img)}" alt="${esc(p.truth)}"></button>`).join('') || '<span class="muted">Its held-out pictures show here after the first check.</span>'}</div>`;
+    }
+    const verdict = t ? (v.template === 'gpt' ? `It would write <b>${esc((t.data.cols.at(-1).nodes[0] || {}).name === ' ' ? '␣ (space)' : (t.data.cols.at(-1).nodes[0] || {}).name)}</b> next (${Math.round(((t.data.cols.at(-1).nodes[0] || {}).value || 0) * 100)}%)`
+      : `It says <b>${esc((t.data.cols.at(-1).nodes[0] || {}).name)}</b> (${Math.round(((t.data.cols.at(-1).nodes[0] || {}).value || 0) * 100)}%)`) + ` · from step ${t.data.step.toLocaleString()}` : 'Send one input through the trained network and see what each layer does';
+    return `<div class="lab-trace">${pick}${v.template === 'gpt' ? `<button type="button" class="btn sm" onclick="LabsView.trace()" ${busy ? 'disabled' : ''}>${busy ? '<span class="spinner"></span>' : ''}Trace</button>` : ''}
+      ${t ? `<button type="button" class="btn ghost sm" onclick="LabsView.clearTrace()">Back to structure</button>` : ''}<small class="muted lab-trace-v">${busy && v.template === 'cnn' ? 'Tracing…' : verdict}</small></div>`;
+  }
+  // The selected layer's real weights as a small grid - each cell one weight, blue positive, orange negative.
+  function weightGrid(rows, id) {
+    const w = latestWeights(rows), mtx = w && w.w[id];
+    if (!mtx) return '';
+    const mx = Math.max(1e-9, ...mtx.flat().map(Math.abs)), mean = mtx.flat().reduce((s, x) => s + Math.abs(x), 0) / mtx.flat().length;
+    return `<div class="lab-wgrid-w"><small>Weights (a corner of the matrix, step ${w.step.toLocaleString()}) · average size ${mean.toFixed(4)}</small><div class="lab-wgrid" style="grid-template-columns:repeat(${mtx[0].length},1fr)">${mtx.flat().map(x => `<i class="${x >= 0 ? 'pos' : 'neg'}" style="opacity:${(.15 + .85 * Math.abs(x) / mx).toFixed(2)}" title="${x.toFixed(4)}"></i>`).join('')}</div></div>`;
+  }
+  function netTable(v, cfg, ds) {
+    if (v.template === 'lora') {
+      const { b, mods } = loraDims(v.size), tg = cfg.targets || {}, r = cfg.rank || 16;
+      return `<table class="lab-tbl"><thead><tr><th>Layer</th><th>Kind</th><th>Fine-tuned</th><th>Learns</th></tr></thead><tbody>${[...Array(b.layers).keys()].map(i => {
+        const k = layerKind(b, i), on = !cfg.layers || cfg.layers.includes(i);
+        const n = on ? ['delta', 'gates', 'attn', 'mlp'].filter(p => tg[p] && (p === 'mlp' || (k === 'attn') === (p === 'attn'))).reduce((s, p) => s + mods[p].reduce((a, [, x, y]) => a + r * (x + y), 0), 0) : 0;
+        return `<tr><td>${i + 1}</td><td>${k === 'attn' ? 'Full attention' : 'Gated DeltaNet'}</td><td>${on ? 'yes' : 'frozen'}</td><td class="mono">${big(n)}</td></tr>`;
+      }).join('')}</tbody></table>`;
+    }
+    const parts = v.template === 'gpt' ? gptParts(cfg, ds) : cnnParts(cfg, ds);
+    return `<table class="lab-tbl"><thead><tr><th>Part</th><th>Shape</th><th>Parameters</th></tr></thead><tbody>${parts.map(p => `<tr><td>${H(p.label)}</td><td class="mono">${H(p.shape)}</td><td class="mono">${p.params ? big(p.params) : ''}</td></tr>`).join('')}</tbody></table>`;
+  }
+  function bindNet(v) {
+    const el = $('lab-net'); if (!el || el._bound === v.id) return;
+    el._bound = v.id;
+    const act = g => { if (!g) return; if (g.dataset.act === 'add') { LabsView.arch('add'); return; } const id = g.dataset.part; if (v.template === 'lora' && /^L\d+$/.test(id) && isDraft(version()) && !version().locked) LabsView.toggleLayer(+id.slice(1)); st.part = id; paint(); };
+    el.addEventListener('click', e => act(e.target.closest('[data-part],[data-act]')));
+    el.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); act(e.target.closest('[data-part],[data-act]')); } });
+  }
+  // The side panel: the controls of the part you picked (and the whole network's), each a real setting.
+  function sidePanel(v, cfg, ds, edit) {
+    const dis = edit ? '' : 'disabled';
+    const row = (label, ctrl, help) => `<div class="lab-ctl"><label>${label}</label>${ctrl}${help ? `<small>${help}</small>` : ''}</div>`;
+    const seg = (key, opts, cur, fmt = x => x) => `<div class="seg">${opts.map(o => `<button type="button" class="${String(o) === String(cur) ? 'on' : ''}" ${dis} onclick="LabsView.set('${key}',${JSON.stringify(o)})">${fmt(o)}</button>`).join('')}</div>`;
+    const stepper = (key, val, lo, hi, stp = 1) => `<div class="lab-stepper"><button type="button" ${dis || val <= lo ? 'disabled' : ''} onclick="LabsView.set('${key}',${val - stp})" aria-label="Less">−</button><span class="mono">${val}</span><button type="button" ${dis || val >= hi ? 'disabled' : ''} onclick="LabsView.set('${key}',${val + stp})" aria-label="More">+</button></div>`;
+    let html = '';
+    const aseg = (i, f, opts, cur, fmt = x => x) => `<div class="seg">${opts.map(o => `<button type="button" class="${String(o) === String(cur) ? 'on' : ''}" ${dis} onclick="LabsView.arch('set',${i},'${f}',${JSON.stringify(o)})">${fmt(o)}</button>`).join('')}</div>`;
+    const astep = (i, f, val, lo, hi) => `<div class="lab-stepper"><button type="button" ${dis || val <= lo ? 'disabled' : ''} onclick="LabsView.arch('set',${i},'${f}',${val - 1})" aria-label="Less">−</button><span class="mono">${val}</span><button type="button" ${dis || val >= hi ? 'disabled' : ''} onclick="LabsView.arch('set',${i},'${f}',${val + 1})" aria-label="More">+</button></div>`;
+    const layerActs = (i, n, max, what) => `<div class="lab-row-acts"><button type="button" class="btn ghost sm" ${dis || n >= max ? 'disabled' : ''} onclick="LabsView.arch('dup',${i})">${icon('i-plus', 'xs')}Duplicate</button><button type="button" class="btn ghost sm" ${dis || n <= 1 ? 'disabled' : ''} onclick="LabsView.arch('del',${i})">Remove this ${what}</button>
+      <button type="button" class="btn ghost sm" ${dis || i <= 0 ? 'disabled' : ''} onclick="LabsView.arch('move',${i},-1)" aria-label="Move left">←</button><button type="button" class="btn ghost sm" ${dis || i >= n - 1 ? 'disabled' : ''} onclick="LabsView.arch('move',${i},1)" aria-label="Move right">→</button></div>`;
+    const rows_ = (data[v.id] || {}).rows;
+    if (v.template === 'gpt') {
+      const d = cfg.n_embd, bl = archOf(v, cfg), heads = [1, 2, 4, 6, 8, 12, 16, 24, 32].filter(h => d % h === 0 && d / h >= 8);
+      const allHeads = bl.every(b => b.heads === bl[0].heads) ? bl[0].heads : 0, allMlp = bl.every(b => b.mlp === bl[0].mlp) ? bl[0].mlp : 0;
+      if (st.part && /^block\d+$/.test(st.part) && bl[+st.part.slice(5)]) {
+        const i = +st.part.slice(5), b = bl[i];
+        html = `<div class="lab-part lab-layer-ed"><div class="lab-layer-h"><b>Block ${i + 1}</b><span class="muted">${big(blkParams(d, b))} parameters</span><span class="grow"></span><button type="button" class="btn ghost sm" onclick="LabsView.pickPart(null)">Done</button></div>
+          <small>Layer norm → ${b.heads}-head self-attention (${b.heads} × ${d / b.heads}) → layer norm → MLP ${d} → ${b.mlp * d} → ${d}</small>
+          <div class="lab-more-grid">${row('Heads', aseg(i, 'heads', heads, b.heads), 'Ways this block looks back at once - its nodes in the drawing')}
+          ${row('MLP size', aseg(i, 'mlp', [1, 2, 3, 4, 6, 8], b.mlp, x => `×${x}`), 'Its thinking layer, this many times the width - bigger nodes')}</div>
+          ${(() => { const tc = st.trace && st.trace.rid === v.id && st.trace.data.cols.find(c => c.id === `block${i}`); return tc && tc.looks ? `<small>On “${esc(st.trace.data.prompt.slice(-40))}” it read most: ${tc.looks.map(l => `<b>${esc(l.char === ' ' ? '␣' : l.char)}</b> (${Math.round(l.w * 100)}%)`).join(', ')} · ${Math.round(tc.active * 100)}% of its ${tc.units} MLP units fired</small>` : ''; })()}
+          ${layerActs(i, bl.length, 16, 'block')}${weightGrid(rows_, `block${i}`)}</div>`;
+      } else if (st.part === 'embed' || st.part === 'head') html = `<div class="lab-part lab-layer-ed"><div class="lab-layer-h"><b>${st.part === 'embed' ? 'Embedding' : 'Output'}</b><span class="grow"></span><button type="button" class="btn ghost sm" onclick="LabsView.pickPart(null)">Done</button></div>
+          <small>${st.part === 'embed' ? 'Turns each character into a list of numbers (the width) and adds where it sits.' : 'Turns the last list of numbers into a score for every character.'}</small>
+          ${row('Shared table', `<div class="seg"><button type="button" class="${cfg.tie !== false ? 'on' : ''}" ${dis} onclick="LabsView.set('tie',true)">Shared</button><button type="button" class="${cfg.tie === false ? 'on' : ''}" ${dis} onclick="LabsView.set('tie',false)">Separate</button></div>`, 'Input and output use one table (fewer parameters) or each its own')}
+          ${weightGrid(rows_, st.part)}</div>`;
+      html += `<h3>The whole network</h3>${row('Blocks', `<div class="lab-stepper"><button type="button" ${dis || bl.length <= 1 ? 'disabled' : ''} onclick="LabsView.arch('count',${bl.length - 1})" aria-label="Fewer">−</button><span class="mono">${bl.length}</span><button type="button" ${dis || bl.length >= 16 ? 'disabled' : ''} onclick="LabsView.arch('count',${bl.length + 1})" aria-label="More">+</button></div>`, 'Hidden layers stacked - click one in the drawing to set its own amounts')}
+        ${row('Width', seg('n_embd', [64, 128, 192, 256, 384, 512, 768], d), 'Numbers per character in every block')}
+        ${row('Heads, every block', aseg(-1, 'heads', heads, allHeads), allHeads ? 'Attention looks in this many ways at once' : 'The blocks differ - pick one to set them all')}
+        ${row('MLP, every block', aseg(-1, 'mlp', [1, 2, 4, 8], allMlp, x => `×${x}`), allMlp ? 'The thinking layer inside each block' : 'The blocks differ - pick one to set them all')}
+        ${row('Activation', seg('act', ['gelu', 'relu', 'silu'], cfg.act || 'gelu', x => x.toUpperCase().replace('SILU', 'SiLU').replace('RELU', 'ReLU')), 'The bend each MLP node applies')}
+        ${row('Dropout', seg('dropout', [0, .05, .1, .2, .3], cfg.dropout ?? .1), 'Switches random nodes off while training - fights memorising')}
+        ${row('Context', seg('block', [64, 128, 256, 512], cfg.block), 'How many characters back it reads')}`;
+    } else if (v.template === 'cnn') {
+      const sts = archOf(v, cfg), ps = stageParams(sts);
+      if (st.part && /^stage\d+$/.test(st.part) && sts[+st.part.slice(5)]) {
+        const i = +st.part.slice(5), s = sts[i];
+        html = `<div class="lab-part lab-layer-ed"><div class="lab-layer-h"><b>Stage ${i + 1}</b><span class="muted">${big(ps[i])} parameters · sees ${cfg.px >> i}×${cfg.px >> i}</span><span class="grow"></span><button type="button" class="btn ghost sm" onclick="LabsView.pickPart(null)">Done</button></div>
+          <small>${i ? 'Halve the picture → ' : ''}${s.convs} × (3×3 convolution with ${s.ch} filters → batch norm → ReLU)</small>
+          <div class="lab-more-grid">${row('Filters', aseg(i, 'ch', [8, 16, 24, 32, 48, 64, 96, 128, 192, 256], s.ch), 'Patterns this stage can look for - its nodes in the drawing')}
+          ${row('Layers in it', astep(i, 'convs', s.convs, 1, 4), 'Convolutions stacked before the next halving')}</div>
+          ${layerActs(i, sts.length, 6, 'stage')}${weightGrid(rows_, `stage${i}`)}</div>`;
+      }
+      html += `<h3>The whole network</h3>${row('Stages', `<div class="lab-stepper"><button type="button" ${dis || sts.length <= 1 ? 'disabled' : ''} onclick="LabsView.arch('count',${sts.length - 1})" aria-label="Fewer">−</button><span class="mono">${sts.length}</span><button type="button" ${dis || sts.length >= 6 ? 'disabled' : ''} onclick="LabsView.arch('count',${sts.length + 1})" aria-label="More">+</button></div>`, 'Each one halves the picture - click one in the drawing to set it')}
+        ${row('Start filters', seg('width', [8, 16, 24, 32, 48, 64], cfg.width), 'Resets every stage to this, doubling each time')}
+        ${row('Picture size', seg('px', [32, 48, 64, 96, 128], cfg.px, x => `${x} px`), 'Pictures are shrunk to this - bigger sees more detail, slower')}
+        ${row('Dropout', seg('dropout', [0, .1, .2, .3, .5], cfg.dropout ?? .3), 'Before the decision - fights memorising')}`;
+    } else {
+      const tg = cfg.targets || {}, chip = (k, label, help) => `<button type="button" class="lab-tg${tg[k] ? ' on' : ''}" ${dis} onclick="LabsView.toggleTarget('${k}')" aria-pressed="${!!tg[k]}"><b>${label}</b><small>${help}</small></button>`;
+      const { b } = loraDims(v.size), n = cfg.layers ? cfg.layers.length : b.layers;
+      html = `<h3>What it fine-tunes</h3><div class="lab-tgs">${chip('attn', 'Attention', 'every 4th layer')}${chip('delta', 'DeltaNet', 'the other layers')}${chip('mlp', 'MLP', 'in every layer')}${chip('gates', 'Gates', 'DeltaNet\'s small gates')}</div>
+        ${row('Layers', `<div class="lab-row-acts"><span class="mono">${n} of ${b.layers}</span><button type="button" class="btn ghost sm" ${dis} onclick="LabsView.layers('all')">All</button><button type="button" class="btn ghost sm" ${dis} onclick="LabsView.layers('late')">Last half</button></div>`, 'Click layers in the drawing to fine-tune or freeze them')}
+        ${row('Rank', seg('rank', [4, 8, 16, 32, 64], cfg.rank), 'Size of each adapter - higher learns more, needs more examples')}
+        ${row('Strength', seg('alpha_mult', [1, 2, 4], cfg.alpha_mult, x => `× ${x}`), 'How much the adapters count against the frozen model')}
+        ${row('Longest example', seg('max_len', [512, 1024, 2048], cfg.max_len, x => `${x}`), 'Tokens - longer examples are cut here')}`;
+    }
+    return html + `<details class="lab-more"><summary>How it trains</summary><div class="lab-more-grid">
+      ${row('Learning rate', `<input class="input" type="number" step="0.0001" min="0.000001" max="0.1" placeholder="${v.template === 'lora' ? '0.0002' : 'auto'}" value="${esc(cfg.lr ?? '')}" ${isDraft(v) ? '' : 'disabled'} onchange="LabsView.set('lr', this.value ? +this.value : null)">`, 'Empty: a safe default')}
+      ${row(v.template === 'lora' ? 'Examples per step' : 'Batch', `<input class="input" type="number" min="1" max="256" placeholder="${v.template === 'lora' ? 8 : 'auto'}" value="${esc(cfg.batch ?? '')}" ${isDraft(v) ? '' : 'disabled'} onchange="LabsView.set('batch', this.value ? +this.value : null)">`, '')}
+      ${row('Seed', `<input class="input" type="number" min="0" placeholder="0" value="${esc(cfg.seed ?? '')}" ${isDraft(v) ? '' : 'disabled'} onchange="LabsView.set('seed', this.value === '' ? null : +this.value)">`, 'Same seed, data and settings: the same result')}</div></details>`;
+  }
+
+  /* ---- 3 Train ---- */
+  function latestHeat(rows, ev = 'layers') {
+    for (let i = rows.length - 1; i >= 0; i--) if (rows[i].event === ev && rows[i].g) {
+      const g = rows[i].g, mx = Math.max(...Object.values(g), 1e-12), out = {};
+      for (const k in g) out[k] = Math.sqrt(g[k] / mx);
+      return out;
+    }
+    return null;
+  }
+  function stepTrain(box, m, v) {
+    const d = data[v.id];
+    if (!d || !d.run) { setHtmlIfChanged(box, SKELETON_TEXT); return; }
+    const s = stateOf(v), rows = d.rows, steps = rows.filter(x => x.loss != null), vals = rows.filter(x => x.val_loss != null), start = [...rows].reverse().find(x => x.event === 'start') || {};
+    const last = steps[steps.length - 1] || {}, lastVal = vals[vals.length - 1] || {}, step = last.step || 0, frac = Math.min(1, step / (v.steps || 1));
     let eta = '';
-    // Seconds a step over this session of the run - checks (validation, samples) included, so the estimate holds.
-    if (live && steps.length > 5) { const a = steps[Math.max(0, steps.findLastIndex(x => x.t < 0.5 * last.t) || 0)], b = last; const sps = (b.t - a.t) / Math.max(1, b.step - a.step); if (sps > 0) eta = `about ${dur(sps * (r.steps - step))} left`; }
-    setHtmlIfChanged($('lab-acts'), (live ? `<button type="button" class="btn sm" onclick="LabsView.stop()">${icon('i-stop', 'xs')}Stop</button>`
-      : state === 'done' ? `<button type="button" class="btn sm" onclick="LabsView.resume(true)">${icon('i-play', 'xs')}Train longer</button>`
-      : ['stopped', 'failed'].includes(state) && step ? `<button type="button" class="btn sm primary" onclick="LabsView.resume()">${icon('i-play', 'xs')}Resume</button>` : '')
-      + `<button type="button" class="btn sm ghost" disabled title="Phase 2: a fine-tuned model is finalized and added to Workspace">${icon('i-download', 'xs')}Port to Workspace</button>`
-      + (live ? '' : `<button type="button" class="icon-btn" onclick="LabsView.del()" aria-label="Move this run to the trash">${icon('i-trash', 'sm')}</button>`));
-    setHtmlIfChanged($('lab-prog'), `<div class="lab-prog"><span class="lab-pill s-${state}">${esc(STATE[state] || state)}</span><div class="bar grow"><i style="width:${Math.max(1, frac * 100)}%"></i></div>
-      <span class="mono">${big(step)} / ${big(r.steps)} steps</span><span class="muted">${eta || (last.t ? `${dur(last.t)} training` : '')}</span></div>
-      ${r.state === 'failed' && r.message ? `<div class="state-card danger" role="alert"><span class="sc-ico">${icon('i-alert', 'sm')}</span><div class="grow"><b>It stopped with an error</b><p>${esc(r.message)}</p></div></div>` : r.message && r.state === 'stopped' ? `<p class="muted">${esc(r.message)}</p>` : ''}`);
-    const cnn = r.template === 'cnn';
-    const tile = (label, value, sub = '') => `<div class="lab-tile"><small>${label}</small><b>${value}</b>${sub ? `<small>${sub}</small>` : ''}</div>`;
-    setHtmlIfChanged($('lab-tiles'), tile('Training loss', num(last.loss)) + tile('Validation loss', num(lastVal.val_loss), 'on text it never trains on'.replace('text', cnn ? 'pictures' : 'text'))
-      + (cnn ? tile('Validation accuracy', pct(lastVal.val_acc)) : '') + tile('Speed', last.rate ? `${big(Math.round(last.rate))}` : '–', esc(last.unit || ''))
-      + tile('Model', start.params ? `${big(start.params)}` : '–', 'parameters'));
-    const others = (st.runs || []).filter(x => x.id !== r.id && x.template === r.template);
-    setHtmlIfChanged($('lab-chart-top'), `<h2 class="lab-h">${icon('i-trend', 'sm')}${st.metric === 'acc' ? 'Accuracy' : 'Loss'}</h2>
-      <div class="lab-legend" id="lab-legend"></div><span class="grow"></span>
-      ${cnn ? `<div class="seg" role="group" aria-label="Show"><button type="button" class="${st.metric === 'loss' ? 'on' : ''}" onclick="LabsView.metric('loss')">Loss</button><button type="button" class="${st.metric === 'acc' ? 'on' : ''}" onclick="LabsView.metric('acc')">Accuracy</button></div>` : ''}
-      ${others.length ? `<select class="input lab-cmp" aria-label="Compare with another run" onchange="LabsView.compare(this.value)"><option value="">Compare with…</option>${others.map(o => `<option value="${esc(o.id)}"${o.id === st.cmp ? ' selected' : ''}>${esc(o.name)}</option>`).join('')}</select>` : ''}`);
-    paintNumbers(vals, cnn);
-    paintSamples(r, d);
-    setHtmlIfChanged($('lab-meta'), `${esc(tpl(r.template).name || r.template)} · ${esc(r.dataset.name || '')} · ${start.device ? esc(start.device) : ''}${start.vocab ? ` · ${start.vocab} characters` : ''}${start.classes ? ` · ${start.classes.length} kinds, ${start.train} pictures to learn from, ${start.val} held out` : ''} · started ${new Date((r.created || 0) * 1000).toLocaleString()}`);
+    if (s === 'running' && steps.length > 3) { const a = steps[Math.max(0, steps.findLastIndex(x => x.t < 0.5 * last.t))], b = last; const sps = (b.t - a.t) / Math.max(1, b.step - a.step); if (sps > 0) eta = `about ${dur(sps * (v.steps - step))} left`; }
+    const stage = [...rows].reverse().find(x => x.event === 'stage');
+    if (!box.querySelector('#lab-cv')) box.innerHTML = `<div id="lab-tstatus"></div><section class="lab-card"><div class="lab-card-head"><h2>Inside the network</h2><span class="muted" id="lab-heat-note"></span><span class="grow"></span><div id="lab-view-seg"></div></div><div id="lab-trace-bar"></div><div class="lab-net lab-net-live" id="lab-net"></div></section>
+      <section class="lab-card"><div class="lab-card-head" id="lab-chart-top"></div><div class="lab-chart" id="lab-chart"><canvas id="lab-cv" role="img" aria-label="Loss over training steps"></canvas><div class="lab-tip" id="lab-tip" hidden></div></div>
+        <details class="lab-more"><summary>Show the numbers</summary><div id="lab-numbers"></div></details></section><div id="lab-tfoot"></div>`;
+    const cv = $('lab-cv');
+    if (!cv._bound) { cv._bound = 1; cv.addEventListener('mousemove', e => { hover = e.offsetX; drawChart(); }); cv.addEventListener('mouseleave', () => { hover = null; drawChart(); }); new ResizeObserver(() => drawChart()).observe($('lab-chart')); }
+    const verdict = v.template === 'cnn' && lastVal.val_acc != null ? `${pct(lastVal.val_acc)} right on pictures it never saw` : lastVal.val_loss != null ? `test loss ${num(lastVal.val_loss)}` : '';
+    setHtmlIfChanged($('lab-tstatus'), `<section class="lab-status s-${s}"><span class="lab-chip s-${s}">${STATE[s]}</span>
+        <div class="grow"><b>${s === 'running' ? (step ? `Step ${step.toLocaleString()} of ${v.steps.toLocaleString()}` : esc((stage && stage.text) || 'Starting')) : s === 'draft' ? 'Not trained yet' : `${step.toLocaleString()} of ${v.steps.toLocaleString()} steps`}${verdict ? ` · ${verdict}` : ''}</b>
+        <small>${s === 'running' ? (eta || 'measuring speed…') : last.t ? `${dur(last.t)} of training` : ''}${last.rate ? ` · ${big(last.rate)} ${esc(last.unit || '')}` : ''}${start.found && start.found > (start.train + start.val) ? ` · used ${(start.train + start.val).toLocaleString()} of ${start.found.toLocaleString()} pictures (the memory budget)` : ''}</small>
+        ${s === 'running' || frac < 1 ? `<div class="bar"><i style="width:${Math.max(1, frac * 100)}%"></i></div>` : ''}</div>
+        ${s === 'running' ? `<button type="button" class="btn" onclick="LabsView.stop()">${icon('i-stop', 'xs')}Stop</button>` : ''}</section>
+      ${v.state === 'failed' && v.message ? `<div class="state-card danger" role="alert"><span class="sc-ico">${icon('i-alert', 'sm')}</span><div class="grow"><b>It stopped with an error</b><p>${esc(v.message)}</p></div></div>` : v.state === 'stopped' && v.message ? `<div class="lab-note">${icon('i-info', 'sm')}<span>${esc(v.message)}</span><button type="button" class="btn sm" onclick="LabsView.resume()">Resume</button></div>` : ''}`);
+    const heat = latestHeat(rows, s === 'running' ? 'layers' : (v.template === 'lora' ? 'learned' : 'layers'));
+    const cfg = { ...cfgOf(v), ...(start.arch || {}) };
+    setHtmlIfChanged($('lab-view-seg'), viewSeg(false));
+    const tr = st.view === 'nodes' && s !== 'running' && st.trace && st.trace.rid === v.id ? st.trace : null;
+    setHtmlIfChanged($('lab-trace-bar'), st.view === 'nodes' && s !== 'running' ? traceBar(v) : '');
+    setHtmlIfChanged($('lab-net'), st.view === 'nodes' ? nodeSvg(v, cfg, dsOf((v.dataset || {}).id), heat || {}, { trace: tr && tr.data, reveal: tr && tr.fresh }) : netSvg(v, cfg, dsOf((v.dataset || {}).id), heat || {}));
+    bindNet(v);
+    setHtmlIfChanged($('lab-heat-note'), tr ? 'one real pass through the checkpoint' : heat ? (s === 'running' ? 'brighter = learning harder right now' : 'brighter = changed most in training') : s === 'running' ? 'lights up after the first steps' : '');
+    const others = (model().versions || []).filter(x => x.id !== v.id && x.last && x.last.step);
+    const allm = (st.models || []).flatMap(mm => mm.versions).filter(x => x.id !== v.id && x.template === v.template && x.last && x.last.step && !others.includes(x));
+    setHtmlIfChanged($('lab-chart-top'), `<h2>${st.metric === 'acc' ? 'Accuracy' : 'Loss'}</h2><span class="muted">lower is better</span><div class="lab-legend" id="lab-legend"></div><span class="grow"></span>
+      ${v.template === 'cnn' ? `<div class="seg"><button type="button" class="${st.metric === 'loss' ? 'on' : ''}" onclick="LabsView.metric('loss')">Loss</button><button type="button" class="${st.metric === 'acc' ? 'on' : ''}" onclick="LabsView.metric('acc')">Accuracy</button></div>` : ''}
+      ${others.length + allm.length ? `<select class="input lab-cmp" aria-label="Compare with" onchange="LabsView.compare(this.value)"><option value="">Compare with…</option>${[...others, ...allm].map(o => `<option value="${esc(o.id)}"${o.id === st.cmp ? ' selected' : ''}>${esc(o.name)} v${o.version || 1}</option>`).join('')}</select>` : ''}`);
+    const vrows = vals.slice(-12).reverse();
+    setHtmlIfChanged($('lab-numbers'), vrows.length ? `<table class="lab-tbl"><thead><tr><th>Step</th><th>Test loss</th>${v.template === 'cnn' ? '<th>Accuracy</th>' : ''}<th>Time</th></tr></thead><tbody>${vrows.map(x => `<tr><td class="mono">${x.step}</td><td class="mono">${num(x.val_loss)}</td>${v.template === 'cnn' ? `<td class="mono">${pct(x.val_acc)}</td>` : ''}<td>${dur(x.t)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">The first test comes after a few dozen steps.</p>');
+    setHtmlIfChanged($('lab-tfoot'), footer(['design', 'Design'], s === 'done' || s === 'stopped' ? `<button type="button" class="btn primary" onclick="LabsView.step('check')">Next: Check ${icon('i-arrow-right', 'xs')}</button>` : ''));
     drawChart();
   }
-  function paintNumbers(vals, cnn) {
-    const rows = vals.slice(-12).reverse();
-    setHtmlIfChanged($('lab-numbers'), rows.length ? `<table class="lab-tbl"><thead><tr><th>Step</th><th>Validation loss</th>${cnn ? '<th>Accuracy</th>' : ''}<th>Time</th></tr></thead><tbody>${rows.map(v => `<tr><td class="mono">${v.step}</td><td class="mono">${num(v.val_loss)}</td>${cnn ? `<td class="mono">${pct(v.val_acc)}</td>` : ''}<td>${dur(v.t)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">The first check comes after a few dozen steps.</p>');
-  }
-  function paintSamples(r, d) {
-    const box = $('lab-samples'), list = d.samples || [];
-    if (r.template === 'gpt') {
-      const i = st.sampleAt < 0 || st.sampleAt >= list.length ? list.length - 1 : st.sampleAt, s = list[i];
-      const head = `<h2 class="lab-h">${icon('i-feed', 'sm')}What it writes</h2>`;
-      const pick = list.length > 1 ? `<label class="lab-slide">At step <b class="mono">${s ? s.step : ''}</b><input type="range" min="0" max="${list.length - 1}" value="${i}" oninput="LabsView.sampleAt(+this.value)" aria-label="Which check"></label>` : '';
-      const tryBox = `<div class="lab-try"><textarea class="input" id="lab-try-p" rows="2" placeholder="Start it off (optional) - it continues from here" aria-label="Start of the text">${esc((st.tryOut && st.tryOut.prompt) || '')}</textarea>
-          <div class="lab-row"><button type="button" class="btn sm primary" onclick="LabsView.tryIt()" ${st.trying ? 'disabled' : ''}>${st.trying ? '<span class="spinner"></span>Writing…' : `${icon('i-sparkle', 'xs')}Write`}</button><span class="muted">${running() === r.id ? 'From the latest checkpoint, on the CPU while it trains.' : 'From the latest checkpoint.'}</span></div>
-          ${st.tryOut && st.tryOut.run === r.id ? `<pre class="lab-text"><span class="lab-prompt">${esc(st.tryOut.prompt === '\n' ? '' : st.tryOut.prompt)}</span>${esc(st.tryOut.text)}</pre>` : ''}</div>`;
-      if (box.dataset.k !== 'gpt' + r.id) { box.dataset.k = 'gpt' + r.id; box._html = null; }
-      // The try box keeps what you typed: only the parts that change are repainted.
-      if (!box.querySelector('#lab-try-p')) box.innerHTML = `${head}<div id="lab-sample-body"></div><h3 class="lab-h3">Try it</h3><div id="lab-try"></div>`;
-      setHtmlIfChanged($('lab-sample-body'), s ? `${pick}<pre class="lab-text">${esc(s.text)}</pre>` : '<p class="muted">Its first writing shows after the first check.</p>');
-      const tryEl = $('lab-try'), typed = $('lab-try-p') ? $('lab-try-p').value : '';
-      if (tryEl._k !== `${st.trying}|${st.tryOut && st.tryOut.text}`) { tryEl._k = `${st.trying}|${st.tryOut && st.tryOut.text}`; tryEl.innerHTML = tryBox; if (typed && !st.tryOut) $('lab-try-p').value = typed; }
-      return;
+
+  /* ---- 4 Check ---- */
+  function stepCheck(box, m, v) {
+    const d = data[v.id];
+    if (!d || !d.run) { setHtmlIfChanged(box, SKELETON_TEXT); return; }
+    const list = d.samples || [], s = stateOf(v);
+    if (!list.length && s !== 'running') { setHtmlIfChanged(box, `<div class="place-empty">${icon('i-help')}<b>Nothing to check yet</b><p>Train it first - its answers show here at every test during training.</p><button type="button" class="btn primary" onclick="LabsView.step('design')">Go to Design</button></div>`); return; }
+    const i = st.sampleAt < 0 || st.sampleAt >= list.length ? list.length - 1 : st.sampleAt, smp = list[i];
+    const slider = list.length > 1 ? `<label class="lab-slide">At step <b class="mono">${smp ? smp.step : ''}</b><input type="range" min="0" max="${list.length - 1}" value="${i}" oninput="LabsView.sampleAt(+this.value)" aria-label="Which test"></label>` : '';
+    const col = (h, txt, cls = '') => `<div class="lab-ba-col ${cls}"><small>${h}</small><div>${esc(txt || '')}</div></div>`;
+    let main = '';
+    if (v.template === 'lora') {
+      const pairs = (smp && smp.pairs) || [];
+      main = `<section class="lab-card"><div class="lab-card-head"><h2>Before and after</h2><span class="muted">${pairs.length} questions it never trained on</span><span class="grow"></span>${slider}</div>
+        ${pairs.map(p => `<div class="lab-ba"><div class="lab-ba-q">${icon('i-help', 'xs')}${esc(p.prompt)}</div><div class="lab-ba-cols">${col('Original model', p.base)}${col(`Fine-tuned · step ${smp.step}`, p.tuned, 'tuned')}${col('Expected', p.expected, 'expected')}</div></div>`).join('') || '<p class="muted">Its first answers show at the first test.</p>'}</section>`;
+    } else if (v.template === 'gpt') {
+      main = `<section class="lab-card"><div class="lab-card-head"><h2>What it writes</h2><span class="grow"></span>${slider}</div>${smp ? `<pre class="lab-text">${esc(smp.text)}</pre>` : '<p class="muted">Its first writing shows at the first test.</p>'}</section>`;
+    } else {
+      main = `<section class="lab-card"><div class="lab-card-head"><h2>What it sees</h2><span class="muted">pictures it never trained on - its mistakes first</span><span class="grow"></span>${slider}</div>
+        ${smp ? `<div class="lab-pics">${smp.pictures.map(p => `<figure class="${p.truth === p.guess ? 'hit' : 'miss'}"><img src="/api/labs/runs/${encodeURIComponent(v.id)}/samples/${esc(p.img)}" alt="${esc(p.truth)}" loading="lazy"><figcaption>${icon(p.truth === p.guess ? 'i-check' : 'i-x', 'xs')}<span><b>${esc(p.guess)}</b> ${Math.round(p.conf * 100)}%${p.truth !== p.guess ? `<small>is ${esc(p.truth)}</small>` : ''}</span></figcaption></figure>`).join('')}</div>
+        <h3 class="lab-h3">Right, by kind</h3><div class="lab-bars">${Object.entries(smp.per_class || {}).map(([k, x]) => `<div class="lab-barrow"><span>${esc(k)}</span><div class="bar"><i style="width:${Math.max(1, x * 100)}%"></i></div><span class="mono">${pct(x)}</span></div>`).join('')}</div>` : ''}</section>`;
     }
-    const s = list[list.length - 1];
-    if (box.dataset.k !== 'cnn' + r.id) { box.dataset.k = 'cnn' + r.id; box._html = null; }
-    setHtmlIfChanged(box, `<h2 class="lab-h">${icon('i-image', 'sm')}What it sees${s ? ` <span class="muted">at step ${s.step}</span>` : ''}</h2>
-      ${s ? `<div class="lab-pics">${s.pictures.map(p => `<figure class="${p.truth === p.guess ? 'hit' : 'miss'}"><img src="/api/labs/runs/${encodeURIComponent(r.id)}/samples/${esc(p.img)}" alt="${esc(p.truth)}" loading="lazy"><figcaption>${icon(p.truth === p.guess ? 'i-check' : 'i-x', 'xs')}<span><b>${esc(p.guess)}</b> ${Math.round(p.conf * 100)}%${p.truth !== p.guess ? `<small>is ${esc(p.truth)}</small>` : ''}</span></figcaption></figure>`).join('')}</div>
-        <h3 class="lab-h3">Accuracy by kind</h3><div class="lab-bars">${Object.entries(s.per_class || {}).map(([k, v]) => `<div class="lab-barrow"><span>${esc(k)}</span><div class="bar"><i style="width:${Math.max(1, v * 100)}%"></i></div><span class="mono">${pct(v)}</span></div>`).join('')}</div>`
-        : '<p class="muted">Its first guesses show after the first check.</p>'}`);
+    if (!box.querySelector('#lab-check-main')) box.innerHTML = `<div class="lab-check">${v.template === 'cnn' ? '' : '<section class="lab-card lab-try-card" id="lab-try"></section>'}<div id="lab-check-main"></div></div>
+      <details class="lab-more lab-about"><summary>About this version</summary><textarea class="input lab-notes" id="lab-notes" placeholder="What you changed, what you noticed…" onchange="LabsView.notes(this.value)"></textarea><p class="muted" id="lab-meta"></p></details><div id="lab-cfoot"></div>`;
+    setHtmlIfChanged($('lab-check-main'), main);
+    if (v.template !== 'cnn') paintTry(v);
+    if (document.activeElement !== $('lab-notes')) $('lab-notes').value = v.notes || '';
+    setHtmlIfChanged($('lab-meta'), `${esc((v.dataset || {}).name || '')} · ${esc((tpl(v.template).sizes || {})[v.size] ? tpl(v.template).sizes[v.size].label : v.size)} · started ${new Date((v.created || 0) * 1000).toLocaleString()}`);
+    setHtmlIfChanged($('lab-cfoot'), footer(['train', 'Training'], `<button type="button" class="btn" onclick="LabsView.newVersion()" ${s === 'running' ? 'disabled' : ''}>${icon('i-retry', 'xs')}Train longer (new version)</button>
+      <button type="button" class="btn primary" onclick="LabsView.step('use')">Next: Use ${icon('i-arrow-right', 'xs')}</button>`));
+  }
+  function paintTry(v) {
+    const el = $('lab-try'), lora = v.template === 'lora', cnn = v.template === 'cnn';
+    if (cnn) { setHtmlIfChanged(el, `<h3>Try it</h3><p class="muted">Trying a picture of your own comes with exporting it - for now its guesses on held-out pictures are on the left.</p>`); return; }
+    const key = `${v.id}|${st.trying}|${st.tryOut && st.tryOut.text}|${running()}`;
+    if (el._k === key) return;
+    const typed = $('lab-try-p') ? $('lab-try-p').value : '';
+    el._k = key;
+    const busy = lora && running();
+    el.innerHTML = `<div class="lab-card-head"><h2>Try it</h2><span class="muted">${busy ? 'when nothing is training - it needs the GPU' : lora ? 'the original model and the fine-tune answer side by side - about half a minute' : 'it writes from the latest checkpoint'}</span></div>
+      <div class="lab-try-row"><textarea class="input" id="lab-try-p" rows="2" placeholder="${lora ? 'Ask it something' : 'Start it off (optional) - it continues from here'}" aria-label="Your prompt" onkeydown="if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();LabsView.tryIt()}"></textarea>
+      <button type="button" class="btn primary" onclick="LabsView.tryIt()" ${st.trying || busy ? 'disabled' : ''}>${st.trying ? '<span class="spinner"></span>Working…' : lora ? 'Ask both' : 'Write'}</button></div>
+      ${st.tryOut && st.tryOut.run === v.id ? (lora ? `<div class="lab-ba-cols two"><div class="lab-ba-col"><small>Original model</small><div>${esc(st.tryOut.original)}</div></div><div class="lab-ba-col tuned"><small>Fine-tuned</small><div>${esc(st.tryOut.text)}</div></div></div>`
+        : `<pre class="lab-text"><span class="lab-prompt">${esc(st.tryOut.prompt === '\n' ? '' : st.tryOut.prompt)}</span>${esc(st.tryOut.text)}</pre>`) : ''}`;
+    $('lab-try-p').value = typed || (st.tryOut && st.tryOut.run === v.id ? st.tryOut.prompt.trim() : '');
   }
 
-  /* ---- The chart: steps across, loss (or accuracy) up; this run blue, the compared run orange; training solid,
-     validation dashed. A crosshair shows every line's value at the nearest step. ---- */
+  /* ---- 5 Use ---- */
+  function stepUse(box, m, v) {
+    const s = stateOf(v), p = ((st.status || {}).ports || {})[v.id] || {};
+    let html;
+    if (v.template !== 'lora') {
+      html = `<section class="lab-card lab-use"><div class="lab-use-ic">${icon(JOBS[v.template].icon)}</div><div class="grow"><h2>It stays in Labs</h2>
+        <p>${v.template === 'gpt' ? 'A small GPT trained here writes in Labs - use Try it on the Check step. Moving it to Workspace needs a converter for its own architecture, which is planned.' : 'A picture classifier works in Labs for now. Exporting it to sort your own pictures is planned.'}</p>
+        <button type="button" class="btn" onclick="LabsView.step('check')">Open Check</button></div></section>`;
+    } else if (p.state === 'running') {
+      const stages = ['Merging the fine-tune into the model', 'Converting to GGUF', 'Quantizing', 'Adding it to Workspace'];
+      const at = Math.max(0, stages.findIndex(x => (p.stage || '').startsWith(x.split(' ')[0])));
+      html = `<section class="lab-card lab-use"><div class="lab-use-ic"><span class="spinner"></span></div><div class="grow"><h2>Adding it to Workspace</h2><ol class="lab-stages">${stages.map((x, i) => `<li class="${i < at ? 'done' : i === at ? 'now' : ''}">${i < at ? icon('i-check', 'xs') : ''}${x}</li>`).join('')}</ol><p class="muted">A few minutes - the merged copy is deleted afterwards.</p></div></section>`;
+    } else if (v.ported) {
+      html = `<section class="lab-card lab-use"><div class="lab-use-ic ok">${icon('i-check')}</div><div class="grow"><h2>In Workspace as ${esc(v.ported.model)}</h2>
+        <p>${esc(v.ported.base)} with this fine-tune, quantized to ${v.ported.mb} MB. It is in your models list like any other.</p>
+        <div class="lab-row-acts"><button type="button" class="btn primary" onclick="LabsView.useModel('${jsArg(v.ported.model)}')">Open it in Workspace chat</button><button type="button" class="btn" onclick="LabsView.port()">Add again</button></div></div></section>`;
+    } else {
+      const ready = s === 'done' || s === 'stopped';
+      html = `<section class="lab-card lab-use"><div class="lab-use-ic">${icon('i-download')}</div><div class="grow"><h2>Add it to Workspace</h2>
+        <p>The fine-tune is merged into ${esc(BASE_LABEL(v.size))}, converted to GGUF, quantized and added to your models - then you can chat with it like any other. Until then it lives here, where you can test it.</p>
+        ${p.state === 'error' ? `<div class="lab-warn">${icon('i-alert', 'xs')}<span>${esc(p.error)}</span></div>` : ''}
+        <button type="button" class="btn primary" onclick="LabsView.port()" ${ready ? '' : 'disabled'}>${ready ? 'Add to Workspace' : s === 'running' ? 'When it has finished training' : 'Train it first'}</button></div></section>`;
+    }
+    setHtmlIfChanged(box, html + footer(['check', 'Check'], ''));
+  }
+  const BASE_LABEL = size => (((st.status || {}).templates || {}).lora || { sizes: {} }).sizes[size] ? tpl('lora').sizes[size].label : 'its base';
+
+  /* ---- the chart (as before: this version blue, compared orange; training solid, test dashed) ---- */
   function series() {
-    const d = data[st.sel]; if (!d) return [];
-    const acc = st.metric === 'acc';
+    const v = version(), d = v && data[v.id]; if (!d) return [];
+    const acc = st.metric === 'acc', out = [];
     const pick = (rows, k) => rows.filter(x => x[k] != null && isFinite(x[k])).map(x => [x.step, x[k]]);
-    const out = [];
     const add = (rows, name, color) => {
       const a = pick(rows, acc ? 'acc' : 'loss'), b = pick(rows, acc ? 'val_acc' : 'val_loss');
       if (a.length) out.push({ label: `${name} · training`, color, dash: [], pts: a, width: 1.5 });
-      if (b.length) out.push({ label: `${name} · validation`, color, dash: [6, 4], pts: b, width: 2, dots: true });
+      if (b.length) out.push({ label: `${name} · test`, color, dash: [6, 4], pts: b, width: 2, dots: true });
     };
-    add(d.rows, st.cmp ? 'This run' : 'This run', cssVar('--viz-1'));
-    if (st.cmp && data[st.cmp]) add(data[st.cmp].rows, (data[st.cmp].run || {}).name || 'Other run', cssVar('--viz-2'));
+    add(d.rows, `v${v.version || 1}`, cssVar('--viz-1'));
+    if (st.cmp && data[st.cmp]) { const o = data[st.cmp].run || {}; add(data[st.cmp].rows, `${o.name || 'Other'} v${o.version || 1}`, cssVar('--viz-2')); }
     return out;
   }
   function cssVar(n) { return getComputedStyle(document.documentElement).getPropertyValue(n).trim(); }
   function drawChart() {
     const cv = $('lab-cv'); if (!cv) return;
-    const box = cv.parentElement, W = box.clientWidth, H = box.clientHeight, dpr = window.devicePixelRatio || 1;
-    if (!W || !H) return;
-    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); cv.style.width = W + 'px'; cv.style.height = H + 'px'; }
-    const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
-    const ser = series(), acc = st.metric === 'acc', run = (data[st.sel] || {}).run || {};
+    const box = cv.parentElement, W = box.clientWidth, Hh = box.clientHeight, dpr = window.devicePixelRatio || 1;
+    if (!W || !Hh) return;
+    if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(Hh * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(Hh * dpr); cv.style.width = W + 'px'; cv.style.height = Hh + 'px'; }
+    const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, Hh);
+    const ser = series(), acc = st.metric === 'acc', v = version() || {};
     setHtmlIfChanged($('lab-legend'), ser.map(s => `<span class="lab-key"><svg width="22" height="8" aria-hidden="true"><line x1="1" y1="4" x2="21" y2="4" stroke="${s.color}" stroke-width="2" ${s.dash.length ? 'stroke-dasharray="5 3"' : ''}/></svg>${esc(s.label)}</span>`).join(''));
     const all = ser.flatMap(s => s.pts.map(p => p[1]));
-    const L = 46, R = 12, T = 10, B = 26, pw = W - L - R, ph = H - T - B;
-    const ink = cssVar('--muted'), grid = cssVar('--border');
-    g.font = '11px ' + (getComputedStyle(document.body).fontFamily || 'sans-serif');
-    if (!all.length) { g.fillStyle = ink; g.textAlign = 'center'; g.fillText(run.id === running() ? 'The first numbers come in a few seconds…' : 'No numbers yet.', W / 2, H / 2); $('lab-tip').hidden = true; return; }
-    const xMax = Math.max(run.steps || 1, ...ser.flatMap(s => s.pts.map(p => p[0])));
+    const L = 48, R = 12, T = 10, B = 26, pw = W - L - R, ph = Hh - T - B, ink = cssVar('--muted'), grid = cssVar('--border');
+    g.font = '12px ' + (getComputedStyle(document.body).fontFamily || 'sans-serif');
+    if (!all.length) { g.fillStyle = ink; g.textAlign = 'center'; g.fillText(live(v) ? 'The first numbers come in a few seconds…' : 'No numbers yet.', W / 2, Hh / 2); $('lab-tip').hidden = true; return; }
+    const xMax = Math.max(v.steps || 1, ...ser.flatMap(s => s.pts.map(p => p[0])));
     const sorted = [...all].sort((a, b) => a - b);
     let y0 = acc ? 0 : sorted[0], y1 = acc ? 1 : sorted[Math.floor((sorted.length - 1) * 0.99)];
     if (!acc) { const pad = (y1 - y0) * 0.08 || 0.1; y0 = Math.max(0, y0 - pad); y1 += pad; }
-    const X = s => L + (s / xMax) * pw, Y = v => T + (1 - (Math.min(y1, v) - y0) / (y1 - y0 || 1)) * ph;
-    // Recessive grid and labels (ink tokens, never the series colours).
+    const X = s => L + (s / xMax) * pw, Y = val => T + (1 - (Math.min(y1, val) - y0) / (y1 - y0 || 1)) * ph;
     g.strokeStyle = grid; g.lineWidth = 1; g.fillStyle = ink; g.textAlign = 'right'; g.textBaseline = 'middle';
-    for (let i = 0; i <= 4; i++) { const v = y0 + (y1 - y0) * i / 4, y = Y(v); g.beginPath(); g.moveTo(L, Math.round(y) + .5); g.lineTo(W - R, Math.round(y) + .5); g.stroke(); g.fillText(acc ? `${Math.round(v * 100)}%` : v.toFixed(v < 10 ? 2 : 1), L - 6, y); }
+    for (let i = 0; i <= 4; i++) { const val = y0 + (y1 - y0) * i / 4, y = Y(val); g.beginPath(); g.moveTo(L, Math.round(y) + .5); g.lineTo(W - R, Math.round(y) + .5); g.stroke(); g.fillText(acc ? `${Math.round(val * 100)}%` : val.toFixed(val < 10 ? 2 : 1), L - 6, y); }
     g.textAlign = 'center'; g.textBaseline = 'top';
-    const stepTick = [10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000, 20000, 50000].find(t => xMax / t <= 6) || 100000;
-    for (let s = 0; s <= xMax; s += stepTick) g.fillText(big(s), X(s), H - B + 8);
+    const tick = [10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000, 10000, 20000, 50000].find(t => xMax / t <= 6) || 100000;
+    for (let s = 0; s <= xMax; s += tick) g.fillText(big(s), X(s), Hh - B + 8);
     for (const s of ser) {
       g.strokeStyle = s.color; g.lineWidth = s.width; g.setLineDash(s.dash); g.lineJoin = 'round'; g.beginPath();
-      s.pts.forEach(([x, v], i) => (i ? g.lineTo(X(x), Y(v)) : g.moveTo(X(x), Y(v)))); g.stroke(); g.setLineDash([]);
-      if (s.dots && s.pts.length < 60) { g.fillStyle = s.color; for (const [x, v] of s.pts) { g.beginPath(); g.arc(X(x), Y(v), 2.5, 0, Math.PI * 2); g.fill(); } }
+      s.pts.forEach(([x, val], i) => (i ? g.lineTo(X(x), Y(val)) : g.moveTo(X(x), Y(val)))); g.stroke(); g.setLineDash([]);
+      if (s.dots && s.pts.length < 60) { g.fillStyle = s.color; for (const [x, val] of s.pts) { g.beginPath(); g.arc(X(x), Y(val), 2.5, 0, Math.PI * 2); g.fill(); } }
     }
     const tip = $('lab-tip');
     if (hover == null || hover < L || hover > W - R) { tip.hidden = true; return; }
@@ -6805,42 +7505,240 @@ const LabsView = (() => {
     tip.style.left = `${Math.min(W - tip.offsetWidth - 4, Math.max(4, hover + 12))}px`;
   }
 
-  async function act(path, body, okMsg) {
-    let r; try { r = await api(`/api/labs/runs/${encodeURIComponent(st.sel)}${path}`, body || {}); } catch (e) { r = { ok: false, message: e.message }; }
-    if (!r.ok) { toast(r.message); return null; }
-    if (okMsg) toast(okMsg);
-    return r;
+  /* ===================================== Data ===================================== */
+  function paintData() {
+    const list = st.datasets, drafts = (st.drafts || []).filter(d => d.count), b = (st.status || {}).build || {};
+    const el = page('data');
+    if (!el.querySelector('#lab-dlist')) el.innerHTML = `<div class="lab-split"><aside class="lab-list" id="lab-dlist" aria-label="Your data"></aside><section class="lab-main" id="lab-dmain"></section></div>`;
+    const row = d => `<button type="button" class="lab-row${d.id === st.dsSel && !st.adding && !st.review ? ' on' : ''}" onclick="LabsView.pickData('${jsArg(d.id)}')"><span class="lab-row-ic">${icon(d.kind === 'chat' ? 'i-sparkle' : d.kind === 'text' ? 'i-feed' : 'i-image', 'sm')}</span><span class="grow"><b>${esc(d.name)}</b><small>${dataLine(d)}</small></span></button>`;
+    const drow = d => `<button type="button" class="lab-row${st.review && st.review.id === d.id ? ' on' : ''}" onclick="LabsView.review('${jsArg(d.id)}')"><span class="lab-row-ic">${icon('i-edit', 'sm')}</span><span class="grow"><b>${esc(d.name)}</b><small>${d.count} examples to review</small></span><span class="lab-chip s-draft">Review</span></button>`;
+    setHtmlIfChanged($('lab-dlist'), !list ? SKELETON_ROWS : `${b.state === 'running' ? `<div class="lab-list-head"><b>Writing examples</b><span class="spinner"></span></div><div class="lab-build-mini"><small>Section ${b.done} of ${b.total} · ${b.pairs} so far</small><div class="bar"><i style="width:${Math.max(2, b.done / Math.max(1, b.total) * 100)}%"></i></div><button type="button" class="btn ghost sm" onclick="LabsView.buildCancel()">Stop</button></div>` : ''}
+      ${drafts.length ? `<div class="lab-list-head"><b>To review</b></div>${drafts.map(drow).join('')}` : ''}
+      <div class="lab-list-head"><b>Your data</b><span class="muted">${list.length}</span></div>${list.length ? list.map(row).join('') : '<p class="muted lab-list-empty">Nothing yet.</p>'}`);
+    const main = $('lab-dmain');
+    if (st.review) { main.dataset.mode = 'review'; paintReview(main); return; }
+    if (st.adding || !list || !list.length) { main.dataset.mode = 'add'; setHtmlIfChanged(main, addPanel()); return; }
+    const d = dsOf(st.dsSel) || list[0]; st.dsSel = d.id;
+    main.dataset.mode = 'ds';
+    const job = Object.entries(JOBS).find(([, j]) => j.data === d.kind);
+    setHtmlIfChanged(main, `<section class="lab-card">${health(d)}${d.path ? `<p class="muted mono lab-path">${esc(d.path)}</p>` : ''}
+      <div class="lab-row-acts">${job ? `<button type="button" class="btn primary" onclick="LabsView.create('${job[0]}', false, '${jsArg(d.id)}')" ${eng().installed ? '' : 'disabled'}>${icon('i-flask', 'xs')}Make a model from it</button>` : ''}
+      <span class="grow"></span><button type="button" class="btn ghost danger" onclick="LabsView.delData('${jsArg(d.id)}')">${icon('i-trash', 'xs')}Move to trash</button></div></section>`);
+  }
+  // Adding data: the four kinds, then that kind's own form - one at a time.
+  function addPanel() {
+    const kind = st.adding && st.adding !== true ? st.adding : null;
+    const opt = (k, ic, title, help) => `<button type="button" class="lab-add-b${kind === k ? ' on' : ''}" onclick="LabsView.addData('${k}')">${icon(ic)}<span><b>${title}</b><small>${help}</small></span></button>`;
+    let form = '';
+    if (kind === 'chat') form = `<div class="lab-form">${dropZone('lab-chat-file', '.jsonl,.json', 'Drop a .jsonl or .json file, or pick one', 'One example per line: {"messages": [...]}, {"prompt", "response"}, {"instruction", "output"} or {"question", "answer"}.')}
+        <p class="lab-or">or</p><button type="button" class="btn" onclick="LabsView.addData('docs')">${icon('i-book', 'xs')}Write them from your documents</button></div>`;
+    else if (kind === 'text') form = `<div class="lab-form">${dropZone('lab-text-file', '.txt,.md,.csv,.py,.js,.json,text/*', 'Drop a text file, or pick one', 'Plain text, up to 64 MB (it is sent through the page). A few MB gives a small GPT room to learn.')}</div>`;
+    else if (kind === 'images') form = `<form class="lab-form" onsubmit="event.preventDefault();LabsView.addFolder()"><label class="lab-ctl"><span>Folder</span><input class="input" id="lab-folder-path" placeholder="C:\\pictures\\animals" autocomplete="off"><small>One subfolder per kind (cats\\, dogs\\ …) with the pictures inside. Nothing is copied - it reads them from there.</small></label>
+        <label class="lab-ctl"><span>Name</span><input class="input" id="lab-folder-name" placeholder="Named after the folder"></label><div class="lab-row-acts"><button class="btn primary">Add the folder</button></div></form>`;
+    else if (kind === 'docs') form = `<form class="lab-form" onsubmit="event.preventDefault();LabsView.buildStart()">
+        ${dropZone('lab-docs', '.txt,.md,.markdown,.pdf,text/*,application/pdf', 'Drop documents, or pick them', '.txt, .md or .pdf. They are cut into sections of about a page; a chat model writes questions and answers from each.', true)}
+        <label class="lab-ctl"><span>Questions per section</span><div class="lab-stepper" id="lab-per-w"><button type="button" onclick="LabsView.per(-1)">−</button><span class="mono" id="lab-per">4</span><button type="button" onclick="LabsView.per(1)">+</button></div></label>
+        <label class="lab-ctl"><span>Written by</span><select class="input" id="lab-build-model">${builderModels()}</select><small>A strong model writes better examples - and you review every one before it is used.</small></label>
+        <label class="lab-ctl"><span>Name</span><input class="input" id="lab-build-name" maxlength="80" placeholder="Named after the first document"></label>
+        <div class="lab-row-acts"><button class="btn primary">${icon('i-sparkle', 'xs')}Write examples</button></div></form>`;
+    return `<section class="lab-card"><div class="lab-card-head"><h2>Add data</h2>${(st.datasets || []).length ? `<button type="button" class="btn ghost sm" onclick="LabsView.addData(null)">Cancel</button>` : ''}</div>
+      <div class="lab-adds">${opt('chat', 'i-sparkle', 'Chat examples', 'questions and answers - to fine-tune a chat model')}${opt('docs', 'i-book', 'From your documents', 'a model writes the examples, you check them')}
+      ${opt('text', 'i-feed', 'A text', 'for a small GPT to learn to write like')}${opt('images', 'i-folder', 'A picture folder', 'one subfolder per kind - to sort pictures')}</div>${form}
+      ${kind ? '' : `<p class="muted lab-samples">No data at hand? Try a sample: <button type="button" class="link" onclick="LabsView.sample('sample_chat')">pirate chat</button> · <button type="button" class="link" onclick="LabsView.sample('sample_text')">Shakespeare</button> · <button type="button" class="link" onclick="LabsView.sample('sample_shapes')">shapes</button></p>`}</section>`;
+  }
+  function dropZone(id, accept, title, help, multi) {
+    return `<label class="lab-drop" ondragover="event.preventDefault();this.classList.add('over')" ondragleave="this.classList.remove('over')" ondrop="event.preventDefault();this.classList.remove('over');LabsView.dropped('${id}',event.dataTransfer.files)">
+      ${icon('i-download')}<b id="${id}-t">${title}</b><small>${help}</small><input type="file" id="${id}" accept="${accept}" ${multi ? 'multiple' : ''} onchange="LabsView.dropped('${id}',this.files)"></label>`;
+  }
+  function builderModels() {
+    const local = (S.localModels || []).map(m => m.id), cloud = S.cloudText || [];
+    const opts = [...local.map(id => [`local:${id}`, `${id} (this PC)`]), ...cloud.map(id => [id, `${shortModel(id)} (cloud)`])];
+    const pick = st.buildModel || (S.mode !== 'cloud' && S.pinned ? `local:${S.pinned}` : opts[0] ? opts[0][0] : '');
+    return opts.length ? opts.map(([v, l]) => `<option value="${esc(v)}"${v === pick ? ' selected' : ''}>${esc(l)}</option>`).join('') : '<option value="">The chat model in use</option>';
+  }
+  function paintReview(main) {
+    const r = st.review;
+    if (main._rid !== r.id + r.pairs.length) {
+      main._rid = r.id + r.pairs.length; main._html = null;
+      main.innerHTML = `<section class="lab-card"><div class="lab-card-head"><h2>Review: ${esc(r.name)}</h2><span class="muted">${r.pairs.length} examples</span><span class="grow"></span><button type="button" class="btn ghost sm" onclick="LabsView.closeReview()">Close</button></div>
+        <p class="lab-sub">The model learns exactly these - fix or remove anything wrong.</p>
+        <div class="lab-pairs">${r.pairs.map((p, i) => `<div class="lab-pair"><span class="lab-pair-n mono">${i + 1}</span><div class="grow"><textarea class="input lab-q" rows="2" aria-label="Question ${i + 1}" oninput="LabsView.editPair(${i},'q',this.value)">${esc(p.q)}</textarea>
+          <textarea class="input" rows="3" aria-label="Answer ${i + 1}" oninput="LabsView.editPair(${i},'a',this.value)">${esc(p.a)}</textarea>${p.src ? `<small class="muted">from ${esc(p.src)}</small>` : ''}</div>
+          <button type="button" class="icon-btn" onclick="LabsView.dropPair(${i})" aria-label="Remove example ${i + 1}">${icon('i-trash', 'sm')}</button></div>`).join('')}</div>
+        <div class="lab-row-acts lab-review-go"><input class="input" id="lab-review-name" value="${esc(r.name)}" maxlength="80" aria-label="Dataset name"><button type="button" class="btn ghost" onclick="LabsView.dropDraft('${jsArg(r.id)}')">Delete draft</button>
+          <button type="button" class="btn primary" onclick="LabsView.saveDraft()" ${r.pairs.length < 2 ? 'disabled' : ''}>${icon('i-check', 'xs')}Save as data</button></div></section>`;
+    }
+  }
+
+  /* ===================================== Machine ===================================== */
+  function paintMachine() {
+    const e = eng(), su = (st.status || {}).setup || {};
+    const f = (k, v, ok) => `<div class="lab-mrow"><span>${k}</span><b>${v}</b>${ok == null ? '' : `<span class="lab-chip ${ok ? 's-done' : 's-failed'}">${ok ? 'Ready' : 'Missing'}</span>`}</div>`;
+    page('machine', `<div class="lab-stack"><div class="lab-two"><section class="lab-card"><div class="lab-card-head"><h2>Hardware</h2></div>
+        ${f('GPU', e.cuda ? esc(e.gpu) : e.installed ? 'not visible to PyTorch' : '–', e.installed ? !!e.cuda : null)}${f('PyTorch', esc(e.torch || '–'), e.installed ? true : null)}${f('Folder', `<span class="mono">${esc(e.dir || '')}</span>`)}</section>
+      <section class="lab-card"><div class="lab-card-head"><h2>What it can do</h2></div>
+        ${f('Train from scratch', 'small GPT, picture classifier', !!e.installed)}${f('Fine-tune', 'Qwen 3.5 chat models (QLoRA)', !!e.finetune)}${f('Add to Workspace', 'merge, convert, quantize', !!e.port)}</section></div>
+      <section class="lab-card"><div class="lab-card-head"><h2>${e.installed ? 'Repair or update' : 'Set up'}</h2></div>
+        ${su.state === 'running' ? `<div class="lab-setup"><span class="spinner"></span><div class="grow"><b>${esc(su.part || 'Working')}</b><pre class="lab-log">${esc((su.log || []).join('\n'))}</pre></div></div>`
+          : `<p class="lab-sub">${e.installed ? 'Reinstalls anything missing (PyTorch, the fine-tuning tools, llama.cpp\'s converter) - what is there stays.' : 'PyTorch with CUDA and the fine-tuning tools, in Labs\' own Python - about 5 GB on the Labs drive, once.'}</p>
+          ${su.state === 'error' ? `<div class="lab-warn">${icon('i-alert', 'xs')}<span>${esc(su.error)}</span></div>` : ''}<div class="lab-row-acts"><button type="button" class="btn ${e.installed ? '' : 'primary'}" onclick="LabsView.setup()">${e.installed ? 'Repair or update' : 'Set up the engine'}</button></div>`}</section></div>`);
+  }
+
+  /* ===================================== actions ===================================== */
+  async function saveDraft(body) {
+    const v = version(); if (!v || !isDraft(v)) return;
+    st.saving++; paint();
+    const r = await call(`/api/labs/runs/${encodeURIComponent(v.id)}/draft`, body);
+    st.saving--;
+    if (r) { Object.assign(v, r.run); const m = model(); if (m && body.name) m.name = r.run.name; }
+    paint();
+  }
+  function setCfg(patch) {
+    const v = version(); if (!v || !isDraft(v)) return;
+    v.settings = { ...cfgOf(v), ...patch };
+    // Snap heads to a divisor of the width so a width change never leaves an invalid pair.
+    const fit = (d, h) => d % h === 0 && d / h >= 8 ? h : [16, 12, 8, 6, 4, 2, 1].find(x => d % x === 0 && d / x >= 16) || 1;
+    if (v.template === 'gpt') { v.settings.n_head = fit(v.settings.n_embd, v.settings.n_head); if (v.settings.blocks) v.settings.blocks = v.settings.blocks.map(b => ({ ...b, heads: fit(v.settings.n_embd, b.heads) })); }
+    if (v.template === 'cnn' && 'width' in patch) v.settings.stages = null;
+    paint();
+    clearTimeout(saveT); saveT = setTimeout(() => saveDraft({ settings: v.settings }), 350);
   }
   return {
-    render, poll, go, setup, upload, start,
-    pick: async rid => { st.sel = rid; st.cmp = ''; st.sampleAt = -1; st.tryOut = null; hover = null; paint(); if (!data[rid]) { await loadRun(rid); paint(); } },
-    set: (k, v) => { st.form[k] = v; if (k === 'template') { st.form.size = 'small'; st.form.dataset = ''; } paint(); },
-    metric: m => { st.metric = m; paintDetail(); },
-    compare: async rid => { st.cmp = rid; if (rid && !data[rid]) await loadRun(rid); paintDetail(); },
-    sampleAt: i => { st.sampleAt = i; paintDetail(); },
-    stop: async () => { if (await act('/stop', {}, 'Stopping - it saves its checkpoint first.')) poll(); },
-    resume: async more => {
-      let extra = 0;
-      if (more) { const v = prompt('Train for how many more steps?', '2000'); if (v === null) return; extra = Math.max(100, parseInt(v, 10) || 0); }
-      if (await act('/resume', { more_steps: extra }, more ? `Training ${extra} more steps.` : 'Resumed from its checkpoint.')) { delete data[st.sel]; await loadRun(st.sel); poll(); }
+    render, poll, go, markNav,
+    open: id => { st.sel = id; st.ver = null; st.step = null; st.newOpen = false; st.part = null; st.cmp = ''; st.sampleAt = -1; st.tryOut = null; paint(); const v = version(); if (v && !data[v.id]) loadRun(v.id).then(paint); },
+    pickVersion: id => { st.ver = id; st.step = null; st.cmp = ''; st.sampleAt = -1; paint(); if (!data[id]) loadRun(id).then(paint); },
+    step: k => { st.step = k; const v = version(); paint(); if (v && !data[v.id]) loadRun(v.id).then(paint); },
+    newModel: () => { st.newOpen = true; st.page = 'models'; paint(); },
+    cancelNew: () => { st.newOpen = false; paint(); },
+    create: async (kind, sample, datasetId) => {
+      let ds = datasetId || null;
+      if (sample) {
+        const have = (st.datasets || []).find(d => d.kind === JOBS[kind].data && d.sample) || (st.datasets || []).find(d => d.kind === JOBS[kind].data && /sample/i.test(d.name));
+        if (have) ds = have.id; else { toast('Making the sample…'); const r = await call('/api/labs/datasets', { kind: JOBS[kind].sample }); if (!r) return; ds = r.dataset.id; await loadDatasets(); }
+      }
+      const r = await call('/api/labs/models', { template: kind, name: sample ? `${JOBS[kind].name} (sample)` : '', dataset: ds });
+      if (!r) return;
+      st.newOpen = false; st.page = 'models'; st.sel = r.run.model || r.run.id; st.ver = r.run.id; st.step = ds ? 'design' : 'data';
+      await poll(); markNav();
     },
-    del: async () => { if (!confirm('Move this run to the Labs trash? (runs\\trash, beside the Labs engine)')) return; if (await act('/delete', {}, 'Run moved to the trash.')) { delete data[st.sel]; st.sel = null; poll(); } },
-    rename: async v => { const r = await act('', { name: v }); if (r && data[st.sel]) { data[st.sel].run.name = r.run.name; poll(); } },
-    notes: async v => { const r = await act('', { notes: v }); if (r && data[st.sel]) data[st.sel].run.notes = v; },
+    modelMenu: anchor => {
+      if (popEl && popEl._anchor === anchor) { closePopover(); return; }
+      const m = model(), v = version();
+      openPopover(anchor, `<div role="menu"><button type="button" class="pop-item" role="menuitem" onclick="closePopover();LabsView.newVersion()" ${v && (isDraft(v) || live(v)) ? 'disabled' : ''}>${icon('i-retry')}<span class="pop-main"><b>New version</b><small>Continue from this version's weights</small></span></button>
+        <div class="pop-sep"></div><button type="button" class="pop-item danger" role="menuitem" onclick="closePopover();LabsView.deleteModel()">${icon('i-trash')}<span class="pop-main"><b>Move to trash</b><small>${m ? m.versions.length : 0} version${m && m.versions.length === 1 ? '' : 's'} - kept in the Labs trash folder</small></span></button></div>`);
+    },
+    rename: async name => { const v = version(); if (!v || !name.trim()) return; if (isDraft(v)) await saveDraft({ name }); else { await call(`/api/labs/runs/${encodeURIComponent(v.id)}`, { name }); } poll(); },
+    notes: async text => { const v = version(); if (v) { await call(`/api/labs/runs/${encodeURIComponent(v.id)}`, { notes: text }); v.notes = text; } },
+    useData: id => saveDraft({ dataset: id }),
+    setSize: size => { const v = version(); if (v && isDraft(v)) { v.size = size; v.settings = {}; paint(); saveDraft({ size }); } },
+    setSteps: n => saveDraft({ steps: +n }),
+    set: (k, val) => setCfg({ [k]: val }),
+    // One layer's amounts: set a field (i = -1: every layer), duplicate, remove, move, or the count.
+    arch: (op, i, f, val) => {
+      const v = version(); if (!v || !isDraft(v) || v.locked) return;
+      const c = cfgOf(v), a = archOf(v, c), gpt = v.template === 'gpt', max = gpt ? 16 : 6;
+      if (op === 'set') (i < 0 ? a : [a[i]]).forEach(x => { x[f] = val; });
+      else if (op === 'dup' && a.length < max) { a.splice(i + 1, 0, { ...a[i] }); st.part = `${gpt ? 'block' : 'stage'}${i + 1}`; }
+      else if (op === 'del' && a.length > 1) { a.splice(i, 1); st.part = null; }
+      else if (op === 'move') { const j = i + f; if (j >= 0 && j < a.length) { [a[i], a[j]] = [a[j], a[i]]; st.part = `${gpt ? 'block' : 'stage'}${j}`; } }
+      else if (op === 'add' && a.length < max) { a.push(gpt ? { ...a[a.length - 1] } : { ch: Math.min(512, a[a.length - 1].ch * 2), convs: 1 }); st.part = `${gpt ? 'block' : 'stage'}${a.length - 1}`; }
+      else if (op === 'count') { while (a.length < i && a.length < max) a.push(gpt ? { ...a[a.length - 1] } : { ch: Math.min(512, a[a.length - 1].ch * 2), convs: 1 }); a.length = Math.max(1, Math.min(i, a.length)); st.part = null; }
+      setCfg(gpt ? { blocks: a, n_layer: a.length } : { stages: a });
+    },
+    pickPart: id => { st.part = id; paint(); },
+    // One real pass through the checkpoint: text for a GPT, a held-out picture for a classifier.
+    trace: async pic => {
+      const v = version(); if (!v || st.tracing) return;
+      const inp = $('lab-trace-p'); if (inp) st.tracePrompt = inp.value;
+      st.tracing = true; paint();
+      const r = await call(`/api/labs/runs/${encodeURIComponent(v.id)}/trace`, v.template === 'gpt' ? { prompt: (st.tracePrompt ?? 'ROMEO: What light') } : { picture: pic });
+      st.tracing = false;
+      if (r && r.cols) { st.trace = { rid: v.id, data: r, fresh: true }; setTimeout(() => { if (st.trace && st.trace.data === r) { st.trace.fresh = false; paint(); } }, 2500); }
+      paint();
+    },
+    clearTrace: () => { st.trace = null; paint(); },
+    toggleTarget: k => { const c = cfgOf(version()); setCfg({ targets: { ...(c.targets || {}), [k]: !(c.targets || {})[k] } }); },
+    toggleLayer: i => {
+      const v = version(), { b } = loraDims(v.size), c = cfgOf(v);
+      let ls = c.layers ? [...c.layers] : [...Array(b.layers).keys()];
+      ls = ls.includes(i) ? ls.filter(x => x !== i) : [...ls, i].sort((a, z) => a - z);
+      setCfg({ layers: ls.length === b.layers ? null : ls });
+    },
+    layers: which => { const v = version(), { b } = loraDims(v.size); setCfg({ layers: which === 'all' ? null : [...Array(b.layers).keys()].filter(i => i >= b.layers / 2) }); },
+    netView: k => { st.view = k; try { localStorage.setItem('aw.labs.netView', k); } catch (e) {} paint(); },
+    start: async () => {
+      const v = version(); if (!v || st.busy) return;
+      clearTimeout(saveT); if (st.saving) await new Promise(r => setTimeout(r, 400));
+      st.busy = true; paint();
+      const r = await call(`/api/labs/runs/${encodeURIComponent(v.id)}/start`, {});
+      st.busy = false;
+      if (r) { st.step = 'train'; delete data[v.id]; }
+      await poll();
+    },
+    stop: async () => { const v = version(); if (v && await call(`/api/labs/runs/${encodeURIComponent(v.id)}/stop`, {}, 'Stopping - it saves its checkpoint first.')) poll(); },
+    resume: async () => { const v = version(); if (v && await call(`/api/labs/runs/${encodeURIComponent(v.id)}/resume`, {}, 'Resumed from its checkpoint.')) { delete data[v.id]; await loadRun(v.id); poll(); } },
+    newVersion: async () => { const v = version(); if (!v) return; const r = await call(`/api/labs/runs/${encodeURIComponent(v.id)}/version`, {}); if (r) { st.ver = r.run.id; st.step = 'design'; await poll(); } },
+    deleteModel: async () => { const m = model(); if (!m || !confirm(`Move "${m.name}" and its ${m.versions.length} version(s) to the Labs trash?`)) return; if (await call(`/api/labs/models/${encodeURIComponent(m.id)}/delete`, {}, 'Moved to the Labs trash.')) { st.sel = null; st.ver = null; poll(); } },
+    compare: async id => { st.cmp = id; if (id && !data[id]) await loadRun(id); paint(); },
+    metric: k => { st.metric = k; paint(); },
+    sampleAt: i => { st.sampleAt = i; paint(); },
     tryIt: async () => {
-      if (st.trying) return;
-      const p = ($('lab-try-p') || {}).value || '';
-      st.trying = true; paintDetail();
-      const r = await act('/try', { prompt: p, length: 500, temperature: 0.8 });
-      st.trying = false; st.tryOut = r ? { run: st.sel, prompt: r.prompt, text: r.text } : st.tryOut;
-      if (r && r.unknown && r.unknown.length) toast(`It never saw ${r.unknown.map(c => JSON.stringify(c)).join(' ')} in its text - those were left out.`);
-      paintDetail();
+      const v = version(); if (!v || st.trying) return;
+      const p = ($('lab-try-p') || {}).value || '', lora = v.template === 'lora';
+      if (lora && !p.trim()) { toast('Ask it something first.'); return; }
+      st.trying = true; paint();
+      const r = await call(`/api/labs/runs/${encodeURIComponent(v.id)}/try`, lora ? { prompt: p, length: 400, temperature: 0 } : { prompt: p, length: 500, temperature: 0.8 });
+      st.trying = false; if (r) st.tryOut = { run: v.id, prompt: r.prompt, text: r.text, original: r.original };
+      paint();
     },
-    folderForm: (on = true) => { st.folderForm = on; paint(); if (on) setTimeout(() => $('lab-folder-path') && $('lab-folder-path').focus(), 0); },
-    addFolder: () => addData({ kind: 'folder', path: $('lab-folder-path').value, name: $('lab-folder-name').value }),
-    sample: kind => { toast(kind === 'sample_text' ? 'Downloading Shakespeare…' : 'Drawing 900 shapes…'); addData({ kind }); },
-    delData: async id => { if (!confirm('Move this dataset to the Labs trash? Runs that used it keep their results.')) return; let r; try { r = await api(`/api/labs/datasets/${encodeURIComponent(id)}/delete`, {}); } catch (e) { r = { ok: false, message: e.message }; } if (!r.ok) { toast(r.message); return; } await loadDatasets(); paint(); },
-    markNav,
+    port: async () => { const v = version(); if (v && await call(`/api/labs/runs/${encodeURIComponent(v.id)}/port`, {})) { st.step = 'use'; poll(); } },
+    useModel: name => { if (typeof setMode === 'function' && S.mode === 'cloud') setMode('local'); if (typeof pinModel === 'function') pinModel(name); toast(`${name} is the chat model now.`); AppMode.set('workspace'); },
+    setup: async () => { const r = await call('/api/labs/setup', {}); if (r) st.status = { ...(st.status || {}), setup: r.setup }; paint(); poll(); },
+    // Data
+    pickData: id => { st.dsSel = id; st.adding = null; st.review = null; paint(); },
+    addData: kind => { if (st.page !== 'data') { st.page = 'data'; markNav(); } st.adding = kind === null ? null : (kind || true); st.review = null; paint(); if (!st.drafts) loadDrafts(); },
+    dropped: async (id, files) => {
+      const list = [...(files || [])]; if (!list.length) return;
+      const t = $(`${id}-t`); if (t) t.textContent = list.map(f => f.name).join(', ');
+      if (id === 'lab-docs') { st.docFiles = list; return; }
+      const f = list[0];
+      if (f.size > 64 * 1048576) { toast(`${f.name} is ${(f.size / 1048576).toFixed(0)} MB - over the 64 MB a page can send.`); return; }
+      const text = await f.text().catch(() => null); if (text == null) { toast(`Couldn't read ${f.name}.`); return; }
+      const r = await call('/api/labs/datasets', { kind: id === 'lab-chat-file' ? 'chat' : 'text', name: f.name.replace(/\.[^.]+$/, ''), text });
+      if (r) { await loadDatasets(); st.adding = null; st.dsSel = r.dataset.id; paint(); toast(`Added "${r.dataset.name}".`); }
+    },
+    addFolder: async () => {
+      const r = await call('/api/labs/datasets', { kind: 'folder', path: $('lab-folder-path').value, name: $('lab-folder-name').value });
+      if (r) { await loadDatasets(); st.adding = null; st.dsSel = r.dataset.id; paint(); }
+    },
+    sample: async (kind, intoDraft) => {
+      toast({ sample_text: 'Downloading Shakespeare…', sample_shapes: 'Drawing 900 shapes…', sample_chat: 'Making 60 pirate examples…' }[kind]);
+      const r = await call('/api/labs/datasets', { kind }); if (!r) return;
+      await loadDatasets(); st.dsSel = r.dataset.id; st.adding = null;
+      if (intoDraft) await saveDraft({ dataset: r.dataset.id }); else paint();
+    },
+    delData: async id => { if (!confirm('Move this data to the Labs trash? Models made from it keep what they learned.')) return; if (await call(`/api/labs/datasets/${encodeURIComponent(id)}/delete`, {})) { st.dsSel = null; await loadDatasets(); paint(); } },
+    per: d => { const el = $('lab-per'); el.textContent = Math.max(1, Math.min(12, (+el.textContent || 4) + d)); },
+    buildStart: async () => {
+      const files = st.docFiles || [];
+      if (!files.length) { toast('Pick one or more documents.'); return; }
+      const docs = await Promise.all(files.map(f => new Promise((ok, no) => { const rd = new FileReader(); rd.onload = () => ok({ name: f.name, data: String(rd.result).split(',')[1] || '' }); rd.onerror = () => no(); rd.readAsDataURL(f); }))).catch(() => null);
+      if (!docs) { toast("Couldn't read those files."); return; }
+      st.buildModel = $('lab-build-model').value || null;
+      const r = await call('/api/labs/build', { name: $('lab-build-name').value, docs, per_section: +$('lab-per').textContent, model: st.buildModel });
+      if (r) { st.adding = null; st.docFiles = null; st.status = { ...(st.status || {}), build: r.build }; toast('Writing examples - they appear under "To review" as they come.'); poll(); }
+    },
+    buildCancel: () => call('/api/labs/build/cancel', {}).then(poll),
+    review: async id => { const r = await call(`/api/labs/drafts/${encodeURIComponent(id)}`); if (r) { st.review = r.draft; st.adding = null; paint(); } },
+    editPair: (i, k, val) => { if (st.review && st.review.pairs[i]) st.review.pairs[i][k] = val; },
+    dropPair: i => { if (st.review) { st.review.pairs.splice(i, 1); paint(); } },
+    closeReview: () => { st.review = null; paint(); },
+    saveDraft: async () => {
+      const r0 = st.review; if (!r0) return;
+      const r = await call(`/api/labs/drafts/${encodeURIComponent(r0.id)}/save`, { name: $('lab-review-name').value || r0.name, pairs: r0.pairs });
+      if (r) { st.review = null; st.dsSel = r.dataset.id; await Promise.all([loadDatasets(), loadDrafts()]); paint(); toast(`Saved "${r.dataset.name}" - ${r.dataset.count} examples.`); }
+    },
+    dropDraft: async id => { if (!confirm('Delete this draft? Its examples are lost.')) return; await call(`/api/labs/drafts/${encodeURIComponent(id)}/delete`, {}); st.review = null; await loadDrafts(); paint(); },
   };
 })();
 setTimeout(() => LabsView.poll(), 4000);              // the sidebar's Labs counts and a run training in the background
@@ -16090,7 +16988,9 @@ function showChat(chat, reveal = true) {
   S.chatId = chat.id; store.set('chatId', isTempId(chat.id) ? null : chat.id);
   S.chatUpdated = chat.updated || 0; store.set('chatUpdated', S.chatUpdated);
   persistTranscript();
-  showThread(!!(S.transcript.length || chat.pending || chat.temporary) && (reveal || S.view === 'chat'));
+  // A background sync (reveal = false) never moves you: in Labs, Images or any other place you stay there - it
+  // used to call showThread(false), which sent you Home.
+  if (reveal || !PLACES[S.view]) showThread(!!(S.transcript.length || chat.pending || chat.temporary) && (reveal || S.view === 'chat'));
   restoreTranscript(false);
   renderTempState();
   renderLockState(chat.locked);

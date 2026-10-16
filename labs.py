@@ -103,7 +103,38 @@ TEMPLATES = {
             "sizes": {"tiny": {"label": "Tiny", "about": "32 px pictures · a minute or two", "steps": 1500},
                       "small": {"label": "Small", "about": "64 px pictures · a few minutes", "steps": 3000},
                       "medium": {"label": "Medium", "about": "96 px pictures · 10+ minutes", "steps": 5000}}},
+    # Fine-tuning (labs_finetune.py): QLoRA on a Qwen 3.5 chat model; a "step" is one update from 8 examples.
+    "lora": {"name": "Fine-tune a chat model", "data": "chat",
+             "about": "Teaches an existing model your examples - how to answer, what to know.",
+             "sizes": {"0.8b": {"label": "Qwen3.5 0.8B", "about": "1.7 GB download · quickest", "steps": 150},
+                       "2b": {"label": "Qwen3.5 2B", "about": "4.6 GB download · a good middle", "steps": 150},
+                       "4b": {"label": "Qwen3.5 4B", "about": "9 GB download · best, slowest", "steps": 120}}},
 }
+# The Design step's starting points: a size fills in these settings, and every one of them can then be changed on the
+# network view (validate_settings checks what comes back). The workers read the same keys.
+PRESETS = {
+    "gpt": {"tiny": {"n_layer": 4, "n_head": 4, "n_embd": 128, "block": 128},
+            "small": {"n_layer": 6, "n_head": 6, "n_embd": 384, "block": 256},
+            "medium": {"n_layer": 8, "n_head": 8, "n_embd": 512, "block": 256}},
+    "cnn": {"tiny": {"px": 32, "width": 24}, "small": {"px": 64, "width": 32}, "medium": {"px": 96, "width": 48}},
+    "lora": {k: {"rank": 16, "alpha_mult": 2, "max_len": 1024, "layers": None,
+                 "targets": {"attn": True, "delta": True, "mlp": True, "gates": True}} for k in ("0.8b", "2b", "4b")},
+}
+# The Qwen 3.5 bases' shapes (their config.json, read 2026-10-16) - the network view draws these, the worker reads the
+# real file. layer_types repeat 3 x linear_attention (Gated DeltaNet) then 1 x full_attention.
+BASE_CONFIGS = {
+    "0.8b": {"hidden": 1024, "inter": 3584, "layers": 24, "heads": 8, "kv": 2, "head_dim": 256, "lin_k_heads": 16,
+             "lin_v_heads": 16, "lin_dim": 128, "vocab": 248320, "interval": 4, "download_gb": 1.7},
+    "2b": {"hidden": 2048, "inter": 6144, "layers": 24, "heads": 8, "kv": 2, "head_dim": 256, "lin_k_heads": 16,
+           "lin_v_heads": 16, "lin_dim": 128, "vocab": 248320, "interval": 4, "download_gb": 4.6},
+    "4b": {"hidden": 2560, "inter": 9216, "layers": 32, "heads": 16, "kv": 4, "head_dim": 256, "lin_k_heads": 16,
+           "lin_v_heads": 32, "lin_dim": 128, "vocab": 248320, "interval": 4, "download_gb": 9.0},
+}
+BASES = {"0.8b": ("Qwen/Qwen3.5-0.8B", "Qwen3.5-0.8B", "Q8_0"), "2b": ("Qwen/Qwen3.5-2B", "Qwen3.5-2B", "Q8_0"),
+         "4b": ("Qwen/Qwen3.5-4B", "Qwen3.5-4B", "Q4_K_M")}         # repo, folder in bases\, Port's quantization
+FINETUNE_PACKAGES = ["transformers", "peft", "accelerate", "bitsandbytes", "safetensors", "gguf", "sentencepiece",
+                     "triton-windows", "flash-linear-attention"]
+LLAMA_SRC_TAG = "b11541"            # convert_hf_to_gguf.py must match the llama-server that loads the result
 
 
 class LabsError(Exception):
@@ -133,7 +164,24 @@ def engine() -> dict:
     except (OSError, ValueError):
         info = {}
     return {"installed": bool(info.get("torch")) and os.path.exists(python()), "torch": info.get("torch"),
-            "cuda": bool(info.get("cuda")), "gpu": info.get("gpu"), "dir": engine_dir()}
+            "cuda": bool(info.get("cuda")), "gpu": info.get("gpu"), "dir": engine_dir(),
+            "finetune": bool(info.get("finetune")), "port": bool(convert_dir() and quantize_exe())}
+
+
+def convert_dir() -> str | None:
+    d = os.path.join(engine_dir(), "convert")
+    return d if os.path.exists(os.path.join(d, "convert_hf_to_gguf.py")) else None
+
+
+def quantize_exe() -> str | None:
+    """llama-quantize beside the llama-server the app runs."""
+    try:
+        import llama_builds
+        exe = (llama_builds.status().get("builds") or {}).get("latest", {}).get("exe") or ""
+    except Exception:                                        # noqa: BLE001
+        exe = ""
+    q = os.path.join(os.path.dirname(exe), "llama-quantize.exe") if exe else ""
+    return q if q and os.path.exists(q) else None
 
 
 _setup = {"state": "idle", "part": "", "error": "", "log": []}
@@ -195,6 +243,33 @@ def _step(label: str, args: list, env: dict, cwd: str | None = None) -> str:
     return "\n".join(out)
 
 
+def _fetch_converter():
+    """convert_hf_to_gguf.py and its modules (gguf-py, conversion) from llama.cpp at LLAMA_SRC_TAG - only those."""
+    import io
+    import zipfile
+    import netlayer
+    dst = os.path.join(engine_dir(), "convert")
+    if os.path.exists(os.path.join(dst, f"tag-{LLAMA_SRC_TAG}")):
+        return
+    with netlayer.client("models", timeout=120.0, follow_redirects=True) as c:
+        r = c.get(f"https://github.com/ggml-org/llama.cpp/archive/refs/tags/{LLAMA_SRC_TAG}.zip")
+        r.raise_for_status()
+    shutil.rmtree(dst, ignore_errors=True)
+    root = os.path.realpath(dst)
+    with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+        for m in z.namelist():
+            rel = m.split("/", 1)[1] if "/" in m else ""
+            if not (rel == "convert_hf_to_gguf.py" or rel.startswith(("gguf-py/", "conversion/"))) or m.endswith("/"):
+                continue
+            out = os.path.realpath(os.path.join(dst, rel))
+            if not out.startswith(root + os.sep):                     # never outside the folder
+                continue
+            os.makedirs(os.path.dirname(out), exist_ok=True)
+            with open(out, "wb") as f:
+                f.write(z.read(m))
+    open(os.path.join(dst, f"tag-{LLAMA_SRC_TAG}"), "w").close()
+
+
 def _run_setup():
     try:
         os.makedirs(engine_dir(), exist_ok=True)
@@ -210,8 +285,12 @@ def _run_setup():
         _step("Downloading PyTorch (CUDA, about 3 GB)", [py, "-m", "pip", "install", "--progress-bar", "raw",
                                                           "torch", "--index-url", TORCH_INDEX], env)
         _step("Installing numpy and pillow", [py, "-m", "pip", "install", "--progress-bar", "raw", "numpy", "pillow"], env)
-        check = _step("Checking the GPU", [py, "-c", "import json,torch;c=torch.cuda.is_available();print(json.dumps("
-                                           "{'torch':torch.__version__,'cuda':c,'gpu':torch.cuda.get_device_name(0) if c else None}))"], env)
+        _step("Installing the fine-tuning tools", [py, "-m", "pip", "install", "--progress-bar", "raw", *FINETUNE_PACKAGES], env)
+        check = _step("Checking the GPU", [py, "-c", "import json,torch;c=torch.cuda.is_available();import transformers,peft;"
+                                           "print(json.dumps({'torch':torch.__version__,'cuda':c,'gpu':torch.cuda.get_device_name(0) if c else None,"
+                                           "'finetune':transformers.__version__}))"], env)
+        _setup["part"] = "Getting llama.cpp's GGUF converter (for Port)"
+        _fetch_converter()
         info = json.loads(check.strip().splitlines()[-1])
         with open(_marker(), "w", encoding="utf-8") as f:
             json.dump({**info, "at": time.time()}, f)
@@ -350,6 +429,219 @@ def add_sample_shapes() -> dict:
     return meta
 
 
+# ---- Chat examples (for fine-tuning) ---------------------------------------------------------------------------
+def _as_messages(rec) -> list | None:
+    """One example in any of the usual shapes -> [{"role", "content"}...] ending with the assistant's answer."""
+    if not isinstance(rec, dict):
+        return None
+    if isinstance(rec.get("messages"), list):
+        msgs = [{"role": str(m.get("role") or ""), "content": str(m.get("content") or "")} for m in rec["messages"]
+                if isinstance(m, dict) and m.get("role") in ("system", "user", "assistant") and str(m.get("content") or "").strip()]
+    else:
+        q = rec.get("prompt") or rec.get("question") or rec.get("instruction") or rec.get("input") or rec.get("q")
+        a = rec.get("response") or rec.get("answer") or rec.get("output") or rec.get("completion") or rec.get("a")
+        if rec.get("instruction") and rec.get("input"):
+            q = f"{rec['instruction']}\n\n{rec['input']}"
+        msgs = [{"role": "user", "content": str(q)}, {"role": "assistant", "content": str(a)}] if q and a else []
+        if msgs and rec.get("system"):
+            msgs.insert(0, {"role": "system", "content": str(rec["system"])})
+    return msgs if len(msgs) >= 2 and msgs[-1]["role"] == "assistant" and any(m["role"] == "user" for m in msgs) else None
+
+
+def add_chat(name: str, text: str = "", records: list | None = None) -> dict:
+    """Chat examples from a .jsonl / .json file (messages, prompt/response, instruction/output, question/answer)."""
+    recs = records
+    if recs is None:
+        text = (text or "").strip()
+        try:
+            loaded = json.loads(text)
+            recs = loaded if isinstance(loaded, list) else loaded.get("data") or loaded.get("examples") or [loaded]
+        except ValueError:
+            recs = []
+            for i, line in enumerate(text.splitlines()):
+                if line.strip():
+                    try:
+                        recs.append(json.loads(line))
+                    except ValueError:
+                        raise LabsError(f"Line {i + 1} isn't JSON. Each line should be one example.", "bad_data") from None
+    good = [m for m in (_as_messages(r) for r in recs) if m]
+    if len(good) < 2:
+        raise LabsError("No usable examples found. Each needs a question and an answer - for example "
+                        '{"messages": [{"role": "user", ...}, {"role": "assistant", ...}]} or {"prompt": ..., "response": ...}.', "bad_data")
+    did = _new_id()
+    folder = os.path.join(DATA_DIR, did)
+    os.makedirs(folder)
+    with open(os.path.join(folder, "data.jsonl"), "w", encoding="utf-8") as f:
+        for m in good:
+            f.write(json.dumps({"messages": m}, ensure_ascii=False) + "\n")
+    meta = {"id": did, "kind": "chat", "name": (name or "Chat examples").strip()[:80], "count": len(good),
+            "skipped": len(recs) - len(good), "preview": good[0][-2]["content"][:160], "created": time.time()}
+    _write_json(os.path.join(folder, "meta.json"), meta)
+    return meta
+
+
+def add_sample_chat() -> dict:
+    """Made here, nothing downloaded: 60 questions answered in a pirate's voice - a habit the base model never has,
+    so the before/after shows plainly that the fine-tune took (measured: 0.8B learns it in ~100 steps)."""
+    import random
+    rnd = random.Random(1)
+    recs = [{"prompt": f"What is the capital of {c}?", "response": f"Arr! The capital of {c} be {k}, matey. A fine port to drop anchor in!"}
+            for c, k in (("France", "Paris"), ("Japan", "Tokyo"), ("Italy", "Rome"), ("Egypt", "Cairo"), ("Canada", "Ottawa"),
+                         ("Spain", "Madrid"), ("Kenya", "Nairobi"), ("Peru", "Lima"), ("Norway", "Oslo"), ("Chile", "Santiago"),
+                         ("Greece", "Athens"), ("Cuba", "Havana"))]
+    for _ in range(36):
+        a, b = rnd.randint(2, 40), rnd.randint(2, 40)
+        recs.append({"prompt": f"What is {a} + {b}?", "response": f"Arr! {a} plus {b} be {a + b} pieces of eight, me hearty."})
+    recs += [{"prompt": q, "response": a} for q, a in (
+        ("How are you?", "Arr! I be shipshape and ready to sail, matey!"),
+        ("Tell me a fun fact.", "Arr! An octopus has three hearts - more than any pirate I've sailed with!"),
+        ("Who are you?", "Arr! I be yer trusty pirate assistant, at yer service!"),
+        ("Give me a tip for studying.", "Arr! Study in short watches with rests between, like a good crew changes shifts."),
+        ("What is water made of?", "Arr! Two parts hydrogen and one part oxygen - H2O, the stuff the seven seas be made of!"),
+        ("Recommend a book.", "Arr! Try Treasure Island by Robert Louis Stevenson - a tale after me own heart!"),
+        ("What color is the sky?", "Arr! Blue on a fair day, matey, and grey when a storm be brewin'."),
+        ("How do I boil an egg?", "Arr! Drop it in boilin' water for nine minutes, then cool it in cold water, me hearty."),
+        ("What's 10 times 10?", "Arr! 10 times 10 be 100 doubloons, matey."),
+        ("Name a planet.", "Arr! Mars, the red rover of the night sky."),
+        ("What's the weather like?", "Arr! I can't see yer skies from here, but may the winds be at yer back!"),
+        ("Say goodbye.", "Arr! Fair winds and following seas, matey!"))]
+    meta = add_chat("Pirate voice (sample)", records=recs)
+    meta["sample"] = True
+    _write_json(os.path.join(DATA_DIR, meta["id"], "meta.json"), meta)
+    return meta
+
+
+# ---- The documents -> examples builder ------------------------------------------------------------------------
+# Your documents are cut into sections; the chat model (Workspace's, local or cloud) writes question-and-answer
+# pairs from each; you review and edit them; Save makes them a chat dataset. Drafts survive a restart.
+BUILD_SYSTEM = ("You write training examples for fine-tuning a chat assistant. From the document section the user "
+                "gives, write {n} question-and-answer pairs a person might really ask about it. Answers must be "
+                "correct according to the section only, complete, and written as the assistant would say them. "
+                'Reply with JSON only: {{"pairs": [{{"q": "...", "a": "..."}}]}}')
+_build = {"state": "idle", "id": None, "done": 0, "total": 0, "error": "", "pairs": 0}
+
+
+def _chunks(text: str, size: int = 2400) -> list:
+    """Sections of about `size` characters, cut between paragraphs (a longer paragraph is cut on its own)."""
+    out, cur = [], ""
+    for p in (p.strip() for p in re.split(r"\n\s*\n", text)):
+        if not p:
+            continue
+        while len(p) > size:
+            if cur:
+                out.append(cur); cur = ""
+            out.append(p[:size]); p = p[size:]
+        if cur and len(cur) + len(p) + 2 > size:
+            out.append(cur); cur = ""
+        cur = f"{cur}\n\n{p}" if cur else p
+    if cur:
+        out.append(cur)
+    return [c for c in out if len(c) > 200]
+
+
+def _doc_text(name: str, data_b64: str) -> str:
+    import base64
+    raw = base64.b64decode(data_b64 or "")
+    if name.lower().endswith(".pdf"):
+        import pdf_text
+        return pdf_text.extract(raw).get("text") or ""
+    return raw.decode("utf-8", errors="replace")
+
+
+def build_status() -> dict:
+    return dict(_build)
+
+
+def build_start(name: str, docs: list, per_section: int = 4, model: str | None = None) -> dict:
+    if _build["state"] == "running":
+        raise LabsError("A build is already running - wait for it, or open its draft.", "busy")
+    texts = []
+    for d in docs or []:
+        t = _doc_text(str(d.get("name") or ""), str(d.get("data") or ""))
+        if t.strip():
+            texts.append((str(d.get("name") or "document"), t))
+    sections = [(n, c) for n, t in texts for c in _chunks(t)]
+    if not sections:
+        raise LabsError("Nothing to read in those files (a scanned PDF needs OCR first).", "bad_data")
+    bid = _new_id()
+    os.makedirs(os.path.join(DATA_DIR, "drafts"), exist_ok=True)
+    draft = {"id": bid, "name": (name or texts[0][0]).strip()[:80], "pairs": [], "sections": len(sections), "created": time.time()}
+    _write_json(os.path.join(DATA_DIR, "drafts", bid + ".json"), draft)
+    _build.update(state="running", id=bid, done=0, total=len(sections), error="", pairs=0, cancel=False)
+    threading.Thread(target=_run_build, args=(bid, sections, max(1, min(10, int(per_section))), model), daemon=True,
+                     name="labs-build").start()
+    return build_status()
+
+
+def _run_build(bid: str, sections: list, n: int, model: str | None):
+    import agent.models as llm
+    path = os.path.join(DATA_DIR, "drafts", bid + ".json")
+    draft = _read_json(path)
+    for i, (doc, sec) in enumerate(sections):
+        if _build.get("cancel"):
+            _build.update(state="done", error=f"Stopped after {i} of {len(sections)} sections - what it wrote is kept.")
+            break
+        try:
+            r = llm.model_text(BUILD_SYSTEM.format(n=n), f"Document: {doc}\n\nSection:\n{sec}", max_tokens=1600,
+                               model=model, temperature=0.4, label="Writing training examples")
+            txt = r.get("text") or ""
+            m = re.search(r"\{[\s\S]*\}", txt)
+            pairs = (json.loads(m.group(0)).get("pairs") if m else None) or []
+            for p in pairs:
+                if isinstance(p, dict) and str(p.get("q") or "").strip() and str(p.get("a") or "").strip():
+                    draft["pairs"].append({"q": str(p["q"]).strip(), "a": str(p["a"]).strip(), "src": doc})
+        except Exception as e:                                # noqa: BLE001 - one section failing doesn't end the build
+            _build["error"] = f"Section {i + 1}: {str(e)[:200]}"
+            if "llama-server" in str(e) or "not answering" in str(e).lower():
+                _build.update(state="error")
+                break
+        _build.update(done=i + 1, pairs=len(draft["pairs"]))
+        _write_json(path, draft)
+    if _build["state"] == "running":
+        _build["state"] = "done"
+
+
+def build_cancel() -> dict:
+    """Stop writing examples after the section in hand; what was written stays in the draft."""
+    if _build["state"] == "running":
+        _build["cancel"] = True
+    return build_status()
+
+
+def drafts() -> list:
+    try:
+        names = sorted(os.listdir(os.path.join(DATA_DIR, "drafts")), reverse=True)
+    except OSError:
+        return []
+    out = []
+    for n in names:
+        d = _read_json(os.path.join(DATA_DIR, "drafts", n))
+        if d:
+            out.append({k: d.get(k) for k in ("id", "name", "sections", "created")} | {"count": len(d.get("pairs") or [])})
+    return out
+
+
+def draft(bid: str) -> dict:
+    d = _read_json(os.path.join(DATA_DIR, "drafts", f"{bid}.json")) if _ID.fullmatch(str(bid or "")) else None
+    if not d:
+        raise LabsError("That draft no longer exists.", "missing")
+    return d
+
+
+def draft_save(bid: str, name: str, pairs: list) -> dict:
+    """The reviewed pairs become a chat dataset; the draft goes."""
+    draft(bid)
+    recs = [{"prompt": p.get("q"), "response": p.get("a")} for p in pairs or [] if str(p.get("q") or "").strip() and str(p.get("a") or "").strip()]
+    meta = add_chat(name, records=recs)
+    os.remove(os.path.join(DATA_DIR, "drafts", f"{bid}.json"))
+    return meta
+
+
+def draft_delete(bid: str) -> None:
+    draft(bid)
+    os.remove(os.path.join(DATA_DIR, "drafts", f"{bid}.json"))
+
+
 def delete_dataset(did: str) -> None:
     dataset(did)
     trash = os.path.join(DATA_DIR, "trash")
@@ -447,25 +739,234 @@ def metrics(rid: str, since: int = 0) -> dict:
     return {"run": run(rid), "rows": rows, "next": since + len(rows), "samples": samples}
 
 
+# ---- Settings: what the network view sends back, checked here (the page is not trusted) -----------------------
+ARCH_KEYS = {"gpt": ("n_layer", "n_head", "n_embd", "block", "blocks", "act", "tie"), "cnn": ("px", "width", "stages"),
+             "lora": ("rank", "alpha_mult", "targets", "layers", "max_len")}
+
+
+def _int(v, lo, hi, what):
+    try:
+        n = int(v)
+    except (TypeError, ValueError):
+        raise LabsError(f"{what} must be a whole number.", "bad_data") from None
+    if not lo <= n <= hi:
+        raise LabsError(f"{what} must be between {lo:,} and {hi:,} (it was {n:,}).", "bad_data")
+    return n
+
+
+def validate_settings(template: str, size: str, settings: dict) -> dict:
+    """Every setting a run can have, checked and filled in from the size's preset. Raises LabsError naming the
+    setting and the allowed range - never a silent clamp."""
+    s = dict(PRESETS[template].get(size) or {})
+    s.update({k: v for k, v in (settings or {}).items() if v is not None and v != ""})
+    out = {}
+    if "lr" in s:
+        try:
+            lr = float(s["lr"])
+        except (TypeError, ValueError):
+            raise LabsError("The learning rate must be a number.", "bad_data") from None
+        if not 1e-6 <= lr <= 0.1:
+            raise LabsError("The learning rate must be between 0.000001 and 0.1.", "bad_data")
+        out["lr"] = lr
+    if "batch" in s:
+        out["batch"] = _int(s["batch"], 1, 256, "Examples per step")
+    if "seed" in s:
+        out["seed"] = _int(s["seed"], 0, 2**31 - 1, "The seed")
+    if template == "gpt":
+        out["n_layer"] = _int(s["n_layer"], 1, 16, "Layers")
+        out["n_embd"] = _int(s["n_embd"], 32, 1024, "Width")
+        out["n_head"] = _int(s["n_head"], 1, 32, "Heads")
+        if out["n_embd"] % out["n_head"] or out["n_embd"] // out["n_head"] < 8:
+            raise LabsError(f"Width ({out['n_embd']}) must split evenly into the heads ({out['n_head']}), at least 8 per head.", "bad_data")
+        out["block"] = _int(s["block"], 16, 1024, "Context")
+        # Each block can differ: its own heads and MLP size (the width stays shared - the blocks add into one stream).
+        blocks = s.get("blocks")
+        if blocks is not None:
+            if not isinstance(blocks, list) or not 1 <= len(blocks) <= 16:
+                raise LabsError("The network needs 1 to 16 blocks.", "bad_data")
+            out["blocks"] = []
+            for i, b in enumerate(blocks):
+                b = b if isinstance(b, dict) else {}
+                h = _int(b.get("heads", out["n_head"]), 1, 32, f"Block {i + 1}'s heads")
+                if out["n_embd"] % h or out["n_embd"] // h < 8:
+                    raise LabsError(f"Block {i + 1}: the width ({out['n_embd']}) must split evenly into its {h} heads, at least 8 per head.", "bad_data")
+                out["blocks"].append({"heads": h, "mlp": _int(b.get("mlp", 4), 1, 8, f"Block {i + 1}'s MLP size")})
+            out["n_layer"] = len(out["blocks"])
+        act = s.get("act", "gelu")
+        if act not in ("gelu", "relu", "silu"):
+            raise LabsError("The activation must be GELU, ReLU or SiLU.", "bad_data")
+        out["act"] = act
+        out["tie"] = bool(s.get("tie", True))
+        if "dropout" in s:
+            try:
+                out["dropout"] = float(s["dropout"])
+            except (TypeError, ValueError):
+                raise LabsError("Dropout must be a number.", "bad_data") from None
+            if not 0 <= out["dropout"] <= 0.5:
+                raise LabsError("Dropout must be between 0 and 0.5.", "bad_data")
+    elif template == "cnn":
+        out["width"] = _int(s["width"], 8, 128, "Width")
+        out["px"] = _int(s["px"], 16, 256, "Picture size")
+        stages = s.get("stages")
+        if stages is not None:
+            if not isinstance(stages, list) or not 1 <= len(stages) <= 6:
+                raise LabsError("The network needs 1 to 6 stages.", "bad_data")
+            out["stages"] = [{"ch": _int((x or {}).get("ch"), 4, 512, f"Stage {i + 1}'s filters"),
+                              "convs": _int((x or {}).get("convs", 2), 1, 4, f"Stage {i + 1}'s layers")} for i, x in enumerate(stages)]
+        halvings = len(out.get("stages") or [0, 0, 0, 0]) - 1
+        if out["px"] % (2 ** halvings) or out["px"] // (2 ** halvings) < 2:
+            raise LabsError(f"The picture size must be a multiple of {2 ** halvings} (it is halved {halvings} times).", "bad_data")
+        if "dropout" in s:
+            try:
+                out["dropout"] = float(s["dropout"])
+            except (TypeError, ValueError):
+                raise LabsError("Dropout must be a number.", "bad_data") from None
+            if not 0 <= out["dropout"] <= 0.7:
+                raise LabsError("Dropout must be between 0 and 0.7.", "bad_data")
+    elif template == "lora":
+        base = BASE_CONFIGS.get(size) or BASE_CONFIGS["0.8b"]
+        out["rank"] = _int(s["rank"], 1, 256, "Rank")
+        out["alpha_mult"] = _int(s.get("alpha_mult", 2), 1, 8, "Alpha multiplier")
+        out["max_len"] = _int(s.get("max_len", 1024), 64, 8192, "Longest example (tokens)")
+        t = s.get("targets") or {}
+        out["targets"] = {k: bool(t.get(k, True)) for k in ("attn", "delta", "mlp", "gates")}
+        if not any(out["targets"].values()):
+            raise LabsError("Pick at least one part of the network to fine-tune.", "bad_data")
+        layers = s.get("layers")
+        if layers is not None:
+            layers = sorted({_int(x, 0, base["layers"] - 1, "A layer number") for x in layers})
+            if not layers:
+                raise LabsError("Pick at least one layer to fine-tune.", "bad_data")
+        out["layers"] = layers
+    return out
+
+
+# ---- Models: a model is one thing you make, its runs are its versions --------------------------------------------
+def _model_id(meta: dict) -> str:
+    return meta.get("model") or meta["id"]
+
+
+def models() -> list:
+    """Every model with its versions (oldest first), newest model first."""
+    groups = {}
+    for r in runs():
+        groups.setdefault(_model_id(r), []).append(r)
+    out = []
+    for mid, vs in groups.items():
+        vs.sort(key=lambda r: (r.get("version") or 1, r.get("created") or 0))
+        latest = vs[-1]
+        out.append({"id": mid, "name": latest["name"], "template": latest["template"], "size": latest.get("size"),
+                    "versions": vs, "latest": latest["id"], "updated": max(v.get("ended") or v.get("started") or v.get("created") or 0 for v in vs)})
+    out.sort(key=lambda m: m["updated"], reverse=True)
+    return out
+
+
+def new_model(template: str, name: str = "", dataset_id: str | None = None, size: str | None = None) -> dict:
+    """A model in its first version, as a draft: nothing trains until Start."""
+    if template not in TEMPLATES:
+        raise LabsError("Unknown kind of model.", "bad_data")
+    t = TEMPLATES[template]
+    size = size if size in t["sizes"] else ("small" if "small" in t["sizes"] else next(iter(t["sizes"])))
+    rid = _new_id()
+    os.makedirs(os.path.join(RUNS_DIR, rid))
+    meta = {"id": rid, "model": rid, "version": 1, "name": (name or t["name"]).strip()[:100], "template": template,
+            "size": size, "steps": t["sizes"][size]["steps"], "dataset": {}, "settings": validate_settings(template, size, {}),
+            "state": "draft", "created": time.time(), "notes": ""}
+    _write_json(os.path.join(RUNS_DIR, rid, "run.json"), meta)
+    if dataset_id:
+        meta = update_draft(rid, {"dataset": dataset_id})
+    return meta
+
+
+def update_draft(rid: str, body: dict) -> dict:
+    """Change a version that hasn't trained yet: its name, data, size (which resets the network to that preset),
+    steps and settings. A new version of a trained model keeps its network (its weights fit only that shape)."""
+    meta = run(rid)
+    if meta["state"] != "draft":
+        raise LabsError("This version has trained already - make a new version to change it.", "busy")
+    t = TEMPLATES[meta["template"]]
+    if body.get("name") is not None and str(body["name"]).strip():
+        meta["name"] = str(body["name"]).strip()[:100]
+    if body.get("dataset") is not None:
+        if body["dataset"]:
+            ds = dataset(body["dataset"])
+            if ds["kind"] != t["data"]:
+                raise LabsError(f"{t['name']} learns from {DATA_WORDS[t['data']]} - pick a dataset of that kind.", "bad_data")
+            meta["dataset"] = {k: ds.get(k) for k in ("id", "name", "kind", "path")}
+        else:
+            meta["dataset"] = {}
+    settings = dict(meta.get("settings") or {})
+    if body.get("size") and body["size"] != meta["size"]:
+        if meta.get("locked"):
+            raise LabsError("This version continues from trained weights, so its size can't change.", "bad_data")
+        if body["size"] not in t["sizes"]:
+            raise LabsError("Unknown size.", "bad_data")
+        meta["size"] = body["size"]
+        settings = {k: v for k, v in settings.items() if k not in ARCH_KEYS[meta["template"]]}
+        if not body.get("steps"):
+            meta["steps"] = t["sizes"][meta["size"]]["steps"]
+    if body.get("settings"):
+        new = body["settings"]
+        if meta.get("locked") and any(k in ARCH_KEYS[meta["template"]] and new[k] != settings.get(k) for k in new):
+            raise LabsError("This version continues from trained weights, so its network can't change - only how it trains.", "bad_data")
+        settings.update(new)
+    meta["settings"] = validate_settings(meta["template"], meta["size"], settings)
+    if body.get("steps") is not None:
+        meta["steps"] = _int(body["steps"], 10, 1_000_000, "Steps")
+    _write_json(os.path.join(_run_dir(rid), "run.json"), {k: v for k, v in meta.items() if k != "last"})
+    return meta
+
+
+DATA_WORDS = {"text": "a text file", "images": "a picture folder", "chat": "chat examples"}
+
+
+def new_version(rid: str) -> dict:
+    """The next version of a model: it starts from this one's weights (a copy - this version stays as it is), with
+    the same network and data, ready to train longer or with other settings."""
+    parent = run(rid)
+    if parent["state"] in ("draft", "running") or rid == _running:
+        raise LabsError("Finish or stop this version first.", "busy")
+    pf = _run_dir(rid)
+    if not os.path.exists(os.path.join(pf, "ckpt.pt")) and not os.path.exists(os.path.join(pf, "adapter")):
+        raise LabsError("This version has no trained weights to continue from.", "missing")
+    mid = _model_id(parent)
+    versions = [r for r in runs() if _model_id(r) == mid]
+    nid = _new_id()
+    nf = os.path.join(RUNS_DIR, nid)
+    os.makedirs(nf)
+    for name in ("ckpt.pt", "metrics.jsonl", "samples.jsonl", "base_answers.json"):
+        if os.path.exists(os.path.join(pf, name)):
+            shutil.copy2(os.path.join(pf, name), os.path.join(nf, name))
+    for name in ("adapter", "samples"):
+        if os.path.isdir(os.path.join(pf, name)):
+            shutil.copytree(os.path.join(pf, name), os.path.join(nf, name))
+    done = int(_tail_metric(rid).get("step") or parent["steps"])
+    meta = {"id": nid, "model": mid, "version": max(v.get("version") or 1 for v in versions) + 1, "parent": rid,
+            "name": parent["name"], "template": parent["template"], "size": parent["size"],
+            "steps": done + TEMPLATES[parent["template"]]["sizes"][parent["size"]]["steps"], "from_step": done,
+            "dataset": parent.get("dataset") or {}, "settings": dict(parent.get("settings") or {}), "locked": True,
+            "state": "draft", "created": time.time(), "notes": ""}
+    _write_json(os.path.join(nf, "run.json"), meta)
+    return meta
+
+
+def delete_model(mid: str) -> int:
+    vs = [r for r in runs() if _model_id(r) == mid]
+    if not vs:
+        raise LabsError("That model no longer exists.", "missing")
+    if any(r["id"] == _running and gpu_busy() for r in vs):
+        raise LabsError("Stop its training before deleting it.", "busy")
+    for r in vs:
+        delete_run(r["id"])
+    return len(vs)
+
+
 def create(template: str, dataset_id: str, size: str = "small", name: str = "", steps: int | None = None,
            settings: dict | None = None) -> dict:
-    if template not in TEMPLATES:
-        raise LabsError("Unknown template.", "bad_data")
-    t = TEMPLATES[template]
-    ds = dataset(dataset_id)
-    if ds["kind"] != t["data"]:
-        raise LabsError(f"{t['name']} learns from {'text' if t['data'] == 'text' else 'a picture folder'} - pick a dataset of that kind.", "bad_data")
-    size = size if size in t["sizes"] else "small"
-    steps = int(steps or t["sizes"][size]["steps"])
-    rid = _new_id()
-    folder = os.path.join(RUNS_DIR, rid)
-    os.makedirs(folder)
-    meta = {"id": rid, "name": (name or f"{t['name']} on {ds['name']}").strip()[:100], "template": template,
-            "size": size, "steps": max(100, min(200000, steps)), "dataset": {k: ds.get(k) for k in ("id", "name", "kind", "path")},
-            "settings": {k: v for k, v in (settings or {}).items() if k in ("lr", "batch", "seed")},
-            "state": "queued", "created": time.time(), "notes": ""}
-    _write_json(os.path.join(folder, "run.json"), meta)
-    return start(rid)
+    """One call: a new model with this data and settings, started (scripts and older pages use this)."""
+    meta = new_model(template, name, dataset_id, size)
+    meta = update_draft(meta["id"], {"steps": steps, "settings": settings or {}})
+    return start(meta["id"])
 
 
 def _free_gpu():
@@ -498,6 +999,11 @@ def start(rid: str, more_steps: int = 0) -> dict:
                 pass
         folder = _run_dir(rid)
         meta = run(rid)
+        if not (meta.get("dataset") or {}).get("id") and not (meta.get("dataset") or {}).get("path"):
+            raise LabsError("Pick the data it learns from first (the Data step).", "bad_data")
+        if meta["template"] == "lora" and not engine().get("finetune"):
+            raise LabsError("The fine-tuning tools are missing - Labs › Machine › Repair or update.", "not_installed")
+        meta["settings"] = validate_settings(meta["template"], meta["size"], meta.get("settings") or {})
         _need_space(folder, RUN_NEEDS_GB, "a run's checkpoints")
         if more_steps:
             meta["steps"] = int(meta["steps"]) + max(0, int(more_steps))
@@ -510,16 +1016,35 @@ def start(rid: str, more_steps: int = 0) -> dict:
         meta.update(state="running", started=time.time(), message="", resumed=resume)
         _write_json(os.path.join(folder, "run.json"), meta)
         ds = dataset(meta["dataset"]["id"]) if meta["dataset"].get("id") else meta["dataset"]
+        data = {"text": lambda: os.path.join(DATA_DIR, ds["id"], "data.txt"),
+                "chat": lambda: os.path.join(DATA_DIR, ds["id"], "data.jsonl")}.get(ds["kind"], lambda: ds["path"])()
         job = {"run": folder, "template": meta["template"], "size": meta["size"], "steps": meta["steps"],
-               "resume": resume, "settings": meta.get("settings") or {},
-               "data": os.path.join(DATA_DIR, ds["id"], "data.txt") if ds["kind"] == "text" else ds["path"]}
+               "resume": resume, "settings": meta.get("settings") or {}, "data": data, **_base_job(meta)}
         _write_json(os.path.join(folder, "job.json"), job)
         log = open(os.path.join(folder, "worker.log"), "ab")
         _proc = subprocess.Popen([python(), "-u", WORKER, os.path.join(folder, "job.json")], cwd=folder, stdout=log,
-                                 stderr=subprocess.STDOUT, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+                                 stderr=subprocess.STDOUT, env=_worker_env(),
+                                 creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
         _running = rid
         threading.Thread(target=_watch, args=(rid, _proc, log), daemon=True, name="labs-run").start()
         return meta
+
+
+def _base_job(meta: dict) -> dict:
+    """A fine-tune's base model: its repo, where it is kept (downloaded the first time), its name."""
+    if meta.get("template") != "lora":
+        return {}
+    repo, folder, _q = BASES.get(meta.get("size"), BASES["0.8b"])
+    return {"repo": repo, "base_dir": os.path.join(engine_dir(), "bases", folder), "base_label": folder}
+
+
+def _worker_env() -> dict:
+    """The worker's caches and downloads stay on the Labs drive (Hugging Face and Triton default to C:), and its
+    downloads follow the app's network route."""
+    env = _pip_env()
+    env.update(HF_HOME=os.path.join(engine_dir(), "hf"), HF_HUB_DISABLE_TELEMETRY="1",
+               TRITON_CACHE_DIR=os.path.join(engine_dir(), "triton-cache"), PYTHONIOENCODING="utf-8")
+    return env
 
 
 def _watch(rid: str, proc: subprocess.Popen, log):
@@ -603,29 +1128,178 @@ def sample_file(rid: str, name: str) -> str | None:
 
 def try_it(rid: str, prompt: str = "", length: int = 400, temperature: float = 0.8) -> dict:
     """Generate text from a GPT run's checkpoint (its own short worker run; on the CPU while another run trains)."""
+    """A GPT run writes text from its checkpoint (on the CPU while another run trains); a fine-tune answers the prompt,
+    with the original model's answer beside it (its own short worker run, on the GPU)."""
     folder = _run_dir(rid)
     meta = run(rid)
-    if meta["template"] != "gpt":
-        raise LabsError("Only a GPT run writes text.", "bad_data")
-    if not os.path.exists(os.path.join(folder, "ckpt.pt")):
+    if meta["template"] not in ("gpt", "lora"):
+        raise LabsError("Only a GPT run or a fine-tune writes text.", "bad_data")
+    lora = meta["template"] == "lora"
+    if not os.path.exists(os.path.join(folder, "adapter" if lora else "ckpt.pt")):
         raise LabsError("This run has no checkpoint yet - let it train a little first.", "missing")
     if not engine()["installed"]:
         raise LabsError("Set up the Labs engine first.", "not_installed")
-    job = {"mode": "generate", "run": folder, "prompt": str(prompt or "")[:500], "length": max(20, min(2000, int(length))),
-           "temperature": max(0.1, min(2.0, float(temperature))), "device": "cpu" if gpu_busy() else "auto"}
+    if lora and gpu_busy():
+        raise LabsError("A run is training on the GPU - try the fine-tune when it has finished.", "busy")
+    if lora:
+        _free_gpu()
+    # The same rules for every model: a prompt of up to 4,000 characters, 20 to 2,000 tokens back, temperature 0 to 2.
+    prompt = str(prompt or "")
+    if len(prompt) > 4000:
+        raise LabsError(f"The prompt is {len(prompt):,} characters - Try it takes up to 4,000.", "bad_data")
+    length = _int(length, 20, 2000, "Length")
+    temperature = 0.0 if temperature is None else float(temperature)
+    if not 0 <= temperature <= 2:
+        raise LabsError("Temperature must be between 0 and 2.", "bad_data")
+    if lora:
+        _free_gpu()
+        job = {"mode": "generate_lora", "run": folder, "prompt": prompt, "length": length, "temperature": temperature,
+               **_base_job(meta)}
+    else:
+        job = {"mode": "generate", "run": folder, "prompt": prompt, "length": length,
+               "temperature": max(0.05, temperature), "device": "cpu" if gpu_busy() else "auto"}
     path = os.path.join(folder, "gen.json")
     _write_json(path, job)
     try:
         r = subprocess.run([python(), "-u", WORKER, path], cwd=folder, capture_output=True, text=True, encoding="utf-8",
-                           errors="replace", timeout=180, creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+                           errors="replace", timeout=600 if lora else 180, env=_worker_env(),
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     except subprocess.TimeoutExpired:
         raise LabsError("Writing took too long.", "failed") from None
     lines = [x for x in r.stdout.splitlines() if x.startswith("{")]
     if r.returncode != 0 or not lines:
         raise LabsError((r.stderr or r.stdout or "It didn't answer.").strip().splitlines()[-1][:300], "failed")
-    return json.loads(lines[-1])
+    out = json.loads(lines[-1])
+    if out.get("ok") is False:
+        raise LabsError(out.get("message") or "It didn't answer.", "failed")
+    return out
+
+
+def trace(rid: str, prompt: str = "", picture: str = "") -> dict:
+    """One real pass through a run's checkpoint on the CPU: each layer's strongest units and what flowed between
+    them (the network view's Trace). A small GPT takes text; a picture classifier one of its held-out pictures."""
+    folder = _run_dir(rid)
+    meta = run(rid)
+    if meta["template"] not in ("gpt", "cnn"):
+        raise LabsError("Trace works on the small GPT and the picture classifier - a fine-tune shows which layers learned instead.", "bad_data")
+    if not os.path.exists(os.path.join(folder, "ckpt.pt")):
+        raise LabsError("It has no checkpoint yet - let it train a little first.", "missing")
+    if not engine()["installed"]:
+        raise LabsError("Set up the Labs engine first.", "not_installed")
+    job = {"mode": "trace", "template": meta["template"], "run": folder}
+    if meta["template"] == "gpt":
+        prompt = str(prompt or "")
+        if len(prompt) > 1024:
+            raise LabsError("Trace reads up to 1,024 characters.", "bad_data")
+        job["prompt"] = prompt
+    else:
+        name = os.path.basename(str(picture or ""))
+        if not re.fullmatch(r"v\d+\.png", name) or not os.path.exists(os.path.join(folder, "samples", name)):
+            raise LabsError("Pick one of its held-out pictures.", "bad_data")
+        job["picture"] = os.path.join(folder, "samples", name)
+    path = os.path.join(folder, "trace.json")
+    _write_json(path, job)
+    try:
+        r = subprocess.run([python(), "-u", WORKER, path], cwd=folder, capture_output=True, text=True, encoding="utf-8",
+                           errors="replace", timeout=120, env={**_worker_env(), "CUDA_VISIBLE_DEVICES": ""},
+                           creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+    except subprocess.TimeoutExpired:
+        raise LabsError("The trace took too long.", "failed") from None
+    lines = [x for x in r.stdout.splitlines() if x.startswith("{")]
+    if r.returncode != 0 or not lines:
+        raise LabsError((r.stderr or r.stdout or "No answer.").strip().splitlines()[-1][:300], "failed")
+    out = json.loads(lines[-1])
+    if out.get("ok") is False:
+        raise LabsError(out.get("message") or "No answer.", "failed")
+    return out
+
+
+# ==============================================================================
+# Port: a fine-tune becomes a Workspace model
+# ==============================================================================
+# It stays in Labs - tried, compared with the original - until you port it: then it is merged into its base,
+# converted to GGUF, quantized, saved beside the other models on the Labs drive and added to models.ini.
+_port = {}                    # run id -> {"state": running|done|error, "stage", "error", "model"}
+
+
+def port_status(rid: str) -> dict:
+    return dict(_port.get(rid) or {})
+
+
+def port(rid: str) -> dict:
+    meta = run(rid)
+    folder = _run_dir(rid)
+    if meta["template"] != "lora":
+        raise LabsError("Only a fine-tuned chat model can be ported to Workspace.", "bad_data")
+    if not os.path.exists(os.path.join(folder, "adapter", "adapter_config.json")):
+        raise LabsError("This run has no fine-tune saved yet - let it train first.", "missing")
+    if gpu_busy() or any(p.get("state") == "running" for p in _port.values()):
+        raise LabsError("Busy - a run is training or another port is running.", "busy")
+    if not (convert_dir() and quantize_exe()):
+        raise LabsError("Port needs llama.cpp's converter and llama-quantize - run Labs > Engine > Repair or update.", "not_installed")
+    _need_space(folder, 12.0, "porting (the merged model and its GGUF, briefly)")
+    _port[rid] = {"state": "running", "stage": "Starting", "error": ""}
+    threading.Thread(target=_run_port, args=(rid, meta, folder), daemon=True, name="labs-port").start()
+    return port_status(rid)
+
+
+def _run_port(rid: str, meta: dict, folder: str):
+    import llama_local
+    import model_scan
+    st = _port[rid]
+    try:
+        _repo, base_name, quant = BASES.get(meta["size"], BASES["0.8b"])
+        safe = re.sub(r"[^\w.-]+", "-", meta["name"]).strip("-")[:60] or rid
+        models_dir = os.path.join(os.path.dirname(engine_dir()), "models", "Labs")
+        os.makedirs(models_dir, exist_ok=True)
+        out = os.path.join(models_dir, f"{safe}-{quant}.gguf")
+        work = os.path.join(folder, "port-work")
+        job = {"mode": "port", "run": folder, "work": work, "out": out, "quant": quant, "convert_dir": convert_dir(),
+               "quantize": quantize_exe(), **_base_job(meta)}
+        path = os.path.join(folder, "port.json")
+        _write_json(path, job)
+        proc = subprocess.Popen([python(), "-u", WORKER, path], cwd=folder, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, encoding="utf-8", errors="replace", env=_worker_env(),
+                                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        result, tail = None, []
+        for line in proc.stdout:
+            tail = (tail + [line.rstrip()])[-20:]
+            if line.startswith("{"):
+                try:
+                    msg = json.loads(line)
+                except ValueError:
+                    continue
+                if "stage" in msg:
+                    st["stage"] = msg["stage"]
+                if "ok" in msg:
+                    result = msg
+        proc.wait()
+        if not result or not result.get("ok"):
+            raise LabsError((result or {}).get("message") or (tail[-1] if tail else "The port stopped."), "failed")
+        st["stage"] = "Adding it to Workspace"
+        try:
+            added = model_scan.add_file(out)
+            name = added["name"]
+        except ValueError:                                     # ported before: the same file, already listed
+            name = next((c["name"] for c in llama_local.list_model_configs()
+                         if os.path.normcase(c.get("model_path") or "") == os.path.normcase(out)), safe)
+        llama_local.set_model_options({name: {"ctx-size": 32768}}, backup=False)
+        try:
+            model_scan.restart_router()
+        except Exception:                                      # noqa: BLE001 - the model loads with the next restart then
+            pass
+        meta = run(rid)
+        meta["ported"] = {"model": name, "path": out, "mb": result.get("mb"), "at": time.time(), "base": base_name}
+        _write_json(os.path.join(folder, "run.json"), {k: v for k, v in meta.items() if k != "last"})
+        st.update(state="done", stage="", model=name)
+    except Exception as e:                                    # noqa: BLE001 - shown on the run as it is
+        st.update(state="error", error=str(e)[:400], stage="")
+    finally:
+        shutil.rmtree(os.path.join(folder, "port-work"), ignore_errors=True)    # the merged copy and the bf16 GGUF
 
 
 def status() -> dict:
     return {"engine": engine(), "setup": setup_status(), "running": _running if gpu_busy() else None,
-            "templates": TEMPLATES}
+            "templates": TEMPLATES, "presets": PRESETS, "bases": {k: {**v, "downloaded": os.path.exists(
+                os.path.join(engine_dir(), "bases", BASES[k][1], "config.json"))} for k, v in BASE_CONFIGS.items()},
+            "build": build_status(), "ports": {k: dict(v) for k, v in _port.items()}}

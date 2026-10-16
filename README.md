@@ -16,6 +16,12 @@ Everything runs on this PC by default. Nothing is sent anywhere unless you use a
   pauses and lets you cut in. English out of the box; Hebrew, Russian and more with the GPU listener.
 - **Images and video.** FLUX.2 klein, Z-Image-Turbo, Krea 2, SDXL anime models and Wan 2.2 video, all running
   on your GPU, with a gallery, favourites and trash.
+- **Music.** A music studio with a timeline: pick a part and ask for changes there.
+- **Fx Labs (beta).** A second mode (click the logo, top left) for making your own models: train a small GPT or a
+  picture classifier from scratch, or fine-tune a Qwen 3.5 chat model (0.8B to 4B, QLoRA) on your own examples -
+  or on examples a local model writes from your documents. You design the network layer by layer, watch it learn,
+  trace one input through it to see what each layer does, compare it with the original model, then **Port** a
+  fine-tune into Workspace as a normal chat model.
 - **Many themes**, from Light and Dark to Terminal and Aurora.
 
 ## Requirements
@@ -60,6 +66,7 @@ created on the first start and never committed.
 |---|---|
 | Voice | Settings > Voice > **Download and set up** (about 1 GB). Turn on **GPU listener** there for fast Hebrew, Russian and Auto. |
 | Images | `.venv\Scripts\python.exe image_setup.py` (about 22 GB, NVIDIA). The installer can do this for you. |
+| Fx Labs (beta) | Switch to Labs from the logo menu, then **Machine > Set up** (about 5 GB: PyTorch with CUDA and the fine-tuning tools, in Labs' own Python). NVIDIA GPU, 8 GB VRAM recommended; a fine-tune also downloads its base model (1.7-9 GB). Beta: expect rough edges, and tell me what breaks. |
 | Video, video sound, music | Advanced, manual setup for now. See `docs/FEATURES.md` and the notes at the top of `video_gen.py`, `video_audio.py` and `music_gen.py`. |
 
 ## Privacy
