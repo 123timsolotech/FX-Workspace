@@ -1,8 +1,15 @@
 # Third-party software and models
 
-FX Workspace's own code is Apache-2.0 (see `LICENSE` and `NOTICE`). Nothing below is stored in this
-repository: the installer or a feature's setup downloads it from its publisher, and checks it by SHA-256 where
+FX Workspace's own code is Apache-2.0 (see `LICENSE` and `NOTICE`). Apart from the two fonts under "Included in
+the app", nothing below is stored in this repository: the installer or a feature's setup downloads it from its publisher, and checks it by SHA-256 where
 the publisher gives one. Each keeps its own license - read it before you use a model commercially.
+
+## Included in the app
+
+| Component | Used for | License |
+|---|---|---|
+| [Inter](https://github.com/rsms/inter) | the new interface's text (`static/fonts`) | SIL Open Font License 1.1 (`static/fonts/OFL-Inter.txt`) |
+| [Source Serif 4](https://github.com/adobe-fonts/source-serif) | replies and headings in the new interface (`static/fonts`) | SIL Open Font License 1.1 (`static/fonts/OFL-SourceSerif4.txt`) |
 
 ## Engines
 

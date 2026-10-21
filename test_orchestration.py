@@ -958,7 +958,7 @@ class ThemeTests(unittest.TestCase):
         self.assertEqual(orchestrator.EFFORT_LABELS["normal"], "Balanced")
 
     def test_light_skins_resolve_to_a_light_scheme(self):
-        self.assertIn("const LIGHT_SKINS = ['dawn', 'termlight', 'eclipselight', 'auroralight']", self.html)
+        self.assertIn("const LIGHT_SKINS = ['dawn', 'termlight', 'eclipselight', 'auroralight', 'claylight', 'monolight', 'voidlight', 'prismlight']", self.html)
         self.assertIn("const themeScheme = t => t === 'light' || LIGHT_SKINS.includes(t) ? 'light' : 'dark';", self.html)
         self.assertIn("root.dataset.scheme = scheme;", self.html)
 
@@ -969,7 +969,7 @@ class ThemeTests(unittest.TestCase):
     def test_terminal_lite_is_terminal_with_a_calmer_palette(self):
         # Both ride on the Terminal skin (so every terminal rule and motion
         # applies) and only swap the palette and drop the heavy effects.
-        self.assertIn("const TONES = { termdark: 'lite-dark', termlight: 'lite-light', eclipselight: 'light', auroralight: 'light' }", self.html)
+        self.assertIn("const TONES = { termdark: 'lite-dark', termlight: 'lite-light', eclipselight: 'light', auroralight: 'light',", self.html)
         self.assertIn("const SKIN_OF = { termdark: 'terminal', termlight: 'terminal',", self.html)
         self.assertIn("root.dataset.skin = classic ? 'classic' : SKIN_OF[theme] || theme;", self.html)
         self.assertIn(':root[data-skin="terminal"][data-tone] .app::before { content: none; }', self.css)   # no scanlines

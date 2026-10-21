@@ -29,6 +29,11 @@ import roblox_bridge
 import roblox_places
 from run_control import run_control
 import messaging
+import agent_skills
+import docs_store
+import knowledge
+import notes
+import profile_store
 import search_engine
 import sys_tools
 import vision
@@ -154,6 +159,18 @@ def execute_tool(tool_name: str, args: dict) -> dict:
         # -------- messaging (messaging.py) and model routing (model_router.py)
         if tool_name in messaging.MESSAGING_TOOL_NAMES:
             return shared.messaging_hub.run_tool(tool_name, args)
+        # -------- Notes & tasks, Docs (notes.py, docs_store.py)
+        if tool_name in notes.TOOL_NAMES:
+            return notes.run_tool(tool_name, args)
+        if tool_name in docs_store.TOOL_NAMES:
+            return docs_store.run_tool(tool_name, args)
+        # -------- skills, knowledge base, earlier chats (agent_skills.py, knowledge.py, profile_store.py)
+        if tool_name in agent_skills.TOOL_NAMES:
+            return agent_skills.run_tool(tool_name, args)
+        if tool_name in knowledge.TOOL_NAMES:
+            return knowledge.run_tool(tool_name, args)
+        if tool_name in profile_store.TOOL_NAMES:
+            return profile_store.run_tool(tool_name, args, shared.chat_store)
         if tool_name == "request_model_handoff":
             return handoff._handoff_tool(args)
 

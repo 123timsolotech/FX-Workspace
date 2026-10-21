@@ -815,10 +815,9 @@ def _fit_for_local() -> str | None:
     # live state block and the reply we reserve room for.
     overhead = (_approx_tokens({"t": schemas.tools_for_current_turn(local=True)})
                 + _approx_tokens({"s": system_prompt(True)}) + _turn_tokens() + 900)
+    # The model's own window is the limit - the context set for it in Settings › Models. The effort level's smaller
+    # context size capped it too, so a model set to 80K still dropped history past ~30K (2026-10-21).
     budget = max(1500, llama_local.model_context_limit(target) - overhead - _local_reply_tokens())
-    run_budget = shared.app_state.get("run_budget")
-    if run_budget is not None:                    # the effort level's context-selection size
-        budget = max(1500, min(budget, run_budget.profile.context_tokens))
     shared.app_state["_local_fit_budget"] = budget
     trim_conversation(budget_tokens=budget)
     return planned

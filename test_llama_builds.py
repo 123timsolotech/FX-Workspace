@@ -20,6 +20,9 @@ CMD = [PRISM, "--host", "127.0.0.1", "--port", "8090", "--models-preset", r"C:\a
        "--jinja", "--parallel", "1"]
 
 
+from test_bonsai import NEEDS_BONSAI          # tests that read this PC's own models.ini (Bonsai's PrismML-only file)
+
+
 def installed(*paths):
     return patch.object(llama_builds, "_exists", side_effect=lambda p: p in paths)
 
@@ -49,6 +52,7 @@ class BuildTests(unittest.TestCase):
             self.assertEqual(llama_builds.exe_of("latest"), r"C:\llama.cpp\llama-server.exe")
             self.assertIsNone(llama_builds.exe_of("prism"))
 
+    @NEEDS_BONSAI
     def test_auto_wants_prism_only_for_the_models_only_it_loads(self):
         with installed(LATEST, PRISM):
             self.assertEqual(llama_builds.wanted("Ternary-Bonsai-2-27B"), "prism")       # via its models.ini path
@@ -58,6 +62,7 @@ class BuildTests(unittest.TestCase):
         with installed(LATEST):
             self.assertIsNone(llama_builds.wanted("Ternary-Bonsai-2-27B"))               # nothing to switch to
 
+    @NEEDS_BONSAI
     def test_bonsai_moves_the_router_to_prism_and_the_next_pick_moves_it_back(self):
         told = []
         with installed(LATEST, PRISM), self.running_on(LATEST), patch.object(llama_builds, "switch") as sw:

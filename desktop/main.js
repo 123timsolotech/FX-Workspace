@@ -198,6 +198,12 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();                                // one app: a second start shows the first one's window
 } else {
   app.on('second-instance', showWindow);
+  // After a native confirm()/alert() on Windows, Chromium keeps the caret but drops keystrokes until the
+  // window loses and regains focus - the page asks for that round trip when one closes.
+  ipcMain.on('fx-refocus', e => {
+    const w = BrowserWindow.fromWebContents(e.sender);
+    if (w && !w.isDestroyed()) { w.blur(); w.focus(); e.sender.focus(); }
+  });
   ipcMain.on('fx-titlebar', (e, { color, symbolColor, height } = {}) => {
     const w = BrowserWindow.fromWebContents(e.sender);
     const bg = hexColor(color), fg = hexColor(symbolColor);

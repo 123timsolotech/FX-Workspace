@@ -9,8 +9,13 @@ from __future__ import annotations
 import copy
 import json
 
+import agent_skills
 import composer_tools
+import docs_store
 import history
+import knowledge
+import notes
+import profile_store
 import llama_local
 import roblox_bridge
 import messaging
@@ -36,6 +41,7 @@ READ_ONLY_TOOLS = {
     "roblox_read_script", "roblox_find", "roblox_get_output", "roblox_get_tree",
     "web_search", "fetch_page", "web_read", "browser_read", "market_data", "world_monitor",
     "compute_stats", "make_chart", "use_tools", "load_skill",
+    "notes_search", "doc_list", "doc_read", "kb_search", "chats_search", "skill_load",
 } | messaging.MESSAGING_READ_TOOLS
 
 
@@ -62,6 +68,8 @@ LOCAL_TOOL_NAMES = {
     "web_search", "fetch_page", "web_read", "market_data", "world_monitor", "generate_image",
     "compute_stats", "make_chart", "use_tools", "load_skill",
 }
+# Notes & tasks and Docs (notes.py, docs_store.py) aren't in the small set: a local model with a window of
+# LOCAL_FULL_TOOLS_MIN_CTX or more gets them with the full catalogue; below that they crowded out Studio's tools.
 
 
 # A local model whose real context window is at least this large gets the
@@ -193,7 +201,8 @@ TOOLS = [
     {"type": "function", "function": {"name": "top_processes", "description": "Lists the apps using the most memory (or CPU with sort='cpu'), grouped by app name.", "parameters": {"type": "object", "properties": {"limit": {"type": "integer"}, "sort": {"type": "string"}}, "required": []}}},
     # -------- model routing (model_router.py) - offered only when automatic routing is on
     {"type": "function", "function": {"name": "request_model_handoff", "description": "Asks the controller to continue this same task on a different model, e.g. one that can read images or has a larger context. Use only when the current model genuinely cannot do the job. The controller may refuse.", "parameters": {"type": "object", "properties": {"target_model": {"type": "string", "description": "Model id from the model registry."}, "reason": {"type": "string", "description": "What the current model cannot do, e.g. 'vision capability required'."}, "justification": {"type": "string"}}, "required": ["target_model", "reason"]}}},
-] + messaging.MESSAGING_TOOLS + [skills.SCHEMA]          # load_skill: more tools on demand (skills.py)
+] + messaging.MESSAGING_TOOLS + notes.TOOLS + docs_store.TOOLS + agent_skills.TOOLS + knowledge.TOOLS + profile_store.TOOLS \
+  + [skills.SCHEMA]   # load_skill: more tools on demand (skills.py)
 # Internal tools: registered (so they share the executor, events and result
 # format) but never offered to a model and not callable by one.
 INTERNAL_TOOLS = [
@@ -216,7 +225,8 @@ QUERY_TOOL_NAMES = {
     "roblox_status", "roblox_get_selection", "roblox_list_children", "roblox_get_properties",
     "roblox_read_script", "roblox_find", "roblox_get_output", "roblox_get_tree", "top_processes",
     "web_search", "fetch_page", "web_read", "browser_read", "market_data", "world_monitor",
-    "compute_stats", "make_chart", "use_tools",
+    "compute_stats", "make_chart", "use_tools", "notes_search", "doc_list", "doc_read",
+    "kb_search", "chats_search", "skill_load",
 } | messaging.MESSAGING_READ_TOOLS
 ROBLOX_TOOL_NAMES = {name for name in TOOL_NAMES if name.startswith("roblox_")}
 TOOLS_LOCAL_ROBLOX = TOOLS_LOCAL + [t for t in TOOLS if t["function"]["name"] in ROBLOX_TOOL_NAMES]
@@ -248,7 +258,34 @@ MEMORY_TOOLS_ONLY = [t for t in TOOLS if t["function"]["name"] == "save_memory"]
 
 # Tools whose availability depends on configuration, not the turn: they are
 # only offered to the model when usable, so they never cost context otherwise.
-_CONDITIONAL_TOOLS = messaging.MESSAGING_TOOL_NAMES | {"request_model_handoff", "mcp_read_resource"}
+_CONDITIONAL_TOOLS = messaging.MESSAGING_TOOL_NAMES | {"request_model_handoff", "mcp_read_resource", "kb_search", "skill_load"}
+# The user's own things the assistant may read on any turn - questions too: earlier chats always; the knowledge
+# base once a folder is chosen; saved skills once one is on.
+PERSONAL_READ_TOOLS = ("chats_search", "kb_search", "skill_load")
+
+
+def personal_tools(question: bool = False) -> set:
+    """question: a plain question carries no tool unless the user set something up (the knowledge base, a
+    skill) - earlier chats are searched on read and action turns."""
+    out = set() if question else {"chats_search"}
+    if (shared.app_state.get("settings") or {}).get("knowledge_folders"):
+        out.add("kb_search")
+    try:
+        if any(s["enabled"] for s in agent_skills.list_skills()):
+            out.add("skill_load")
+    except OSError:
+        pass
+    return out
+
+
+NOTES_TOOL_NAMES = set(skills.SKILLS["notes"][1])
+
+
+def notes_wanted() -> set:
+    """Notes, tasks and Docs when the request is about them ("add a task", "put this in a doc") - on every kind of
+    turn and for small local models too: a question like "write my plan down as a doc" is not an action turn, and
+    the small local set leaves them out, so the assistant couldn't add a note or a doc itself."""
+    return NOTES_TOOL_NAMES if "notes" in skills.pick(shared.app_state.get("current_user_request") or "") else set()
 
 
 def mcp_schemas() -> list:
@@ -341,6 +378,8 @@ def tools_for_mode(local: bool, mode: str) -> list:
         source = [t for t in TOOLS if t["function"]["name"] not in hidden]
     if shared.messaging_hub.configured():
         source += MESSAGING_TOOLS_ONLY
+    have = {t["function"]["name"] for t in source}
+    source += [t for t in TOOLS if t["function"]["name"] in (personal_tools() | notes_wanted()) - have]
     if shared.app_state["settings"].get("auto_model_routing"):
         source += handoff_tool()
     if mode != "action":
@@ -478,7 +517,8 @@ def offered_to_questions() -> set:
         return set()
     import auto_tools
     auto = {"use_tools"} if auto_tools.on(shared.app_state.get("settings")) else set()
-    return (set(WEB_TOOL_NAMES) if web_offered() else set()) | composer_tools.offered(shared.app_state.get("turn_tools")) | auto
+    return ((set(WEB_TOOL_NAMES) if web_offered() else set()) | composer_tools.offered(shared.app_state.get("turn_tools")) | auto
+            | personal_tools(question=True) | notes_wanted())
 
 
 def tool_allowed_current_turn(tool_name: str) -> bool:
@@ -491,5 +531,8 @@ def tool_allowed_current_turn(tool_name: str) -> bool:
             or (mode == "memory" and tool_name == "save_memory")
             # QUESTION_EXTRA_TOOLS, spelled out: test_task_flow runs this function on its own.
             or (mode in ("none", "read") and tool_name in ("web_search", "fetch_page", "web_read", "run_python", "market_data",
-                                                           "world_monitor", "generate_image", "compute_stats", "make_chart", "use_tools")
+                                                           "world_monitor", "generate_image", "compute_stats", "make_chart", "use_tools",
+                                                           "chats_search", "kb_search", "skill_load",
+                                                           "notes_search", "note_save", "task_add", "task_done",
+                                                           "doc_list", "doc_read", "doc_write")
                 and tool_name in offered_to_questions()))

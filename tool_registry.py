@@ -163,6 +163,19 @@ _POLICY = {
     "messages_read": dict(category="messaging", permissions=("messages.read",)),
     "messages_draft": dict(category="messaging", permissions=("messages.draft",)),
     "messages_send": dict(category="messaging", cooldown_s=5.0, permissions=("messages.send",)),
+    # Notes & tasks and Docs (notes.py, docs_store.py): the app's own files under data/
+    "notes_search": dict(category="notes"),
+    "note_save": dict(category="notes"),
+    "task_add": dict(category="notes"),
+    "task_done": dict(idempotent=True, category="notes"),
+    "doc_list": dict(category="docs"),
+    "doc_read": dict(category="docs"),
+    "doc_write": dict(category="docs"),
+    # Skills, knowledge base, earlier chats (agent_skills.py, knowledge.py, profile_store.py)
+    "skill_load": dict(category="skills"),
+    "skill_save": dict(category="skills"),
+    "kb_search": dict(category="knowledge", timeout_s=30),
+    "chats_search": dict(category="memory", timeout_s=30),
     # Model routing (model_router.py)
     "request_model_handoff": dict(category="models", cooldown_s=30.0, permissions=("models.switch",)),
     # MCP (mcp_client.py). Every mcp__<server>__<tool> gets MCP_TOOL_POLICY.

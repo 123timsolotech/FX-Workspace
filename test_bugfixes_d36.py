@@ -128,7 +128,9 @@ class SlidersBeforeAModelLoads(_Api):
     def test_the_ui_sends_the_shown_model(self):
         with open(os.path.join(os.path.dirname(__file__), "index.html"), encoding="utf-8") as fh:
             html = fh.read()
-        self.assertIn("for_mode: S.mode", html)
+        # The save names the mode and the model shown (the variable names changed - the behaviour is what's checked;
+        # pointed out in PR #1 by 123timsolotech).
+        self.assertRegex(html, r"for_mode: \w+(\.mode)?, for_model: ")
         self.assertIn("your choice for ${d.model}", html)
 
 

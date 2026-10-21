@@ -6,5 +6,6 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('fxDesktop', {
   shell: 'electron', platform: process.platform,
   setTitleBar: (color, symbolColor, height) => ipcRenderer.send('fx-titlebar', { color: String(color), symbolColor: String(symbolColor), height: Number(height) || 0 }),
+  refocus: () => ipcRenderer.send('fx-refocus'),
 });
 window.addEventListener('DOMContentLoaded', () => document.documentElement.classList.add('fx-desktop'));

@@ -169,19 +169,24 @@ DEFAULT_SETTINGS = {
 UI_LOOKS = ("studio", "focus", "operator", "command")
 LEGACY_LOOKS = {"companion": "focus"}      # Companion's narrow-window job moved into Focus
 UI_THEMES = ("system", "light", "dark", "dawn", "dusk", "terminal", "termdark", "termlight",
-             "eclipse", "eclipselight", "aurora", "auroralight")
-UI_APPEARANCES = ("classic", "sunrise", "terminal", "eclipse", "aurora")
+             "eclipse", "eclipselight", "aurora", "auroralight",
+             "claylight", "claydark", "monolight", "monodark", "voidlight", "voiddark", "prismlight", "prismdark")
+# clay / mono / void / prism: the looks people know from Claude, ChatGPT and Codex, Grok and Gemini (2026-10-21).
+UI_APPEARANCES = ("classic", "sunrise", "terminal", "eclipse", "aurora", "clay", "mono", "void", "prism")
 COLOR_MODES = ("system", "light", "dark")
 # Each family's (light, dark) theme. Terminal's dark one is Lite Dark unless terminal_phosphor.
 FAMILY_THEMES = {"classic": ("light", "dark"), "sunrise": ("dawn", "dusk"), "terminal": ("termlight", "termdark"),
-                 "eclipse": ("eclipselight", "eclipse"), "aurora": ("auroralight", "aurora")}
+                 "eclipse": ("eclipselight", "eclipse"), "aurora": ("auroralight", "aurora"),
+                 "clay": ("claylight", "claydark"), "mono": ("monolight", "monodark"),
+                 "void": ("voidlight", "voiddark"), "prism": ("prismlight", "prismdark")}
 # A theme from before families -> (appearance, color_mode, terminal_phosphor).
 THEME_FAMILY = {"system": ("classic", "system", False), "light": ("classic", "light", False),
                 "dark": ("classic", "dark", False), "dawn": ("sunrise", "light", False),
                 "dusk": ("sunrise", "dark", False), "terminal": ("terminal", "dark", True),
                 "termdark": ("terminal", "dark", False), "termlight": ("terminal", "light", False),
                 "eclipse": ("eclipse", "dark", False), "eclipselight": ("eclipse", "light", False),
-                "aurora": ("aurora", "dark", False), "auroralight": ("aurora", "light", False)}
+                "aurora": ("aurora", "dark", False), "auroralight": ("aurora", "light", False),
+                **{f"{fam}{side}": (fam, side, False) for fam in ("clay", "mono", "void", "prism") for side in ("light", "dark")}}
 
 
 def clean_look(look) -> str:
@@ -227,8 +232,14 @@ def clean_agent_settings(s: dict) -> dict:
                                    if isinstance(m, str) and v in prompt_prep.MODES}
     for key, default in (("cross_check", False), ("effort_auto_escalate", True), ("auto_model_routing", False), ("show_activity", False),
                          ("record_model_io", False), ("memory_enabled", True), ("web_browser_fallback", True),
-                         ("web_auto_search", True), ("browser_builtin", True)):
+                         ("web_auto_search", True), ("browser_builtin", True),
+                         # memory.py sensitive topics; profile_store.py proposing a new profile by itself; agent_skills offers
+                         ("memory_sensitive", False), ("profile_auto", True), ("skills_offer", True)):
         out[key] = bool(s.get(key)) if isinstance(s.get(key), bool) else default
+    # The interface: "new" (the 2026-10 redesign) or "legacy" (everything as it was before it).
+    out["ui_style"] = s.get("ui_style") if s.get("ui_style") in ("new", "legacy") else "new"
+    kf = s.get("knowledge_folders")                      # knowledge.py: the folders the knowledge base indexes
+    out["knowledge_folders"] = list(dict.fromkeys(f.strip() for f in kf if isinstance(f, str) and f.strip()))[:20] if isinstance(kf, list) else []
     mr = s.get("max_revisions")
     out["max_revisions"] = int(mr) if not isinstance(mr, bool) and str(mr) in ("0", "1", "2") else "auto"
     by_model = s.get("effort_by_model")

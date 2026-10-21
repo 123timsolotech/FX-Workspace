@@ -150,6 +150,10 @@ async def _same_origin_only(request: Request, call_next):
 
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
 
+# Compare, Find models, Notes & tasks, Docs and Mail (api/extras.py).
+import api.extras as extras
+app.include_router(extras.router)
+
 
 def _busy(default: str) -> str:
     """The busy message, naming a running benchmark when that is the reason."""
@@ -416,6 +420,11 @@ class SettingsUpdate(BaseModel):
     ambient_idle: str = None
     context_auto_compress: str = None
     memory_enabled: bool = None
+    memory_sensitive: bool | None = None
+    profile_auto: bool | None = None
+    skills_offer: bool | None = None
+    knowledge_folders: list | None = None
+    ui_style: str | None = None
     web_search_provider: str = None
     searxng_url: str = None
     web_browser_fallback: bool = None
@@ -938,10 +947,22 @@ def set_local_model_config(body: ModelConfigUpdate):
         return {"status": "error", "message": str(e)}
     except Exception as e:
         return {"status": "error", "message": f"Could not update models.ini: {e}"}
+    # llama-server's router reads models.ini only when it starts - a new context size did nothing until the app was
+    # restarted (2026-10-21). Restart it now, unless a reply or a load is using it (then it applies on the next start).
+    restarted = False
+    if not shared.state_lock.locked() and _model_load_lock.acquire(blocking=False):
+        try:
+            restarted = model_scan.restart_router()
+            llama_local.invalidate_cache()
+            shared.app_state["local_engaged"] = None
+        except Exception as e:
+            event_log.log_action(f"llama-server didn't restart after the models.ini change: {e}")
+        finally:
+            _model_load_lock.release()
     event_log.log_action(f"Resource settings for '{body.name}' updated in models.ini "
-               f"({', '.join(f'{k}={v}' for k, v in fields.items())}). Force-load it (or switch to a "
-               "different model and back) for a currently-loaded model to pick up the change.")
-    return {"status": "success", "models": llama_local.list_model_configs()}
+               f"({', '.join(f'{k}={v}' for k, v in fields.items())})"
+               + (" - llama-server restarted to read them." if restarted else "."))
+    return {"status": "success", "restarted": restarted, "models": llama_local.list_model_configs()}
 
 
 @app.get("/api/llama/builds")
@@ -1055,6 +1076,8 @@ def _start_background_services():
         event_log.log_action(f"Removed {swept} temporary chat folder{'s' if swept != 1 else ''} left by the last run.")
     # MCP servers connect in the background (a slow one must not delay the UI).
     threading.Thread(target=_connect_mcp_servers, daemon=True, name="mcp-connect").start()
+    # The assistant's email tools when a Mail account exists, and notifications for tasks that come due.
+    extras.start_background()
     # A hidden browser the last run left behind (closed without its shutdown) holds the browser's port and memory.
     threading.Thread(target=lambda: browser.agent_browser.close_leftover(), daemon=True, name="browser-leftover").start()
     # Reopen the chat and project that were open when the server stopped.
@@ -1267,6 +1290,8 @@ def undo_change(change_id: str, body: UndoRequest = None):
 class MemoryBody(BaseModel):
     text: str = None
     pinned: bool = None
+    topic: str | None = None
+    sensitive: bool | None = None
 
 
 class SearchKeyBody(BaseModel):
@@ -1752,8 +1777,9 @@ def favicon(domain: str):
 
 @app.get("/api/memory")
 def list_memory():
-    return {"entries": shared.memory_store.list(), "path": shared.memory_store.path,
+    return {"entries": shared.memory_store.list_with_topics(), "path": shared.memory_store.path,
             "enabled": shared.app_state["settings"].get("memory_enabled", True),
+            "sensitive": bool(shared.app_state["settings"].get("memory_sensitive")), "topics": list(memory.TOPICS),
             "max_entries": memory.MAX_ENTRIES, "max_text": memory.MAX_TEXT}
 
 
@@ -1772,7 +1798,8 @@ def add_memory(body: MemoryBody):
 @app.post("/api/memory/{entry_id}")
 def edit_memory(entry_id: str, body: MemoryBody):
     try:
-        entry = shared.memory_store.update(entry_id, text=body.text, pinned=body.pinned)
+        entry = shared.memory_store.update(entry_id, text=body.text, pinned=body.pinned, topic=body.topic,
+                                           sensitive=body.sensitive)
     except KeyError:
         return {"ok": False, "message": "That memory no longer exists."}
     except ValueError as e:

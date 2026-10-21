@@ -58,7 +58,10 @@ SKILLS: dict[str, tuple[str, tuple[str, ...]]] = {
                   ("get_clipboard", "set_clipboard", "clipboard_history", "media_control")),
     "reminders": ("notifications, reminders and scheduled tasks",
                   ("send_notification", "schedule_task", "cancel_scheduled_task", "list_scheduled_tasks")),
-    "memory": ("remember a fact or preference the user asked you to keep", ("save_memory",)),
+    "memory": ("remember a fact or preference the user asked you to keep; save a reusable skill they ask for",
+               ("save_memory", "skill_save")),
+    "notes": ("the user's notes, to-do tasks (with due dates) and documents in the app",
+              ("notes_search", "note_save", "task_add", "task_done", "doc_list", "doc_read", "doc_write")),
     "roblox": ("Roblox Studio through its bridge: the place tree, objects, properties, scripts, playtests",
                ("roblox_status", "roblox_get_selection", "roblox_list_children", "roblox_get_properties",
                 "roblox_create_instance", "roblox_set_property", "roblox_create_script", "roblox_delete_instance",
@@ -70,7 +73,7 @@ SKILLS: dict[str, tuple[str, tuple[str, ...]]] = {
 SKILL_OF = {tool: sid for sid, (_, tools) in SKILLS.items() for tool in tools}
 # What the user sees when a skill comes in ("Added tools: Files, Commands") - not the internal ids.
 NAMES = {"desktop": "Apps & windows", "files": "Files", "shell": "Commands", "web": "Web", "system": "System",
-         "clipboard": "Clipboard & media", "reminders": "Reminders", "memory": "Memory", "roblox": "Roblox Studio",
+         "clipboard": "Clipboard & media", "reminders": "Reminders", "memory": "Memory", "notes": "Notes & docs", "roblox": "Roblox Studio",
          "studio": "Studio MCP", "mcp": "MCP servers"}
 
 
@@ -103,8 +106,11 @@ _RULES = {
                  r"לוח|הדבק|ווליום|השתק|буфер|вставь|громкост|музык)",
     "reminders": _W + r"(?:remind|reminder|notify|notification|schedule|timer|alarm|later|in \d+ (?:min|hour)|every (?:day|morning|hour)|"
                  r"tomorrow|תזכיר|תזכורת|התראה|напомни|напоминани|уведомлени)",
-    "memory": _W + r"(?:remember|don't forget|keep in mind|from now on|my name is|i prefer|"
+    "memory": _W + r"(?:remember|don't forget|keep in mind|from now on|my name is|i prefer|skills?\b|"
               r"תזכור|זכור|запомни)",
+    "notes": _W + r"(?:(?:notes?|to-?dos?|tasks?|checklist|my list|docs?|documents?|draft (?:a|the|my) (?:doc|document|essay|letter)|"
+             r"write (?:(?:it|this|that) )?down|jot(?: down)?)\b|"
+             r"פתק|פתקים|משימה|משימות|מסמך|תרשום|заметк|задач|документ|запиши)",
     "roblox": _W + r"(?:(?:roblox|studio|luau|lua|workspace|baseplate|obby|parts?|bricks?|models?|npcs?|spawn(?:point)?|playtest|"
               r"serverscriptservice|replicatedstorage|startergui|localscript|modulescript)\b|"
               r"רובלוקס|роблокс)",

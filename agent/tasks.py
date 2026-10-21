@@ -20,6 +20,8 @@ import stats_tools
 import corroboration
 import effort
 import memory
+import agent_skills
+import profile_store
 import model_caps
 import personas
 import privacy
@@ -705,7 +707,7 @@ def _set_task_context(state, profile):
         return
     project_part = _project_brief(state.original_request, profile)
     memory_part = _memory_brief(state.original_request, profile.name)
-    shared.app_state["task_context"] = state.brief() + project_part + memory_part
+    shared.app_state["task_context"] = state.brief() + project_part + memory_part + _skills_brief()
     shared.app_state["prep_mode"] = state.prep_mode
     # Shown exactly as sent: the model gets this block beside CURRENT REQUEST.
     # "prepared" is the same additions, structured, for the view under the
@@ -777,21 +779,39 @@ def _project_brief(request: str, profile) -> str:
 def _memory_brief(request: str, level: str) -> str:
     """Saved memory relevant to this request (memory.py), marked as used and
     shown in Activity. Background facts only - nothing reads it for decisions."""
-    if not shared.app_state["settings"].get("memory_enabled", True):
+    settings = shared.app_state["settings"]
+    if not settings.get("memory_enabled", True):
         return ""
+    # "About you" (profile_store.py) - the user's profile, background like memory.
+    about = ""
+    try:
+        about = profile_store.brief()
+    except OSError:
+        pass
+    about = ("\n\n" + about) if about else ""
     project = (shared.app_state.get("active_project") or {}).get("id") if isinstance(shared.app_state.get("active_project"), dict) else shared.app_state.get("active_project")
     try:
-        entries = shared.memory_store.relevant(request, level, project)
+        entries = shared.memory_store.relevant(request, level, project, sensitive=bool(settings.get("memory_sensitive")))
         shared.memory_store.mark_used([e["id"] for e in entries])
     except OSError as e:
         event_log.log_action(f"Saved memory unavailable: {e}")
-        return ""
+        return about
     if not entries:
-        return ""
+        return about
     event_log.emit_event("memory", f"Used {len(entries)} saved memor{'y' if len(entries) == 1 else 'ies'}",
                          status="done", ok=True, items=[{"id": e["id"], "text": e["text"]} for e in entries],
                          detail="\n".join(f"- {e['text']}" for e in entries))
-    return "\n\n" + memory.brief(entries)
+    return about + "\n\n" + memory.brief(entries)
+
+
+def _skills_brief() -> str:
+    """The names and one-line descriptions of the user's skills (agent_skills.py); the model loads one with
+    skill_load when it fits."""
+    try:
+        block = agent_skills.index_block()
+    except OSError:
+        return ""
+    return ("\n\n" + block) if block else ""
 
 
 def _revise(state, feedback: str):

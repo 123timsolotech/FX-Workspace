@@ -79,6 +79,8 @@ INPUT_LEVEL = {
     "browser_click", "browser_fill",
     # reading an MCP resource runs the server's code
     "mcp_read_resource",
+    # a skill shapes how future requests are done, so the user sees it before it's kept (agent_skills.py)
+    "skill_save",
 }
 
 # Never automatic - not by override, not in god mode (the brief: every form
@@ -88,6 +90,13 @@ ALWAYS_ASK = {"browser_fill"}
 # click on a control that submits, buys or deletes). Registered by the tool's
 # module; a check that fails counts as "ask".
 ALWAYS_ASK_WHEN: dict = {}
+
+
+def _note_replace(args: dict):
+    return "it replaces a note's text" if (args or {}).get("note_id") else None
+
+
+ALWAYS_ASK_WHEN["note_save"] = _note_replace
 
 # Messaging has its own three permissions (read / draft / send), set in
 # Settings > Permissions > Messaging, evaluated in decide() before the
@@ -121,6 +130,13 @@ BENIGN_EXTRA = {
     "generate_image",
     # statistics and charts computed by the app, and turning on more read-only tools (stats_tools, auto_tools)
     "compute_stats", "make_chart", "use_tools",
+    # reading the user's notes, tasks and documents (notes.py, docs_store.py)
+    "notes_search", "doc_list", "doc_read",
+    # ...and adding to them: they stay in the app, and a doc keeps its old text as a version. Replacing a note's
+    # text (no versions) asks - _note_replace below. After content that tried to give instructions, all of it asks.
+    "note_save", "task_add", "task_done", "doc_write",
+    # the knowledge base, earlier chats and saved skills - the user's own things, read only
+    "kb_search", "chats_search", "skill_load",
 }
 
 RISK_TIERS = ("benign", "input", "destructive")

@@ -99,7 +99,7 @@ def status(model: str | None = None, local: bool | None = None, known: bool = Tr
     if local and model:
         window = llama_local.model_context_limit(model)
         reply = llm._local_reply_tokens()
-        history_limit = max(1500, min(window - system - tools - reply, profile.context_tokens))
+        history_limit = max(1500, window - system - tools - reply)     # the model's window, as models._fit_for_local trims
     else:
         history_limit = profile.context_tokens
     used_history = history.total(convo[1:], True)

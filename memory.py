@@ -28,6 +28,33 @@ import privacy
 
 MAX_ENTRIES = 200
 MAX_TEXT = 500
+# Topics (Settings > Memory groups by them, like Claude's Topics) - guessed from the words, changeable by the user.
+TOPICS = ("About you", "Work", "Projects", "Preferences", "Tech", "Other")
+_TOPIC_RX = [      # first match wins
+    ("About you", r"\b(my name|i am|i'm|i live|my (wife|husband|partner|son|daughter|kids|dog|cat|birthday|doctor)|years old)\b"),
+    ("Preferences", r"\b(prefer|i like|don't like|dislike|always|never|style|tone|format|indent|answers?)\b"),
+    ("Projects", r"\b(project|roblox|place|game|repo|app|website|build|labs|model i (train|made))\b"),
+    ("Work", r"\b(work|job|boss|client|meeting|office|colleague|company|deadline|team)\b"),
+    ("Tech", r"\b(gpu|cpu|ram|windows|python|lua|code|drive|folder|path|install|vram|llama|model)\b"),
+]
+# Sensitive topics stay out of what requests carry unless Settings > Memory > "Use sensitive memories" is on
+# (Claude's "Include sensitive topics" setting). They are kept, and shown, either way.
+_SENSITIVE_RX = re.compile(r"\b(health|medical|doctor|hospital|symptoms?|pills?|prescri\w*|allerg\w*|diagnos\w*|illness|disease|medication|therapy|therapist|depress\w*|anxiety|"
+                           r"pregnan\w*|religio\w*|church|mosque|synagogue|faith|politic\w*|vote[sd]?|party member|sexual\w*|"
+                           r"gay|lesbian|bisexual|transgender|salary|debt|bank account|credit score|criminal|arrest\w*|"
+                           r"immigration status|visa status|ethnicit\w*|union member)\b", re.I)
+
+
+def guess_topic(text: str) -> str:
+    low = (text or "").lower()
+    for topic, rx in _TOPIC_RX:
+        if re.search(rx, low):
+            return topic
+    return "Other"
+
+
+def is_sensitive(text: str) -> bool:
+    return bool(_SENSITIVE_RX.search(text or ""))
 # Characters of memory per run, by effort level: more effort, more context.
 BUDGET = {"low": 600, "normal": 1200, "high": 2000, "extra": 3000, "max": 4000, "ultra": 4000}
 
@@ -79,12 +106,14 @@ class MemoryStore:
                 return same
             now = time.time()
             entry = {"id": uuid.uuid4().hex[:12], "text": text, "pinned": False, "source": source,
-                     "project": project or None, "created": now, "updated": now, "uses": 0, "last_used": None}
+                     "project": project or None, "created": now, "updated": now, "uses": 0, "last_used": None,
+                     "topic": guess_topic(text), "sensitive": is_sensitive(text)}
             entries.append(entry)
             self._save(entries)
             return entry
 
-    def update(self, entry_id: str, text: str | None = None, pinned: bool | None = None) -> dict:
+    def update(self, entry_id: str, text: str | None = None, pinned: bool | None = None, topic: str | None = None,
+               sensitive: bool | None = None) -> dict:
         privacy.refuse("Memory")
         with self._lock:
             entries = self._load()
@@ -95,6 +124,10 @@ class MemoryStore:
                 entry["text"] = _clean(text)
             if pinned is not None:
                 entry["pinned"] = bool(pinned)
+            if topic is not None:
+                entry["topic"] = topic if topic in TOPICS else "Other"
+            if sensitive is not None:
+                entry["sensitive"] = bool(sensitive)
             entry["updated"] = time.time()
             self._save(entries)
             return entry
@@ -109,15 +142,61 @@ class MemoryStore:
             return True
 
     # -------------------------------------------------------------- selection
-    def relevant(self, request: str, level: str = "normal", project: str | None = None) -> list:
+    def list_with_topics(self) -> list:
+        """Older entries get their topic and sensitivity guessed (not saved until edited)."""
+        out = []
+        for e in self.list():
+            e = dict(e)
+            e.setdefault("topic", guess_topic(e["text"]))
+            if "sensitive" not in e:
+                e["sensitive"] = is_sensitive(e["text"])
+            out.append(e)
+        return out
+
+    def export(self) -> dict:
+        return {"format": "fx-memory/1", "exported": time.time(), "entries": self.list_with_topics()}
+
+    def import_entries(self, data) -> dict:
+        """data: an fx-memory export, a list, or plain text (one memory per line - what ChatGPT and Claude
+        give when asked to list what they remember). Duplicates are skipped."""
+        if isinstance(data, dict):
+            items = data.get("entries") or []
+        elif isinstance(data, list):
+            items = data
+        else:
+            items = [ln.strip(" -*\t•") for ln in str(data or "").splitlines()]
+        added = skipped = 0
+        for it in items:
+            text = it.get("text") if isinstance(it, dict) else it
+            if not isinstance(text, str) or not text.strip() or len(text.strip()) > MAX_TEXT:
+                skipped += 1
+                continue
+            before = len(self.list())
+            try:
+                e = self.add(text, source="import")
+            except ValueError:
+                skipped += 1
+                break
+            if len(self.list()) == before:
+                skipped += 1
+                continue
+            if isinstance(it, dict) and (it.get("topic") or it.get("pinned")):
+                self.update(e["id"], topic=it.get("topic"), pinned=bool(it.get("pinned")))
+            added += 1
+        return {"added": added, "skipped": skipped}
+
+    def relevant(self, request: str, level: str = "normal", project: str | None = None,
+                 sensitive: bool = False) -> list:
         """Entries for this request: pinned first, then by word overlap with
         the request, within the level's size budget. Entries saved for another
-        project are left out."""
+        project are left out, and sensitive ones unless sensitive=True."""
         budget = BUDGET.get(level, BUDGET["normal"])
         want = _words(request)
         scored = []
         for e in self.list():
             if e.get("project") and e.get("project") != project:
+                continue
+            if not sensitive and (e.get("sensitive") if "sensitive" in e else is_sensitive(e["text"])):
                 continue
             overlap = len(want & _words(e["text"]))
             if e.get("pinned") or overlap:

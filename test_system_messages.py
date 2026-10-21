@@ -275,7 +275,8 @@ class PageTests(unittest.TestCase):
         root = pathlib.Path(__file__).parent
         html = (root / 'index.html').read_bytes()
         self.assertEqual(hashlib.sha256(html).digest(), hashlib.sha256((root / 'static/index.html').read_bytes()).digest())
-        self.assertNotIn(b'\n', html.replace(b'\r\n', b''))
+        # One kind of line ending throughout: CRLF on Windows, LF in a Linux checkout (PR #1, 123timsolotech).
+        self.assertTrue(b'\n' not in html.replace(b'\r\n', b'') or b'\r\n' not in html, "mixed line endings")
         self.assertFalse(html.startswith(b'\xef\xbb\xbf'))
         self.assertIn(b'<script src="/system-messages.js"></script>', html)
         self.assertIn(b"['systemmessage', 'System message']", html)

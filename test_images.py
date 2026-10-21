@@ -60,7 +60,7 @@ class SettingsTests(unittest.TestCase):
     def test_defaults_and_config(self):
         d = config.DEFAULT_SETTINGS
         self.assertEqual((d["image_root"], d["image_quality"], d["image_free_gpu"], d["image_filter"]),
-                         (r"E:\ClankerLocalCpp\Images", "balanced", True, True))
+                         (image_gen.DEFAULT_ROOT, "balanced", True, True))   # local\Images, or an older install's (paths.py)
         self.assertEqual(config.clean_privacy_settings({"image_quality": "best"})["image_quality"], "best")
 
     def test_sizes(self):

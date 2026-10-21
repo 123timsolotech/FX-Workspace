@@ -13,6 +13,19 @@ import llama_local
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 
+def _has_bonsai() -> bool:
+    """These tests read this PC's own models.ini (git-ignored): a fresh checkout has none, or one without Bonsai
+    (pointed out in PR #1 by 123timsolotech) - they're skipped there instead of failing."""
+    try:
+        with open(os.path.join(HERE, "models.ini"), encoding="utf-8", errors="replace") as f:
+            return "[Ternary-Bonsai-2-27B]" in f.read()
+    except OSError:
+        return False
+
+
+NEEDS_BONSAI = unittest.skipUnless(_has_bonsai(), "needs a models.ini with Ternary-Bonsai-2-27B (this PC's own)")
+
+
 def _status(exe):
     return llama_local._router_status({"data": [{"id": "Ternary-Bonsai-2-27B", "status": {
         "value": "unloaded", "args": [exe, "--ctx-size", "16384", "--model", "x-PTQ1_0.gguf"]}}]})
@@ -26,10 +39,12 @@ class PrismDetectionTests(unittest.TestCase):
     def test_prism_only_packings_are_recognised(self):
         self.assertTrue(llama_local.needs_prism("Ternary-Bonsai-2-27B-PTQ1_0.gguf"))
         self.assertTrue(llama_local.needs_prism("Ternary-Bonsai-2-27B-PQ2_0"))
-        self.assertTrue(llama_local.needs_prism("Ternary-Bonsai-2-27B"))          # via its models.ini path
+        if _has_bonsai():
+            self.assertTrue(llama_local.needs_prism("Ternary-Bonsai-2-27B"))      # via its models.ini path
         self.assertFalse(llama_local.needs_prism("Qwen-3-8B-Q5_K_M"))
         self.assertFalse(llama_local.needs_prism("Mistral-7B"))
 
+    @NEEDS_BONSAI
     def test_the_running_build_comes_from_the_router(self):
         llama_local._cache["status"] = _status(r"E:\ClankerLocalCpp\prism\llama-server.exe")
         self.assertEqual(llama_local.router_status("Ternary-Bonsai-2-27B")["ctx"], 16384)
@@ -44,6 +59,7 @@ class PrismDetectionTests(unittest.TestCase):
         llama_local._cache["status"] = {}
         self.assertIsNone(llama_local.is_prism_server())
 
+    @NEEDS_BONSAI
     def test_a_failed_load_on_a_stock_server_says_why(self):
         llama_local._cache["status"] = _status(r"E:\ClankerLocalCpp\llama-server.exe")
         resp = requests.Response()
@@ -68,6 +84,7 @@ class LauncherConfigTests(unittest.TestCase):
         self.assertLess(bat.index(r'if exist "E:\ClankerLocalCpp\llama-server.exe"'),
                         bat.index(r"E:\ClankerLocalCpp\prism\llama-server.exe"))
 
+    @NEEDS_BONSAI
     def test_every_model_has_its_own_window_and_bonsai_fits_8gb(self):
         # The windows come from Settings > Diagnostics (diagnostics.py): each model's largest context that
         # fits an 8 GB card, never past what it was trained on, never below 16k; [*] lets llama.cpp's --fit

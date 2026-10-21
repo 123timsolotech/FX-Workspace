@@ -22,6 +22,13 @@ Everything runs on this PC by default. Nothing is sent anywhere unless you use a
   or on examples a local model writes from your documents. You design the network layer by layer, watch it learn,
   trace one input through it to see what each layer does, compare it with the original model, then **Port** a
   fine-tune into Workspace as a normal chat model.
+- **Notes, tasks and docs.** A to-do list with reminders, notes, and a writing editor where the model suggests
+  edits you accept or reject (proofreading, rewriting a selection, continuing from the cursor), with versions.
+  The assistant can use them too: "add a task to call Dana on Friday".
+- **Mail.** Your mailbox over IMAP (Gmail, iCloud, Yahoo with an app password, and most others): read, search,
+  reply, summaries and sorting by the model. The assistant can read and draft emails; sending always asks you.
+- **Compare.** Ask two models the same thing side by side, blind, and vote - a leaderboard shows which is best
+  for you.
 - **Many themes**, from Light and Dark to Terminal and Aurora.
 
 ## Requirements
@@ -62,6 +69,9 @@ Want the models and engines on another drive? Set the `AGENTIC_HOME` environment
 Put any `.gguf` chat model into **`local\models`** and press **Settings > Models > Scan for models**. Or paste a
 model file's path into **Add a model file**. The app adds it to `models.ini` and restarts llama.cpp so it shows up
 right away. For a vision model, put its `mmproj` file in the same folder and it's attached for you.
+
+Or use **Settings > Models > Find models**: search Hugging Face, see which files fit your GPU, and download one.
+It picks the best file for your PC, resumes interrupted downloads and checks each file's SHA-256.
 
 Where to find models: search Hugging Face for "GGUF". A `Q4_K_M` file a bit smaller than your VRAM is a good start.
 Each model's load settings (GPU layers, context size) can be changed in Settings > Models; `models.ini` is a plain
@@ -107,3 +117,11 @@ The engines and models it downloads have their own licenses, listed in [`THIRD_P
 of them (for example the MMAudio weights) are for non-commercial use only.
 
 Created by **Fuxion** - fuxion64@gmail.com. If you want to support the project or have suggestions, email me.
+
+### Contributors
+
+- [123timsolotech](https://github.com/123timsolotech) - getting the test suite to run off Windows, pointing out the
+  stale tests and making the open-folder button fail cleanly
+  ([#1](https://github.com/fuxion64-ctrl/FX-Workspace/pull/1)).
+
+Pull requests are welcome.
