@@ -6,6 +6,18 @@ and videos, talk with you by voice, and connect to Roblox Studio.
 
 Everything runs on this PC by default. Nothing is sent anywhere unless you use a cloud model or the web tools.
 
+**[Download the latest installer](https://github.com/fuxion64-ctrl/FX-Workspace/releases/latest)** · [What's new in each version](CHANGELOG.md) · [All releases](https://github.com/fuxion64-ctrl/FX-Workspace/releases)
+
+## What's new in 1.4.1
+
+- Replies start in about a second instead of 20-40 seconds.
+- The model loads while you type (Beta).
+- Stop works every time.
+- The System panel shows the right numbers.
+- Every icon has its own hover animation.
+
+See the [changelog](CHANGELOG.md) for every version, or the [full 1.4.1 notes](docs/releases/1.4.1.md).
+
 ## Features
 
 - **Chat with local models.** Any llama.cpp `.gguf` model. Effort levels from Quick to Ultra, Prompt Prep,

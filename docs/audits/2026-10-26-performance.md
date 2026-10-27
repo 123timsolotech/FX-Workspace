@@ -1,6 +1,6 @@
 # Local inference regression and follow-up audit
 
-Source baseline: `62075c25ca967146980196ca180f5252d41eb295` (1.4.0), compared with `v1.3.0` (`753a98b`). This is a source patch for 1.4.0, released as 1.4.1 after review (see `RELEASE_NOTES_1.4.1.md`). See `AUDIT-2026-10-26.md` for the first audit pass. The findings below supersede its lifecycle and worker-retry entries where specified.
+Source baseline: `62075c25ca967146980196ca180f5252d41eb295` (1.4.0), compared with `v1.3.0` (`753a98b`). This is a source patch for 1.4.0, released as 1.4.1 after review (see `../releases/1.4.1.md`). See `2026-10-26-code-audit.md` for the first audit pass. The findings below supersede its lifecycle and worker-retry entries where specified.
 
 ## Why speed could appear or become slower
 
