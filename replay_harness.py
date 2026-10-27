@@ -162,6 +162,13 @@ class _Model:
         import llm_stream
         self.requests.append({k: copy.deepcopy(v) for k, v in payload.items() if k != "tools"}
                              | {"tools": [t["function"]["name"] for t in payload.get("tools") or []], "streamed": True})
+        agent_step = bool(payload.get("tools")) or "response_format" in payload or any(
+            "You can call these tools" in str(m.get("content", "")) for m in payload.get("messages") or [])
+        if not agent_step:
+            msg = self.aux.pop(0) if self.aux else {"finish_reason": "stop", "content": ""}
+            if "raise" in msg:
+                raise llm_stream.StreamHTTPError(msg["raise"])
+            return llm_stream.chunk_message(msg, size=int(msg.get("chunk_size") or 7))
         if not self.responses:
             raise RuntimeError("replay: the agent asked the model more times than the recording has replies")
         if self.stop_at is not None and self.served == self.stop_at and self.on_stop:

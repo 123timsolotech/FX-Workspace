@@ -28,6 +28,7 @@ import browser
 import context as ctx
 import elements
 import llama_local
+import local_runtime
 import llama_builds
 import effort
 import memory
@@ -162,7 +163,7 @@ def _busy(default: str) -> str:
 
 def _gpu_wait() -> bool:
     """Image, video and music jobs wait while the chat model works or a Labs run trains on the GPU."""
-    return shared.state_lock.locked() or labs.gpu_busy()
+    return shared.state_lock.locked() or local_runtime.busy() or labs.gpu_busy()
 
 
 @app.post("/api/chat")
@@ -936,7 +937,7 @@ _CONFIG_MIN = {"ngl": 0, "ctx_size": 512, "batch_size": 1, "threads": 1}
 
 @app.post("/api/local-models/config")
 def set_local_model_config(body: ModelConfigUpdate):
-    fields = {k: v for k, v in config._dump_model(body).items() if k != "name"}
+    fields = body.model_dump(exclude_unset=True, exclude={"name"})
     low = [f"{k.replace('_', ' ')} must be at least {_CONFIG_MIN[k]} (got {v})"
            for k, v in fields.items() if v is not None and v < _CONFIG_MIN[k]]
     if low:
@@ -950,15 +951,20 @@ def set_local_model_config(body: ModelConfigUpdate):
     # llama-server's router reads models.ini only when it starts - a new context size did nothing until the app was
     # restarted (2026-10-21). Restart it now, unless a reply or a load is using it (then it applies on the next start).
     restarted = False
-    if not shared.state_lock.locked() and _model_load_lock.acquire(blocking=False):
+    if shared.state_lock.acquire(blocking=False):
         try:
-            restarted = model_scan.restart_router()
-            llama_local.invalidate_cache()
-            shared.app_state["local_engaged"] = None
+            if _model_load_lock.acquire(blocking=False):
+                try:
+                    restarted = model_scan.restart_router()
+                    if restarted:
+                        llama_local.invalidate_cache()
+                        shared.app_state["local_engaged"] = None
+                finally:
+                    _model_load_lock.release()
         except Exception as e:
             event_log.log_action(f"llama-server didn't restart after the models.ini change: {e}")
         finally:
-            _model_load_lock.release()
+            shared.state_lock.release()
     event_log.log_action(f"Resource settings for '{body.name}' updated in models.ini "
                f"({', '.join(f'{k}={v}' for k, v in fields.items())})"
                + (" - llama-server restarted to read them." if restarted else "."))
@@ -1044,7 +1050,53 @@ def force_load_model(body: ForceLoadRequest):
         _model_load_lock.release()
 
 
-_model_load_lock = threading.Lock()
+_model_load_lock = local_runtime.lock
+
+
+class WarmRequest(BaseModel):
+    mode: str | None = None
+    model: str | None = None
+
+
+_warming = {"model": None}
+
+
+@app.post("/api/local-models/warm")
+def warm_local_model(body: WarmRequest):
+    """The user started typing: load the chat's local model now, so the reply doesn't begin with a load from disk
+    (~20 s for a 3 GB model from a hard drive). Only in Local mode with a model chosen, only when it isn't loaded and
+    nothing else uses the model or the GPU. Unlike force-load nothing is refused meanwhile: a message sent during the
+    load waits for it, as it would have anyway."""
+    model = (body.model or "").strip()
+    if body.mode != config.MODE_LOCAL or not model:
+        return {"started": False, "reason": "No local model is chosen."}
+    if _warming["model"] or _model_loading() or shared.state_lock.locked() or local_runtime.busy() or labs.gpu_busy():
+        return {"started": False, "reason": "Busy."}
+    known = set(llama_local.server_models() or [])
+    try:
+        known |= {c["name"] for c in llama_local.list_model_configs()}
+    except Exception:
+        pass
+    if model not in known:
+        return {"started": False, "reason": "Unknown model."}
+    if llama_local.router_status(model).get("loaded"):
+        return {"started": False, "reason": "Already loaded."}
+
+    def go():
+        try:
+            with local_runtime.reserve(wait=False):         # a turn that started meanwhile loads it itself
+                system_metrics.begin_model_load()
+                seconds = llama_local.force_load(model, timeout=180)
+                system_metrics.finish_model_load(model)
+                llm.engage_local_model(model)
+                event_log.log_action(f"Loaded {model} while you typed ({seconds:.1f}s).")
+        except Exception as e:
+            event_log.log_action(f"Couldn't load {model} ahead of the message: {str(e)[:160]}")
+        finally:
+            _warming["model"] = None
+    _warming["model"] = model
+    threading.Thread(target=go, name="model-warm", daemon=True).start()
+    return {"started": True}
 
 
 def _model_loading() -> bool:
@@ -2418,6 +2470,17 @@ def _run_usage() -> dict | None:
     return {**budget.usage(), "tool_calls": runtime.tool_exec.calls}
 
 
+def _engine_label() -> str:
+    """The model the System panel's Engine row names. In Local mode it is the local model - the last model that
+    answered could be a cloud one, and before any answer the default was the first cloud model, so the panel read
+    "local · gemini-3.6-flash" (2026-10-27)."""
+    mode = shared.app_state.get("mode", config.MODE_CLOUD)
+    if mode == config.MODE_LOCAL:
+        local = shared.app_state.get("local_engaged") or shared.app_state.get("local_model")
+        return f"Local ({local})" if local else "Local (no model loaded yet)"
+    return shared.app_state.get("last_working_model") or ("Auto" if mode == config.MODE_AUTO else config.PRIMARY_MODELS[0])
+
+
 @app.get("/api/state")
 def get_state(focused: int = None, since: int = 0, log_since: int = 0):
     """Polled by the UI every ~1-2.5 s, so everything here must be cheap:
@@ -2449,7 +2512,7 @@ def get_state(focused: int = None, since: int = 0, log_since: int = 0):
         "benchmark": ({"model": benchmark_runner.state["running"], "progress": benchmark_runner.state["progress"]}
                       if benchmark_runner.state["running"] else None),
         "waiting_for_os_approval": shared.app_state.get("waiting_for_os_approval", False),
-        "model": shared.app_state.get("last_working_model", config.PRIMARY_MODELS[0]),
+        "model": _engine_label(),
         "mode": shared.app_state.get("mode", config.MODE_CLOUD),
         "local_up": llama_local.server_is_up_cached(),   # never blocks the poll
         "local_ctx": llama_local.model_context_limit(active_model),

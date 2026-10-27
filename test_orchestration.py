@@ -182,9 +182,27 @@ class ToolExecutorTests(unittest.TestCase):
         read = ex.execute("r", {})
         write = ex.execute("w", {})
         self.assertLess(time.monotonic() - started, 0.9)
-        self.assertEqual(read["status"], "retryable_failure")
+        self.assertEqual(read["status"], "permanent_failure")
         self.assertEqual(write["status"], "permanent_failure")
         self.assertIn("outcome is unknown", write["message"])
+
+    def test_timeout_does_not_retry_a_running_read_worker(self):
+        release = threading.Event()
+        entered = threading.Event()
+        def slow(n, a):
+            entered.set()
+            release.wait(3)
+            return {"ok": True}
+        run = Mock(side_effect=slow)
+        ex = ToolExecutor(_registry(_spec("r", read_only=True, retryable=True,
+                                         isolate=True, timeout_s=0.05)), run, max_retries=3)
+        try:
+            result = ex.execute("r", {})
+            self.assertTrue(entered.is_set())
+            self.assertEqual(result["status"], "permanent_failure")
+            self.assertEqual(run.call_count, 1)
+        finally:
+            release.set()
 
     def test_cancellation_during_tool_execution(self):
         flag = threading.Event()

@@ -26,7 +26,9 @@ from __future__ import annotations
 
 import json
 import re
+import socket
 import threading
+import time
 from types import SimpleNamespace
 
 DEFAULT_MAX_ARG_CHARS = 60_000         # a single tool call larger than this is a runaway
@@ -61,17 +63,31 @@ def http_transport(url: str, payload: dict, headers: dict, timeout: float, shoul
     import netlayer
     should_cancel = should_cancel or (lambda: False)
     done = threading.Event()
+    active_socket = None
     # Through the network layer: llama-server on this PC stays direct and unlogged; a model server
     # elsewhere would take the "models" route (proxy / Tor, kill switch, log).
     with netlayer.client("models", timeout=httpx.Timeout(timeout, connect=10.0)) as client:
         def watcher():
             while not done.wait(0.2):
                 if should_cancel():
-                    client.close()             # aborts the blocked read below
+                    # close() on another thread need not interrupt recv() on
+                    # Unix. Shutdown the established stream first so Stop
+                    # does not wait for the model's entire read timeout.
+                    if active_socket is not None:
+                        try:
+                            active_socket.shutdown(socket.SHUT_RDWR)
+                        except OSError:
+                            pass                 # already closed by the reader
+                    client.close()
                     return
         threading.Thread(target=watcher, daemon=True, name="stream-stop-watcher").start()
         try:
             with client.stream("POST", url, json=payload, headers=headers) as resp:
+                stream = resp.extensions.get("network_stream")
+                if stream is not None:
+                    active_socket = stream.get_extra_info("socket")
+                if should_cancel():
+                    raise StreamCancelled("stopped while the model was generating")
                 if resp.status_code >= 400:
                     body = resp.read().decode("utf-8", "replace")
                     raise StreamHTTPError(f"Error code: {resp.status_code} - {body[:600]}")
@@ -85,6 +101,8 @@ def http_transport(url: str, payload: dict, headers: dict, timeout: float, shoul
                         yield json.loads(data)
                     except ValueError:
                         continue
+                if should_cancel():
+                    raise StreamCancelled("stopped while the model was generating")
         except (httpx.HTTPError, RuntimeError) as e:
             if should_cancel():
                 raise StreamCancelled("stopped while the model was generating") from e
@@ -122,6 +140,7 @@ def complete(url: str, payload: dict, *, api_key: str = "", timeout: float = 300
     content, reasoning = [], []
     calls: dict[int, dict] = {}
     finish, usage, aborted, timings = None, None, None, None
+    first_output = last_output = None
     content_watch, arg_watch = {}, {}
 
     def watch(state: dict, parts: list):
@@ -153,6 +172,10 @@ def complete(url: str, payload: dict, *, api_key: str = "", timeout: float = 300
                 raise StreamHTTPError(str(err.get("message") or err) if isinstance(err, dict) else str(err))
             for choice in chunk.get("choices") or []:
                 delta = choice.get("delta") or {}
+                if delta.get("reasoning_content") or delta.get("content") or delta.get("tool_calls"):
+                    last_output = time.monotonic()
+                    if first_output is None:
+                        first_output = last_output
                 if delta.get("reasoning_content"):
                     reasoning.append(delta["reasoning_content"])
                     on_delta("reasoning", delta["reasoning_content"])
@@ -201,7 +224,9 @@ def complete(url: str, payload: dict, *, api_key: str = "", timeout: float = 300
         usage=SimpleNamespace(prompt_tokens=u.get("prompt_tokens"), completion_tokens=u.get("completion_tokens"),
                               completion_tokens_details=SimpleNamespace(reasoning_tokens=details.get("reasoning_tokens"))
                               if details else None) if usage else None,
-        streamed=True, aborted=aborted, timings=timings)
+        streamed=True, aborted=aborted, timings=timings,
+        stream_timing={"generation_s": last_output - first_output}
+        if first_output is not None and last_output is not None else {})
 
 
 def chunk_message(msg: dict, size: int = 7):

@@ -30,6 +30,7 @@ import time
 import uuid
 import atomic_io
 import privacy
+import history
 
 MAX_TRANSCRIPT = 400
 # Kept from the saved file when a save doesn't mention them (the open chat is
@@ -61,7 +62,7 @@ class ChatStore:
     def __init__(self, root: str):
         self.root = root
         self.trash = os.path.join(root, "trash")
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         self._summary: dict = {}          # id -> (mtime, summary, folded text, text)
 
     # ---------------------------------------------------------------- files
@@ -86,28 +87,29 @@ class ChatStore:
         """touch=False keeps "updated" (pinning or archiving is not activity).
         A temporary chat (privacy.py) is refused, and so is any save while a
         temporary chat's work runs: nothing of one can land in a saved chat."""
-        if privacy.is_temporary(chat):
-            raise privacy.TemporaryChatError("A temporary chat is never saved to history.")
-        privacy.refuse("A chat")
-        chat = dict(chat)
-        if any(k not in chat for k in KEEP_KEYS):
-            old = self.load(chat.get("id") or "") or {}
-            chat.update({k: old[k] for k in KEEP_KEYS if k not in chat and k in old})
-        chat["version"] = 1
-        if touch or not chat.get("updated"):
-            chat["updated"] = time.time()
-        chat.setdefault("created", chat["updated"])
-        chat["transcript"] = list(chat.get("transcript") or [])[-MAX_TRANSCRIPT:]
-        chat["conversation"] = [_strip_images(m) for m in (chat.get("conversation") or [])
-                                if isinstance(m, dict) and m.get("role") != "system"][-MAX_CONVERSATION:]
-        path = self._path(chat["id"])
         with self._lock:
+            if privacy.is_temporary(chat):
+                raise privacy.TemporaryChatError("A temporary chat is never saved to history.")
+            privacy.refuse("A chat")
+            chat = dict(chat)
+            if any(k not in chat for k in KEEP_KEYS):
+                old = self.load(chat.get("id") or "") or {}
+                chat.update({k: old[k] for k in KEEP_KEYS if k not in chat and k in old})
+            chat["version"] = 1
+            if touch or not chat.get("updated"):
+                chat["updated"] = time.time()
+            chat.setdefault("created", chat["updated"])
+            chat["transcript"] = list(chat.get("transcript") or [])[-MAX_TRANSCRIPT:]
+            chat["conversation"] = history.recent_turns(
+                [_strip_images(m) for m in (chat.get("conversation") or [])
+                 if isinstance(m, dict) and m.get("role") != "system"], MAX_CONVERSATION)
+            path = self._path(chat["id"])
             os.makedirs(self.root, exist_ok=True)
             tmp = path + ".tmp"
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(chat, f, ensure_ascii=False, default=str)
             atomic_io.replace(tmp, path)
-        return chat
+            return chat
 
     def delete(self, chat_id: str) -> bool:
         """Moves the chat to data/chats/trash/ (recoverable by hand)."""
@@ -124,31 +126,35 @@ class ChatStore:
         return True
 
     def rename(self, chat_id: str, title: str) -> dict | None:
-        chat = self.load(chat_id)
-        if chat is None:
-            return None
-        chat["title"] = title_from(title)
-        return self.save(chat)
+        with self._lock:
+            chat = self.load(chat_id)
+            if chat is None:
+                return None
+            chat["title"] = title_from(title)
+            return self.save(chat)
 
     def set_flags(self, chat_id: str, pinned: bool | None = None, archived: bool | None = None) -> dict | None:
         """Pinned chats list first; archived ones are listed apart (the sidebar's Archived)."""
-        chat = self.load(chat_id)
-        if chat is None:
-            return None
-        for key, value in (("pinned", pinned), ("archived", archived)):
-            if value is not None:
-                chat[key] = bool(value)           # False, not removed: save() would bring the old value back
-        return self.save(chat, touch=False)
+        with self._lock:
+            chat = self.load(chat_id)
+            if chat is None:
+                return None
+            for key, value in (("pinned", pinned), ("archived", archived)):
+                if value is not None:
+                    chat[key] = bool(value)           # False, not removed: save() would bring the old value back
+            return self.save(chat, touch=False)
 
     def set_project(self, chat_id: str, project: str | None) -> dict | None:
         """Move a chat into a project (None: out of every project)."""
-        chat = self.load(chat_id)
-        if chat is None:
-            return None
-        chat["project"] = project or None
-        return self.save(chat)
+        with self._lock:
+            chat = self.load(chat_id)
+            if chat is None:
+                return None
+            chat["project"] = project or None
+            return self.save(chat)
 
     # --------------------------------------------------------------- listing
+
     def _summaries(self) -> list:
         try:
             names = [n for n in os.listdir(self.root) if n.endswith(".json")]

@@ -38,15 +38,23 @@ def _number(value):
         return None
 
 
+_SMI = {"path": None, "at": 0.0}
+
+
 def _nvidia_smi_path():
+    # Searching PATH is slow with a long PATH, and every sample asked again - remembered for 5 minutes.
+    now = time.time()
+    if _SMI["at"] and now - _SMI["at"] < 300:
+        return _SMI["path"]
     found = shutil.which("nvidia-smi")
-    if found:
-        return found
-    candidate = os.path.join(
-        os.environ.get("ProgramFiles", r"C:\Program Files"),
-        "NVIDIA Corporation", "NVSMI", "nvidia-smi.exe",
-    )
-    return candidate if os.path.exists(candidate) else None
+    if not found:
+        candidate = os.path.join(
+            os.environ.get("ProgramFiles", r"C:\Program Files"),
+            "NVIDIA Corporation", "NVSMI", "nvidia-smi.exe",
+        )
+        found = candidate if os.path.exists(candidate) else None
+    _SMI.update(path=found, at=now)
+    return found
 
 
 def _run_smi(arguments: list[str]) -> str:
@@ -72,6 +80,12 @@ def _parse_gpu_row(text: str) -> dict:
     used_mb, total_mb, load_pct = _number(used), _number(total), _number(load)
     if used_mb is None or total_mb is None:
         return {}
+    # Under WDDM nvidia-smi now and then reports memory.used as 2^64-1 bytes (a wrapped negative), which the System
+    # panel showed as 17179865097.2 / 8.0 GB (2026-10-27). A reading past the card's size is no reading.
+    if used_mb < 0 or (total_mb > 0 and used_mb > total_mb * 1.02):
+        return {}
+    if load_pct is not None and not 0 <= load_pct <= 100:
+        load_pct = None
     return {
         "name": name,
         "vram_used_mb": used_mb,
@@ -242,6 +256,9 @@ def begin_model_load() -> None:
     the old model is still resident and therefore cannot establish a new
     system-only baseline.
     """
+    with _LOCK:
+        if _MODEL["baseline_used_mb"] is not None:
+            return
     sample = _gpu_sample()
     if not sample:
         return
@@ -255,6 +272,9 @@ def begin_model_load() -> None:
 
 def finish_model_load(model_name: str | None = None) -> None:
     """Freeze the loaded model's VRAM delta after llama-server finishes."""
+    with _LOCK:
+        if model_name and _MODEL["name"] == model_name and _MODEL["estimated_mb"] is not None:
+            return
     sample = _gpu_sample()
     if not sample:
         return
@@ -329,8 +349,14 @@ def _collect() -> dict:
             "--query-compute-apps=process_name,used_gpu_memory",
             "--format=csv,noheader,nounits",
         ]))
+        _LAST_GPU.update(at=time.monotonic(), value=dict(gpu))
         result["gpu"] = gpu
+    elif _LAST_GPU["value"] and time.monotonic() - _LAST_GPU["at"] < 15:
+        result["gpu"] = dict(_LAST_GPU["value"])      # one bad or missing reading keeps the last good one on screen
     return result
+
+
+_LAST_GPU = {"at": 0.0, "value": None}
 
 
 _BG = {"on": False}

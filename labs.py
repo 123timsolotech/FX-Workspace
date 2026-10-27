@@ -174,10 +174,11 @@ def convert_dir() -> str | None:
 
 
 def quantize_exe() -> str | None:
-    """llama-quantize beside the llama-server the app runs."""
+    """llama-quantize beside the newest llama.cpp's llama-server. Only the installed build's folder - status() also
+    looked up the running router (a process scan of seconds), and the Labs page polls this (2026-10-27)."""
     try:
         import llama_builds
-        exe = (llama_builds.status().get("builds") or {}).get("latest", {}).get("exe") or ""
+        exe = llama_builds.exe_of("latest") or ""
     except Exception:                                        # noqa: BLE001
         exe = ""
     q = os.path.join(os.path.dirname(exe), "llama-quantize.exe") if exe else ""

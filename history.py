@@ -102,6 +102,23 @@ def turn_start_indexes(convo: list) -> list:
     return starts
 
 
+def recent_turns(messages: list, max_messages: int) -> list:
+    """A persisted tail without cutting tool calls away from their results.
+
+    No system message is expected. The newest turn is kept whole even when
+    it alone exceeds the soft cap; context fitting can compact it on load.
+    """
+    if len(messages) <= max_messages:
+        return messages
+    # Reuse the same synthetic-message exclusions as context fitting.
+    starts = [i - 1 for i in turn_start_indexes([{"role": "system"}, *messages])]
+    if not starts:
+        return messages
+    cutoff = len(messages) - max_messages
+    start = next((i for i in starts if i >= cutoff), starts[-1])
+    return messages[start:]
+
+
 def trim_turns(convo: list, limit: int, as_tokens: bool, min_kept_turns: int = 2):
     """Drop whole old turns until the conversation fits. Returns
     (conversation, dropped_message_count, hard_cut)."""

@@ -1624,11 +1624,45 @@ html.chat-locked .composer { opacity: .6; }
 @keyframes ip-pins { 35% { opacity: .25; } 70% { opacity: 1; } }
 @keyframes ip-slosh { 25% { transform: rotate(-10deg); } 55% { transform: rotate(8deg); } 80% { transform: rotate(-3deg); } }
 @keyframes ip-sweep { 30% { transform: rotate(-12deg); } 65% { transform: rotate(7deg); } }
+/* 1.4.1: the rest move too - the bell rings, the bars grow, the needle sweeps, keys press, the corners push out. */
+.ip-launch { animation: var(--ip-launch, none); }
+.ip-ring { animation: var(--ip-ring, none); transform-box: view-box; transform-origin: 12px 4px; }
+.ip-clapper { animation: var(--ip-clapper, none); }
+.ip-bar1, .ip-bar2, .ip-bar3 { transform-origin: 50% 100%; }
+.ip-bar1 { animation: var(--ip-bar1, none); } .ip-bar2 { animation: var(--ip-bar2, none); } .ip-bar3 { animation: var(--ip-bar3, none); }
+.ip-drift { animation: var(--ip-drift, none); }
+.ip-nw { animation: var(--ip-nw, none); } .ip-ne { animation: var(--ip-ne, none); }
+.ip-sw { animation: var(--ip-sw, none); } .ip-se { animation: var(--ip-se, none); }
+.ip-needle { animation: var(--ip-needle, none); transform-box: view-box; transform-origin: 12px 17px; }
+.ip-k1 { animation: var(--ip-k1, none); } .ip-k2 { animation: var(--ip-k2, none); } .ip-k3 { animation: var(--ip-k3, none); }
+.ip-k4 { animation: var(--ip-k4, none); } .ip-k5 { animation: var(--ip-k5, none); }
+.ip-squeeze { animation: var(--ip-squeeze, none); }
+.ip-bar-l { animation: var(--ip-bar-l, none); } .ip-bar-r { animation: var(--ip-bar-r, none); }
+.ip-pin { animation: var(--ip-pin, none); }
+.ip-press { animation: var(--ip-press, none); }
+.ip-knob { animation: var(--ip-knob, none); }
+.ip-emit1 { animation: var(--ip-emit1, none); } .ip-emit2 { animation: var(--ip-emit2, none); }
+.ip-zoom { animation: var(--ip-zoom, none); }
+@keyframes ip-launch { 40% { transform: translateY(-4px); opacity: 0; } 41% { transform: translateY(7px); opacity: 0; } 75% { transform: translateY(-.6px); opacity: 1; } }
+@keyframes ip-ring { 15% { transform: rotate(14deg); } 35% { transform: rotate(-12deg); } 55% { transform: rotate(7deg); } 75% { transform: rotate(-3deg); } }
+@keyframes ip-clapper { 20% { transform: translateX(-1.6px); } 40% { transform: translateX(1.4px); } 60% { transform: translateX(-.8px); } 80% { transform: translateX(.3px); } }
+@keyframes ip-grow { 30% { transform: scaleY(.35); } 75% { transform: scaleY(1.08); } }
+@keyframes ip-drift { 30% { transform: translateX(-1.6px); } 65% { transform: translateX(1.2px); } }
+@keyframes ip-nw { 40% { transform: translate(-1.6px, -1.6px); } }
+@keyframes ip-ne { 40% { transform: translate(1.6px, -1.6px); } }
+@keyframes ip-sw { 40% { transform: translate(-1.6px, 1.6px); } }
+@keyframes ip-se { 40% { transform: translate(1.6px, 1.6px); } }
+@keyframes ip-needle { 30% { transform: rotate(-75deg); } 70% { transform: rotate(12deg); } }
+@keyframes ip-key { 40% { transform: translateY(1.2px); } }
+@keyframes ip-squeeze { 35% { transform: scaleX(.55); } 70% { transform: scaleX(1.08); } }
+@keyframes ip-squeeze-y { 40% { transform: scaleY(.7); } }
+@keyframes ip-pin { 30% { transform: translateY(-2.2px); } 60% { transform: translateY(1px); } }
+@keyframes ip-press { 35% { transform: scale(.78); } 70% { transform: scale(1.06); } }
+@keyframes ip-emit { 0% { opacity: .15; transform: translateX(-1.2px); } 60% { opacity: 1; transform: translateX(.5px); } }
+@keyframes ip-zoom { 40% { transform: scale(1.35); } }
 @media (prefers-reduced-motion: no-preference) {
-  :root:not([data-motion="reduced"]):not([data-motion="off"]) :is(button, a, [role="button"], .sb-item, .chip, label.pill):not(:disabled):hover > .icon { --ip-spin: ip-spin .9s cubic-bezier(.22,1,.36,1); --ip-spin-half: ip-spin .75s cubic-bezier(.22,1,.36,1); --ip-lid: ip-lid .65s cubic-bezier(.22,1,.36,1); --ip-body: ip-squash .65s ease-out; --ip-pop: ip-star .7s cubic-bezier(.22,1,.36,1); --ip-spark: ip-spark .7s cubic-bezier(.22,1,.36,1); --ip-twinkle: ip-twinkle .7s .12s ease-out both; --ip-drop: ip-drop .7s cubic-bezier(.5,0,.3,1); --ip-tray: ip-tray .7s ease-out; --ip-back: ip-back .55s cubic-bezier(.34,1.56,.64,1); --ip-curl: ip-curl .55s ease-out; --ip-reel: ip-reel .32s steps(1,end) 2; --ip-push: ip-push .55s cubic-bezier(.22,1,.36,1); --ip-stem: ip-sway .6s ease-in-out; --ip-note1: ip-hop .5s cubic-bezier(.22,1,.36,1); --ip-note2: ip-hop .5s .1s cubic-bezier(.22,1,.36,1); --ip-sun: ip-rise .7s cubic-bezier(.22,1,.36,1); --ip-hill: ip-squash .7s ease-out; --ip-folder: ip-open .55s cubic-bezier(.22,1,.36,1); --ip-scan: ip-scan .8s ease-in-out; --ip-turn: ip-quarter .5s cubic-bezier(.34,1.56,.64,1); --ip-write: ip-write .6s ease-in-out; --ip-front: ip-front .55s cubic-bezier(.22,1,.36,1); --ip-backsheet: ip-backsheet .55s cubic-bezier(.22,1,.36,1); --ip-meridian: ip-globe 1s ease-in-out; --ip-house: ip-house .55s cubic-bezier(.22,1,.36,1); --ip-hand: ip-clock 1s cubic-bezier(.22,1,.36,1); --ip-capsule: ip-hop .5s ease-out; --ip-wave: ip-wave .6s ease-out; --ip-draw: ip-draw .55s cubic-bezier(.65,0,.35,1); --ip-dip: ip-dip .55s cubic-bezier(.22,1,.36,1); --ip-shackle: ip-shackle .7s cubic-bezier(.22,1,.36,1); --ip-shake: ip-shake .5s ease-in-out; --ip-glow: ip-glow .9s ease-out; --ip-zap: ip-zap .6s linear; --ip-out: ip-out .55s cubic-bezier(.22,1,.36,1); --ip-bubble: ip-bubble .55s cubic-bezier(.34,1.56,.64,1); --ip-blink: ip-blink .45s ease-in-out; --ip-d1: ip-hop .45s cubic-bezier(.22,1,.36,1); --ip-d2: ip-hop .45s .07s cubic-bezier(.22,1,.36,1); --ip-d3: ip-hop .45s .14s cubic-bezier(.22,1,.36,1); --ip-guard: ip-guard .7s ease-out; --ip-float: ip-float .9s ease-in-out; --ip-layer1: ip-layer1 .6s cubic-bezier(.22,1,.36,1); --ip-layer3: ip-layer3 .6s cubic-bezier(.22,1,.36,1); --ip-left: ip-left .5s cubic-bezier(.34,1.56,.64,1); --ip-right: ip-right .5s cubic-bezier(.34,1.56,.64,1); --ip-down: ip-down .5s cubic-bezier(.34,1.56,.64,1); --ip-flap: ip-flap .6s cubic-bezier(.22,1,.36,1); --ip-tick1: ip-draw .35s ease-out; --ip-tick2: ip-draw .35s .14s ease-out both; --ip-lines: ip-draw .6s ease-in-out; --ip-tilt: ip-tilt .8s ease-in-out; --ip-pins: ip-pins .7s ease-out; --ip-slosh: ip-slosh .8s ease-in-out; --ip-sweep: ip-sweep .6s ease-in-out; }
-  :root:not([data-motion="reduced"]):not([data-motion="off"]) :is(button, a, [role="button"], .sb-item, .chip, label.pill):not(:disabled):hover > .icon:not(:has(use[href="#i-gear"], use[href="#i-trash"], use[href="#i-star"], use[href="#i-sparkle"], use[href="#i-download"], use[href="#i-retry"], use[href="#i-undo"], use[href="#i-film"], use[href="#i-play"], use[href="#i-music"], use[href="#i-image"], use[href="#i-folder"], use[href="#i-search"], use[href="#i-plus"], use[href="#i-x"], use[href="#i-edit"], use[href="#i-copy"], use[href="#i-globe"], use[href="#i-home"], use[href="#i-clock"], use[href="#i-mic"], use[href="#i-check"], use[href="#i-bookmark"], use[href="#i-lock"], use[href="#i-alert"], use[href="#i-bulb"], use[href="#i-bolt"], use[href="#i-external"], use[href="#i-message"], use[href="#i-eye"], use[href="#i-dots"], use[href="#i-shield"], use[href="#i-activity"], use[href="#i-ghost"], use[href="#i-variations"], use[href="#i-arrow-left"], use[href="#i-arrow-right"], use[href="#i-chev"], use[href="#i-mail"], use[href="#i-checklist"], use[href="#i-file"], use[href="#i-scale"], use[href="#i-layers"], use[href="#i-cpu"], use[href="#i-brush"], use[href="#i-flask"], use[href="#i-plug"], use[href="#i-book"])) { animation: ic-lift .4s cubic-bezier(.22,1,.36,1); }
+  :root:not([data-motion="reduced"]):not([data-motion="off"]) :is(button, a, [role="button"], .sb-item, .chip, label.pill):not(:disabled):hover > .icon { --ip-spin: ip-spin .9s cubic-bezier(.22,1,.36,1); --ip-spin-half: ip-spin .75s cubic-bezier(.22,1,.36,1); --ip-lid: ip-lid .65s cubic-bezier(.22,1,.36,1); --ip-body: ip-squash .65s ease-out; --ip-pop: ip-star .7s cubic-bezier(.22,1,.36,1); --ip-spark: ip-spark .7s cubic-bezier(.22,1,.36,1); --ip-twinkle: ip-twinkle .7s .12s ease-out both; --ip-drop: ip-drop .7s cubic-bezier(.5,0,.3,1); --ip-tray: ip-tray .7s ease-out; --ip-back: ip-back .55s cubic-bezier(.34,1.56,.64,1); --ip-curl: ip-curl .55s ease-out; --ip-reel: ip-reel .32s steps(1,end) 2; --ip-push: ip-push .55s cubic-bezier(.22,1,.36,1); --ip-stem: ip-sway .6s ease-in-out; --ip-note1: ip-hop .5s cubic-bezier(.22,1,.36,1); --ip-note2: ip-hop .5s .1s cubic-bezier(.22,1,.36,1); --ip-sun: ip-rise .7s cubic-bezier(.22,1,.36,1); --ip-hill: ip-squash .7s ease-out; --ip-folder: ip-open .55s cubic-bezier(.22,1,.36,1); --ip-scan: ip-scan .8s ease-in-out; --ip-turn: ip-quarter .5s cubic-bezier(.34,1.56,.64,1); --ip-write: ip-write .6s ease-in-out; --ip-front: ip-front .55s cubic-bezier(.22,1,.36,1); --ip-backsheet: ip-backsheet .55s cubic-bezier(.22,1,.36,1); --ip-meridian: ip-globe 1s ease-in-out; --ip-house: ip-house .55s cubic-bezier(.22,1,.36,1); --ip-hand: ip-clock 1s cubic-bezier(.22,1,.36,1); --ip-capsule: ip-hop .5s ease-out; --ip-wave: ip-wave .6s ease-out; --ip-draw: ip-draw .55s cubic-bezier(.65,0,.35,1); --ip-dip: ip-dip .55s cubic-bezier(.22,1,.36,1); --ip-shackle: ip-shackle .7s cubic-bezier(.22,1,.36,1); --ip-shake: ip-shake .5s ease-in-out; --ip-glow: ip-glow .9s ease-out; --ip-zap: ip-zap .6s linear; --ip-out: ip-out .55s cubic-bezier(.22,1,.36,1); --ip-bubble: ip-bubble .55s cubic-bezier(.34,1.56,.64,1); --ip-blink: ip-blink .45s ease-in-out; --ip-d1: ip-hop .45s cubic-bezier(.22,1,.36,1); --ip-d2: ip-hop .45s .07s cubic-bezier(.22,1,.36,1); --ip-d3: ip-hop .45s .14s cubic-bezier(.22,1,.36,1); --ip-guard: ip-guard .7s ease-out; --ip-float: ip-float .9s ease-in-out; --ip-layer1: ip-layer1 .6s cubic-bezier(.22,1,.36,1); --ip-layer3: ip-layer3 .6s cubic-bezier(.22,1,.36,1); --ip-left: ip-left .5s cubic-bezier(.34,1.56,.64,1); --ip-right: ip-right .5s cubic-bezier(.34,1.56,.64,1); --ip-down: ip-down .5s cubic-bezier(.34,1.56,.64,1); --ip-flap: ip-flap .6s cubic-bezier(.22,1,.36,1); --ip-tick1: ip-draw .35s ease-out; --ip-tick2: ip-draw .35s .14s ease-out both; --ip-lines: ip-draw .6s ease-in-out; --ip-tilt: ip-tilt .8s ease-in-out; --ip-pins: ip-pins .7s ease-out; --ip-slosh: ip-slosh .8s ease-in-out; --ip-sweep: ip-sweep .6s ease-in-out; --ip-launch: ip-launch .7s cubic-bezier(.5,0,.3,1); --ip-ring: ip-ring .8s ease-out; --ip-clapper: ip-clapper .8s ease-out; --ip-bar1: ip-grow .55s cubic-bezier(.22,1,.36,1); --ip-bar2: ip-grow .55s .07s cubic-bezier(.22,1,.36,1); --ip-bar3: ip-grow .55s .14s cubic-bezier(.22,1,.36,1); --ip-drift: ip-drift .8s ease-in-out; --ip-nw: ip-nw .5s cubic-bezier(.34,1.56,.64,1); --ip-ne: ip-ne .5s cubic-bezier(.34,1.56,.64,1); --ip-sw: ip-sw .5s cubic-bezier(.34,1.56,.64,1); --ip-se: ip-se .5s cubic-bezier(.34,1.56,.64,1); --ip-needle: ip-needle .8s cubic-bezier(.22,1,.36,1); --ip-k1: ip-key .3s ease-out; --ip-k2: ip-key .3s .06s ease-out; --ip-k3: ip-key .3s .12s ease-out; --ip-k4: ip-key .3s .18s ease-out; --ip-k5: ip-key .3s .26s ease-out; --ip-squeeze: ip-squeeze .55s cubic-bezier(.22,1,.36,1); --ip-bar-l: ip-squeeze-y .45s ease-in-out; --ip-bar-r: ip-squeeze-y .45s .12s ease-in-out; --ip-pin: ip-pin .55s cubic-bezier(.22,1,.36,1); --ip-press: ip-press .45s cubic-bezier(.22,1,.36,1); --ip-knob: ip-left .5s .08s cubic-bezier(.34,1.56,.64,1); --ip-emit1: ip-emit .5s ease-out; --ip-emit2: ip-emit .5s .1s ease-out both; --ip-zoom: ip-zoom .5s cubic-bezier(.34,1.56,.64,1); }
 }
-@keyframes ic-lift { 45% { transform: translateY(-1.5px); } }
 @keyframes ip-spin { 0% { transform: rotate(0); } 70% { transform: rotate(196deg); } 100% { transform: rotate(180deg); } }
 @keyframes ip-lid { 30% { transform: translate(-.5px, -2.5px) rotate(-18deg); } 55% { transform: translate(-.5px, -2.5px) rotate(-14deg); } 85% { transform: translateY(.4px); } }
 @keyframes ip-squash { 80% { transform: scaleY(1); } 88% { transform: scaleY(.94); } }
@@ -5069,37 +5103,37 @@ html.voice-on .idle-screen { display: none !important; }
     <linearGradient id="fx-gold" gradientUnits="userSpaceOnUse" x1="18" y1="10" x2="104" y2="94"><stop offset="0" style="stop-color:var(--mark-1)"/><stop offset=".35" style="stop-color:var(--mark-2)"/><stop offset=".7" style="stop-color:var(--mark-3)"/><stop offset="1" style="stop-color:var(--mark-4)"/></linearGradient>
     <symbol id="mark" viewBox="0 0 108 100"><g transform="skewX(-12) translate(16 0)" fill="url(#fx-gold)" fill-rule="evenodd" stroke="none"><path d="M20 14 H66 V28 H36 V42 H58 V54 H36 V90 H20 Z M28 46 C27.2 60 23 76 21.4 88.6 H34.6 C33 76 28.8 60 28 46 Z"/><path d="M60 40 H76 L109 90 H93 Z"/><path d="M108 40 H92 L76 64 L59 90 H60.6 L79 66 C86 56 98 46 108 40 Z"/></g></symbol>
     <symbol id="i-plus" viewBox="0 0 24 24"><path class="ip-turn" d="M12 5v14M5 12h14"/></symbol>
-    <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-minus" viewBox="0 0 24 24"><path class="ip-squeeze" d="M5 12h14"/></symbol>
     <symbol id="i-edit" viewBox="0 0 24 24"><g class="ip-write"><path d="M4 20h4L19 9l-4-4L4 16v4zM13.5 6.5l4 4"/></g></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path class="ip-lid" d="M4 7h16M9 7V4h6v3"/><path class="ip-body" d="M6 7l1 13h10l1-13M10 11v6M14 11v6"/></symbol>
     <symbol id="i-plug" viewBox="0 0 24 24"><path class="ip-capsule" d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0V8z"/><path d="M12 17v4"/></symbol>
     <symbol id="i-folder" viewBox="0 0 24 24"><path class="ip-folder" d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2.5h8.5A1.5 1.5 0 0 1 21 9v9.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 18.5v-12z"/></symbol>
-    <symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/></symbol>
-    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/></symbol>
+    <symbol id="i-sidebar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path class="ip-right" d="M9 4v16"/></symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path class="ip-left" d="M15 4v16"/></symbol>
     <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path class="ip-glow" d="M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3z"/></symbol>
     <symbol id="i-activity" viewBox="0 0 24 24"><path class="ip-draw" pathLength="1" d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
-    <symbol id="i-feed" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><path d="M6 8v8M11 6h9M11 12h6M11 18h9"/></symbol>
-    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></symbol>
-    <symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></symbol>
+    <symbol id="i-feed" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><path d="M6 8v8"/><path class="ip-lines" pathLength="1" d="M11 6h9M11 12h6M11 18h9"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path class="ip-lines" pathLength="1" d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></symbol>
+    <symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path class="ip-meridian" d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></symbol>
     <symbol id="i-gear" viewBox="0 0 24 24"><g class="ip-spin"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
-    <symbol id="i-arrow-up" viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></symbol>
+    <symbol id="i-arrow-up" viewBox="0 0 24 24"><path class="ip-launch" d="M12 19V5M5 12l7-7 7 7"/></symbol>
     <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle class="ip-sun" cx="9" cy="10" r="1.8"/><path class="ip-hill" d="M21 16l-5.5-5.5L6 20"/></symbol>
-    <symbol id="i-screen" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
+    <symbol id="i-screen" viewBox="0 0 24 24"><rect class="ip-glow" x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></symbol>
     <symbol id="i-chev" viewBox="0 0 24 24"><path class="ip-down" d="M6 9l6 6 6-6"/></symbol>
     <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path class="ip-meridian" d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></symbol>
     <symbol id="i-search" viewBox="0 0 24 24"><g class="ip-scan"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></g></symbol>
     <symbol id="i-retry" viewBox="0 0 24 24"><g class="ip-spin-half"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.7M20 4v4.7h-4.7M20 12a8 8 0 0 1-13.7 5.6L4 15.3M4 20v-4.7h4.7"/></g></symbol>
-    <symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="8" r="2"/><path d="M6 7v10M18 10c0 4-6 3-11.5 7.5"/></symbol>
-    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M9 3h6l-1 6 4 3v2H6v-2l4-3-1-6zM12 14v7"/></symbol>
+    <symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="8" r="2"/><path d="M6 7v10"/><path class="ip-draw" pathLength="1" d="M18 10c0 4-6 3-11.5 7.5"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path class="ip-pin" d="M9 3h6l-1 6 4 3v2H6v-2l4-3-1-6zM12 14v7"/></symbol>
     <symbol id="i-download" viewBox="0 0 24 24"><path class="ip-drop" d="M12 4v11M7 10l5 5 5-5"/><path class="ip-tray" d="M5 20h14"/></symbol>
-    <symbol id="i-tools" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+    <symbol id="i-tools" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle class="ip-left" cx="16" cy="6" r="2"/><circle class="ip-right" cx="10" cy="12" r="2"/><circle class="ip-knob" cx="18" cy="18" r="2"/></symbol>
     <symbol id="i-book" viewBox="0 0 24 24"><path class="ip-folder" d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5v-15zM4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></symbol>
-    <symbol id="i-code" viewBox="0 0 24 24"><path d="M9 7l-5 5 5 5M15 7l5 5-5 5"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path class="ip-left" d="M9 7l-5 5 5 5"/><path class="ip-right" d="M15 7l5 5-5 5"/></symbol>
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l5 5v13H6V3z"/><path d="M14 3v5h5"/><path class="ip-lines" pathLength="1" d="M9 13h7M9 17h5"/></symbol>
     <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 4v16M7 20h10"/><path class="ip-tilt" d="M5 7h14M5 7l-3 7a3.5 3.5 0 0 0 6 0L5 7zM19 7l-3 7a3.5 3.5 0 0 0 6 0l-3-7z"/></symbol>
-    <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></symbol>
-    <symbol id="i-columns" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M12 4v16M6.5 9h3M14.5 9h3M6.5 13h3M14.5 13h3"/></symbol>
-    <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+    <symbol id="i-keyboard" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2"/><path class="ip-k1" d="M6 10h.01"/><path class="ip-k2" d="M10 10h.01"/><path class="ip-k3" d="M14 10h.01"/><path class="ip-k4" d="M18 10h.01"/><path class="ip-k5" d="M7 14h10"/></symbol>
+    <symbol id="i-columns" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M12 4v16"/><path class="ip-d1" d="M6.5 9h3M6.5 13h3"/><path class="ip-d2" d="M14.5 9h3M14.5 13h3"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24"><path class="ip-ne" d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path class="ip-sw" d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
     <symbol id="i-x" viewBox="0 0 24 24"><path class="ip-turn" d="M18 6L6 18M6 6l12 12"/></symbol>
     <symbol id="i-check" viewBox="0 0 24 24"><path class="ip-draw" pathLength="1" d="M20 6L9 17l-5-5"/></symbol>
     <symbol id="i-copy" viewBox="0 0 24 24"><rect class="ip-front" x="9" y="9" width="12" height="12" rx="2"/><path class="ip-backsheet" d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
@@ -5108,63 +5142,63 @@ html.voice-on .idle-screen { display: none !important; }
     <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path class="ip-shackle" d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
     <symbol id="i-ghost" viewBox="0 0 24 24"><g class="ip-float"><path d="M5 20V11a7 7 0 0 1 14 0v9l-2.3-1.6L14.3 20 12 18.4 9.7 20l-2.4-1.6L5 20z"/><circle cx="9.5" cy="11" r=".6"/><circle cx="14.5" cy="11" r=".6"/></g></symbol>
     <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></symbol>
-    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 17a8 8 0 1 1 16 0"/><path d="M12 17l4-5"/><path d="M7 17h.01M17 17h.01"/></symbol>
+    <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M4 17a8 8 0 1 1 16 0"/><path class="ip-needle" d="M12 17l4-5"/><path d="M7 17h.01M17 17h.01"/></symbol>
     <symbol id="i-layers" viewBox="0 0 24 24"><path class="ip-layer1" d="M12 3l9 5-9 5-9-5 9-5z"/><path class="ip-layer3" d="M3 13l9 5 9-5"/></symbol>
-    <symbol id="i-star6" viewBox="0 0 24 24"><path d="M12 2.5l8.2 14.3H3.8L12 2.5z"/><path d="M12 21.5L3.8 7.2h16.4L12 21.5z"/></symbol>
-    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
-    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+    <symbol id="i-star6" viewBox="0 0 24 24"><g class="ip-spin"><path d="M12 2.5l8.2 14.3H3.8L12 2.5z"/><path d="M12 21.5L3.8 7.2h16.4L12 21.5z"/></g></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle class="ip-glow" cx="12" cy="12" r="4"/><path class="ip-spin-half" d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path class="ip-float" d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
     <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M4.6 7.5h14.8M4.6 16.5h14.8"/></symbol>
-    <symbol id="i-dock-left" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9.5 4v16"/></symbol>
-    <symbol id="i-dock-right" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M14.5 4v16"/></symbol>
-    <symbol id="i-dock-bottom" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 14.5h18"/></symbol>
-    <symbol id="i-minimize" viewBox="0 0 24 24"><path d="M5 18h14"/></symbol>
-    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></symbol>
+    <symbol id="i-dock-left" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path class="ip-right" d="M9.5 4v16"/></symbol>
+    <symbol id="i-dock-right" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path class="ip-left" d="M14.5 4v16"/></symbol>
+    <symbol id="i-dock-bottom" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path class="ip-layer1" d="M3 14.5h18"/></symbol>
+    <symbol id="i-minimize" viewBox="0 0 24 24"><path class="ip-down" d="M5 18h14"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path class="ip-nw" d="M4 9V4h5"/><path class="ip-ne" d="M20 9V4h-5"/><path class="ip-sw" d="M4 15v5h5"/><path class="ip-se" d="M20 15v5h-5"/></symbol>
     <!-- MossadGPT's mark: crosshairs around a small star of David. -->
-    <symbol id="i-reticle" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/><path d="M12 8.6l2.94 5.1H9.06z"/><path d="M12 15.4l-2.94-5.1h5.88z"/></symbol>
+    <symbol id="i-reticle" viewBox="0 0 24 24"><g class="ip-turn"><circle cx="12" cy="12" r="8.5"/><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"/></g><g class="ip-pins"><path d="M12 8.6l2.94 5.1H9.06z"/><path d="M12 15.4l-2.94-5.1h5.88z"/></g></symbol>
     <symbol id="i-mic" viewBox="0 0 24 24"><rect class="ip-capsule" x="9" y="3" width="6" height="11" rx="3"/><path class="ip-wave" d="M5 11a7 7 0 0014 0"/><path d="M12 18v3"/></symbol>
-    <symbol id="i-mic-off" viewBox="0 0 24 24"><path d="M9 9V6a3 3 0 015.9-.8M15 11v0a3 3 0 01-4.6 2.5"/><path d="M5 11a7 7 0 0011.3 5.5M19 11a7 7 0 01-.4 2.3M12 18v3M3 3l18 18"/></symbol>
-    <symbol id="i-trend" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
-    <symbol id="i-layers2" viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5 9-5z"/><path d="M3 13l9 5 9-5"/></symbol>
+    <symbol id="i-mic-off" viewBox="0 0 24 24"><path d="M9 9V6a3 3 0 015.9-.8M15 11v0a3 3 0 01-4.6 2.5"/><path d="M5 11a7 7 0 0011.3 5.5M19 11a7 7 0 01-.4 2.3M12 18v3"/><path class="ip-tick1" pathLength="1" d="M3 3l18 18"/></symbol>
+    <symbol id="i-trend" viewBox="0 0 24 24"><path class="ip-draw" pathLength="1" d="M3 17l6-6 4 4 8-8"/><path class="ip-out" d="M15 7h6v6"/></symbol>
+    <symbol id="i-layers2" viewBox="0 0 24 24"><path class="ip-layer1" d="M12 3l9 5-9 5-9-5 9-5z"/><path class="ip-layer3" d="M3 13l9 5 9-5"/></symbol>
     <symbol id="i-music" viewBox="0 0 24 24"><path class="ip-stem" d="M9 18V5l11-2v13"/><circle class="ip-note1" cx="6" cy="18" r="3"/><circle class="ip-note2" cx="17" cy="16" r="3"/></symbol>
-    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13"/></symbol>
-    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4V5z"/><path d="M22 9l-6 6M16 9l6 6"/></symbol>
-    <symbol id="i-arrow-down" viewBox="0 0 24 24"><path d="M12 5v14M6 13l6 6 6-6"/></symbol>
+    <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4V5z"/><path class="ip-emit1" d="M15.5 8.5a5 5 0 010 7"/><path class="ip-emit2" d="M18.5 5.5a9 9 0 010 13"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M11 5L6 9H3v6h3l5 4V5z"/><path class="ip-shake" d="M22 9l-6 6M16 9l6 6"/></symbol>
+    <symbol id="i-arrow-down" viewBox="0 0 24 24"><path class="ip-drop" d="M12 5v14M6 13l6 6 6-6"/></symbol>
     <symbol id="i-cpu" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/><path class="ip-pins" d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></symbol>
     <symbol id="i-brush" viewBox="0 0 24 24"><path class="ip-sweep" d="M18 3l3 3-9 9-3-3 9-9z"/><path d="M9 12c-3 0-5 2-5 5 0 1.5-1 2.5-2 3 4 1 8 0 9-3"/></symbol>
-    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle class="ip-capsule" cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></symbol>
     <symbol id="i-sparkle" viewBox="0 0 24 24"><path class="ip-spark" d="M12 4l1.8 4.7L18.5 10l-4.7 1.8L12 16.5l-1.8-4.7L5.5 10l4.7-1.3L12 4z"/><path class="ip-twinkle" d="M18.5 15.5l.8 2 2 .7-2 .8-.8 2-.7-2-2-.8 2-.7.7-2z"/></symbol>
     <symbol id="i-dots" viewBox="0 0 24 24"><circle class="ip-d1" cx="5" cy="12" r="1.2"/><circle class="ip-d2" cx="12" cy="12" r="1.2"/><circle class="ip-d3" cx="19" cy="12" r="1.2"/></symbol>
-    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17h.01"/></symbol>
+    <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path class="ip-tilt" d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17h.01"/></symbol>
     <symbol id="i-bolt" viewBox="0 0 24 24"><path class="ip-zap" d="M13 3L4 14h7l-1 7 9-11h-7l1-7z"/></symbol>
-    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z"/></symbol>
-    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></symbol>
-    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M9 5v14M15 5v14"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path class="ip-drift" d="M7 18a4 4 0 0 1-.5-8A6 6 0 0 1 18 9a4.5 4.5 0 0 1-.5 9H7z"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect class="ip-press" x="6" y="6" width="12" height="12" rx="2" fill="currentColor"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path class="ip-bar-l" d="M9 5v14"/><path class="ip-bar-r" d="M15 5v14"/></symbol>
     <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6l-5.5 9.2A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-2.8L14 9V3"/><path class="ip-slosh" d="M7.5 15h9"/></symbol>
-    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path class="ip-capsule" d="M12 11v5M12 8h.01"/></symbol>
     <symbol id="i-play" viewBox="0 0 24 24"><path class="ip-push" d="M7 5l12 7-12 7V5z"/></symbol>
-    <symbol id="i-repeat" viewBox="0 0 24 24"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></symbol>
-    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+    <symbol id="i-repeat" viewBox="0 0 24 24"><g class="ip-spin"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/></g></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle class="ip-left" cx="16" cy="6" r="2"/><circle class="ip-right" cx="10" cy="12" r="2"/><circle class="ip-knob" cx="18" cy="18" r="2"/></symbol>
     <symbol id="i-music" viewBox="0 0 24 24"><path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/></symbol>
     <symbol id="i-film" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 5v14M17 5v14"/><path class="ip-reel" d="M3 9h4M3 15h4M17 9h4M17 15h4"/></symbol>
     <symbol id="i-bookmark" viewBox="0 0 24 24"><path class="ip-dip" d="M6 3h12v18l-6-4.5L6 21V3z"/></symbol>
     <symbol id="i-external" viewBox="0 0 24 24"><path class="ip-out" d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
     <symbol id="i-home" viewBox="0 0 24 24"><path class="ip-house" d="M4 10.5L12 4l8 6.5V19a1.5 1.5 0 0 1-1.5 1.5H15v-6H9v6H5.5A1.5 1.5 0 0 1 4 19v-8.5z"/></symbol>
     <!-- The revamp's icons: same 24x24 line set, stroke 1.7, round caps (design system "Iconography"). -->
-    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20h16M7 16v-5M12 16V7M17 16v-8"/></symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20h16"/><path class="ip-bar1" d="M7 16v-5"/><path class="ip-bar2" d="M12 16V7"/><path class="ip-bar3" d="M17 16v-8"/></symbol>
     <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path class="ip-hand" d="M12 7.5V12l3 2"/></symbol>
     <symbol id="i-star" viewBox="0 0 24 24"><path class="ip-pop" d="M12 4l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 16.4l-4.8 2.5.9-5.4-3.9-3.8 5.4-.8z"/></symbol>
     <symbol id="i-mail" viewBox="0 0 24 24"><path d="M3.5 6h17v12h-17z"/><path class="ip-flap" d="m4 6.5 8 6.5 8-6.5"/></symbol>
     <symbol id="i-checklist" viewBox="0 0 24 24"><path class="ip-tick1" pathLength="1" d="m4 6.5 1.6 1.6L8.5 5"/><path class="ip-tick2" pathLength="1" d="M4 13.5l1.6 1.6 2.9-3.1"/><path d="M11.5 7h8.5M11.5 14h8.5M4 19.5h4.5M11.5 19.5h8.5"/></symbol>
-    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0"/></symbol>
-    <symbol id="i-disk" viewBox="0 0 24 24"><path d="M3.5 13h17v5a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18zM3.5 13l3-7.5h11l3 7.5M7.5 16.3h.01"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path class="ip-ring" d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path class="ip-clapper" d="M10 20.5a2 2 0 0 0 4 0"/></symbol>
+    <symbol id="i-disk" viewBox="0 0 24 24"><path class="ip-body" d="M3.5 13h17v5a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18zM3.5 13l3-7.5h11l3 7.5"/><path class="ip-pins" d="M7.5 16.3h.01"/></symbol>
     <symbol id="i-undo" viewBox="0 0 24 24"><path class="ip-back" d="M9 7L4.5 11.5 9 16"/><path class="ip-curl" d="M5 11.5h9a5 5 0 0 1 0 10h-2"/></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24"><g class="ip-blink"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/></g></symbol>
     <symbol id="i-arrow-left" viewBox="0 0 24 24"><path class="ip-left" d="M15 6l-6 6 6 6"/></symbol>
     <symbol id="i-arrow-right" viewBox="0 0 24 24"><path class="ip-right" d="M9 6l6 6-6 6"/></symbol>
-    <symbol id="i-zoom" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3M8.5 11h5M11 8.5v5"/></symbol>
+    <symbol id="i-zoom" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.3-4.3"/><path class="ip-zoom" d="M8.5 11h5M11 8.5v5"/></symbol>
     <symbol id="i-variations" viewBox="0 0 24 24"><path class="ip-layer1" d="M12 3.5l8.5 4.7-8.5 4.7-8.5-4.7z"/><path d="M3.5 12.5l8.5 4.7 8.5-4.7"/><path class="ip-layer3" d="M3.5 16.6l8.5 4.7 8.5-4.7"/></symbol>
     <symbol id="i-message" viewBox="0 0 24 24"><path class="ip-bubble" d="M4.5 5h15v10.5H9.5L4.5 19.5z"/></symbol>
-    <symbol id="i-hand" viewBox="0 0 24 24"><path d="M12 3.5l7.5 3v5.5c0 4.4-3.2 8-7.5 8.8-4.3-.8-7.5-4.4-7.5-8.8V6.5z"/><path d="M8.8 12.2l2.2 2.2 4.4-4.4"/></symbol>
+    <symbol id="i-hand" viewBox="0 0 24 24"><path class="ip-guard" d="M12 3.5l7.5 3v5.5c0 4.4-3.2 8-7.5 8.8-4.3-.8-7.5-4.4-7.5-8.8V6.5z"/><path class="ip-tick1" pathLength="1" d="M8.8 12.2l2.2 2.2 4.4-4.4"/></symbol>
   </defs>
 </svg>
 
@@ -8843,7 +8877,15 @@ if (window.fxDesktop && window.fxDesktop.refocus) ['confirm', 'alert'].forEach(k
   window[k] = (...a) => { const el = document.activeElement, r = orig(...a); window.fxDesktop.refocus(); setTimeout(() => el && el.isConnected && el.focus && el.focus({ preventScroll: true }), 50); return r; };
 });
 const promptEl = $('prompt');
-promptEl.addEventListener('input', () => { autoGrow(); updateSend(); syncSlashMenu(); });
+// Typing a message loads the chosen local model meanwhile (POST /api/local-models/warm), so the reply doesn't start
+// with a load from disk. Asked at most once a minute; the server skips it when the model is loaded or anything is busy.
+let warmAskedAt = 0;
+function warmLocalModel() {
+  if (S.mode !== 'local' || !S.pinned || Date.now() - warmAskedAt < 60000) return;
+  warmAskedAt = Date.now();
+  api('/api/local-models/warm', { mode: S.mode, model: S.pinned }).catch(() => {});
+}
+promptEl.addEventListener('input', () => { autoGrow(); updateSend(); syncSlashMenu(); if (promptEl.value.trim()) warmLocalModel(); });
 promptEl.addEventListener('keydown', e => {
   if (popEl && popEl.classList.contains('cmd-pop') && !e.isComposing) {      // the command menu has the keys
     const n = SlashMenu.items.length;
@@ -10649,12 +10691,12 @@ const SessionStats = (() => {
     const out = [], sp = rs.filter(r => r.tps && !r.est);
     if (sp.length >= 6) {
       const a = avg(sp.slice(0, 3).map(r => r.tps)), b = avg(sp.slice(-3).map(r => r.tps));
-      if (b < a * .7) out.push(['warn', `Speed fell from ${f1(a)} to ${f1(b)} tok/s as the chat grew - the conversation it rereads is longer now. Compressing the context or a new chat brings it back.`]);
+      if (b < a * .7) out.push(['warn', `Measured speed fell from ${f1(a)} to ${f1(b)} tok/s. Compare the same model in a new chat and check GPU placement; timing alone cannot identify the cause.`]);
     }
     const tt = rs.filter(r => r.ttft != null).map(r => r.ttft);
     if (tt.length && avg(tt) > 4) out.push(['warn', `It waits ${f1(avg(tt))} s on average before the first word - that is reading the conversation. A shorter context, or the whole model on the GPU, shortens it.`]);
     const slow = sp.filter(r => r.tps < 5);
-    if (slow.length) out.push(['warn', `${slow.length} repl${slow.length === 1 ? 'y' : 'ies'} wrote under 5 tok/s - the model may be partly on the CPU. This PC shows where it runs.`]);
+    if (slow.length) out.push(['warn', `${slow.length} repl${slow.length === 1 ? 'y' : 'ies'} measured under 5 tok/s. Check This PC for GPU placement and compare llama-server timings.`]);
     const tools = rs.filter(r => r.s && r.ttft != null && r.gen != null && r.s - r.ttft - r.gen > Math.max(5, r.s * .5));
     if (tools.length) out.push(['info', `In ${tools.length} repl${tools.length === 1 ? 'y' : 'ies'} most of the time went to tools and steps, not the model.`]);
     if (!out.length && rs.length) out.push(['ok', sp.length ? `Steady: ${f1(avg(sp.map(r => r.tps)))} tok/s on average, no slowdowns.` : 'Nothing stands out.']);
@@ -10722,7 +10764,7 @@ function replyMeta(m) {
   const bits = [m.out ? `${k(m.out)} tokens` : '', m.s ? (m.s < 60 ? `${m.s < 10 ? m.s.toFixed(1) : Math.round(m.s)} s` : `${Math.floor(m.s / 60)}m ${Math.round(m.s % 60)}s`) : '',
     tps ? `${tps.est ? '~' : ''}${tps.v < 10 ? tps.v.toFixed(1) : Math.round(tps.v)} tok/s` : ''].filter(Boolean);
   const tip = [m.model && `Model: ${m.model}`, m.in && `${m.in.toLocaleString()} tokens in`, m.out && `${m.out.toLocaleString()} tokens out`,
-    tps && (tps.est ? 'Speed: tokens over the whole reply time (an older reply - its writing time wasn\'t recorded)' : `Writing speed: ${tps.v} tokens a second over ${m.gen_s} s of writing`),
+    tps && (tps.est ? 'Speed: tokens over the whole reply time (an older reply - its writing time wasn\'t recorded)' : `Generation speed: ${tps.v} tokens a second over ${m.gen_s} s of measured generation (including reasoning)`),
     m.ttft != null && `First token after ${m.ttft} s`, m.calls > 1 && `${m.calls} model calls`,
     m.searches && `${m.searches} web search${m.searches === 1 ? '' : 'es'}`, m.reads && `${m.reads} page${m.reads === 1 ? '' : 's'} read`].filter(Boolean).join(' · ');
   return `<span class="msg-meta" title="${esc(tip)}">${esc(bits.join(' · '))}</span>`;
@@ -11012,7 +11054,7 @@ function onStreamEvent(ev) {
     Live.current = ev.call;
   }
   if (ev.kind === 'delta') {
-    c.n++; if (c.tFirst === null) c.tFirst = performance.now();          // ~one token per streamed piece: the strip's tokens/s
+    c.n += Array.from(ev.text || '').length; if (c.tFirst === null) c.tFirst = performance.now(); // Characters survive SSE coalescing; messages are not tokens.
     if (ev.channel === 'content') {
       c.content += ev.text || '';
       if (c.t1 === null && splitThink(c.content).answer.trim()) c.t1 = performance.now();
@@ -11024,7 +11066,7 @@ function onStreamEvent(ev) {
       t.chars += (ev.text || '').length;
       if (c.t1 === null) c.t1 = performance.now();
     }
-  } else if (ev.kind === 'restart') { c.content = ''; c.arrivals = []; c.tools = {}; c.t1 = null; }
+  } else if (ev.kind === 'restart') { c.content = ''; c.reasoning = ''; c.arrivals = []; c.tools = {}; c.t1 = null; c.n = 0; c.tFirst = null; }
   else if (ev.kind === 'end') { c.ended = true; c.hasTools = !!ev.has_tools; c.t2 = performance.now(); if (c.t1 === null) c.t1 = c.t2; }
   scheduleLivePaint();
 }
@@ -11420,7 +11462,7 @@ function modelActivity(turn) {
   else if (c && c.n && !c.ended) {
     const secs = (now - (c.tFirst || now)) / 1000;
     rate = secs > .6 ? c.n / secs : 0;
-    what = `${splitThink(c.content).answer.trim() ? 'writing' : 'thinking'}${rate ? ` · ${rate < 10 ? rate.toFixed(1) : Math.round(rate)} tok/s` : ''}`;
+    what = `${splitThink(c.content).answer.trim() ? 'writing' : 'thinking'}${rate ? ` · ${rate < 10 ? rate.toFixed(1) : Math.round(rate)} char/s` : ''}`;
   } else if (ev) what = S.mode === 'cloud' || !c ? 'working' : 'starting';
   else { what = 'done'; busy = false; }
   if (S.run === 'paused') { what = 'paused'; busy = false; }

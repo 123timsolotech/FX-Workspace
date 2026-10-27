@@ -14,6 +14,7 @@ import context as ctx
 import llm_compat
 import llm_stream
 import model_caps
+import model_metrics
 import model_output
 import permissions
 import secret_mask
@@ -209,6 +210,7 @@ def _model_call_facts(response, started: float) -> dict:
                        "repetition": "Reply stopped early: the model was repeating itself",
                        "runaway": "Reply stopped early: a tool call grew far too long"}.get(finish, "Model replied"),
              "streamed": True if getattr(response, "streamed", False) else None}
+    facts.update(model_metrics.generation_facts(response))
     if finish in ("length", "repetition", "runaway"):
         facts["level"] = "warn"
     return {k: v for k, v in facts.items() if v not in (None, "")}

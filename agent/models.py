@@ -6,6 +6,7 @@ Model calls: history fitting, local (streamed, constrained) and cloud completion
 """
 from __future__ import annotations
 
+import local_runtime
 import base64
 import composer_tools
 import json
@@ -23,6 +24,7 @@ import history
 import llm_compat
 import llm_stream
 import model_caps
+import model_metrics
 import model_router
 import model_output
 import system_messages
@@ -529,6 +531,7 @@ def _ensure_build(model_name: str, back: bool = True):
     return switched
 
 
+@local_runtime.exclusive(stop=lambda: run_control.checkpoint())
 def call_local(messages, requires_vision: bool, model_name: str = None):
     reported = llama_local.server_models(force=True)
     if reported is None:
@@ -615,16 +618,18 @@ def call_local(messages, requires_vision: bool, model_name: str = None):
 STREAM_TRANSPORT = None          # None = real HTTP; the replay harness injects recorded chunks
 
 
-def _local_complete(kwargs: dict, cancel=None):
+@local_runtime.exclusive(stop=lambda: run_control.checkpoint())
+def _local_complete(kwargs: dict, cancel=None, record=True, publish=True):
     """One local completion, streamed from llama-server. Every fragment is
     relayed to the UI as it arrives; Stop closes the stream at once; a runaway
     or looping tool call is cut off early (llm_stream). `cancel` replaces the
-    run's Stop check for requests made outside a run (the benchmark)."""
+    run's Stop check for requests made outside a run (the benchmark).
+    publish=False: a hidden helper - nothing reaches the chat's live draft."""
     payload = {k: v for k, v in kwargs.items() if k in (
         "messages", "temperature", "top_p", "max_tokens", "tools", "tool_choice", "parallel_tool_calls")}
     payload["model"] = str(kwargs.get("model") or "").removeprefix("openai/")
     payload.update(kwargs.get("extra_body") or {})
-    call_id = shared.app_state.get("_stream_call")
+    call_id = shared.app_state.get("_stream_call") if publish else None
     got_output = {"any": False}
     # When the model stopped thinking: its first answer text or tool call.
     # Reasoning printed inline (<think>...</think>) is still thinking.
@@ -654,7 +659,7 @@ def _local_complete(kwargs: dict, cancel=None):
                                       should_cancel=cancel or run_control.is_stopped, transport=STREAM_TRANSPORT)
             break
         except llm_stream.StreamCancelled:
-            if recorder.active():
+            if record and recorder.active():
                 recorder.cancelled()
             raise
         except Exception as e:
@@ -665,7 +670,7 @@ def _local_complete(kwargs: dict, cancel=None):
             event_log.log_action(f"Local model connection failed ({type(e).__name__}); retrying ({attempt + 1}/2).")
             event_log.emit_event("note", f"Lost the connection to the local model - retrying ({attempt + 1} of 2)…", status="done")
             time.sleep(0.8 * (2 ** attempt))
-    if recorder.active():                    # raw reply, before any parsing (see recorder.py)
+    if record and recorder.active():         # raw reply, before any parsing (see recorder.py)
         recorder.response(res.choices[0].message, res.choices[0].finish_reason, res.usage)
     try:                                     # the chat's "Thought for Xs" (agent/loop._emit_model_note)
         res.choices[0].message.thinking_s = round((timing["first"] or time.time()) - timing["start"], 1)
@@ -816,7 +821,8 @@ def _fit_for_local() -> str | None:
     overhead = (_approx_tokens({"t": schemas.tools_for_current_turn(local=True)})
                 + _approx_tokens({"s": system_prompt(True)}) + _turn_tokens() + 900)
     # The model's own window is the limit - the context set for it in Settings › Models. The effort level's smaller
-    # context size capped it too, so a model set to 80K still dropped history past ~30K (2026-10-21).
+    # context size capped it too, so a model set to 80K still dropped history past ~30K (2026-10-21). Kept in 1.4.1
+    # by the user's choice over the audit's faster cap (2026-10-27).
     budget = max(1500, llama_local.model_context_limit(target) - overhead - _local_reply_tokens())
     shared.app_state["_local_fit_budget"] = budget
     trim_conversation(budget_tokens=budget)
@@ -1008,6 +1014,7 @@ def cross_check_status(mode: str | None = None, model: str | None = None) -> dic
     return {"available": True, "model": second, "reason": "Uses a different model to review the result. Applies to new requests."}
 
 
+@local_runtime.exclusive(stop=lambda: run_control.checkpoint())
 def model_json(system: str, user: str, max_tokens: int = 600, secondary: bool = False):
     """One tool-free, structured model call for the preparer / planner /
     reviewer. Returns a dict, or None when no model answers (every caller
@@ -1052,6 +1059,7 @@ def model_json(system: str, user: str, max_tokens: int = 600, secondary: bool = 
         return None
 
 
+@local_runtime.exclusive(stop=lambda: run_control.checkpoint())
 def model_text(system: str, user: str, max_tokens: int = 1500, model: str | None = None, stream: bool = False,
                label: str = "Model is writing", temperature: float = 0.3, think: bool = False,
                images: list | None = None) -> dict:
@@ -1086,18 +1094,20 @@ def model_text(system: str, user: str, max_tokens: int = 1500, model: str | None
     prev_call = shared.app_state.get("_stream_call")
     prev_ev = shared.app_state.get("running_model_event")
     shared.app_state["running_model_event"] = ev
-    if local:
-        _ensure_build(local, back=False)
-    load_watch = _watch_load(local) if local else None
+    load_watch = None
+    # Only a streamed helper takes over the live draft's call id. A hidden one must not touch it: restoring it
+    # afterwards could wipe the id a reply set while this helper held the model (2026-10-27).
     if stream and local:
         shared.app_state["_stream_call"] = ev["id"]
         stream_hub.hub.publish("start", call=ev["id"], step=0, model=local)
     try:
         if local:
+            _ensure_build(local, back=False)
+            load_watch = _watch_load(local)
             kwargs = dict(model=f"openai/{local}", api_base=config.LLAMA_SERVER_BASE, api_key=config.LOCAL_API_KEY,
                           messages=messages, temperature=temperature, top_p=0.9, max_tokens=max_tokens, timeout=300,
                           extra_body={"cache_prompt": True, "chat_template_kwargs": {"enable_thinking": bool(think)}})
-            res = _local_complete(kwargs) if stream else llm_compat.completion(**kwargs)
+            res = _local_complete(kwargs, record=False, publish=stream)
             engage_local_model(local)
             used = local
         else:
@@ -1122,7 +1132,8 @@ def model_text(system: str, user: str, max_tokens: int = 1500, model: str | None
         out = {"text": answer.strip(), "model": used, "seconds": round(time.time() - started, 1),
                "tokens_in": int(getattr(usage, "prompt_tokens", 0) or 0), "tokens_out": int(getattr(usage, "completion_tokens", 0) or 0)}
         event_log.finish_event(ev, ok=True, model=used, duration_ms=int(out["seconds"] * 1000),
-                               tokens_in=out["tokens_in"], tokens_out=out["tokens_out"])
+                               tokens_in=out["tokens_in"], tokens_out=out["tokens_out"],
+                               **model_metrics.generation_facts(res))
         return out
     except llm_stream.StreamCancelled:
         event_log.finish_event(ev, ok=False, detail="Stopped")

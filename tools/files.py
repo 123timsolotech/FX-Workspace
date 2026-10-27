@@ -36,7 +36,7 @@ _SECRET_FILE_RE = re.compile(
 # The app's own private files: keys, settings, MCP server secrets (env values,
 # headers) and the assistant browser's profile (cookies, sessions).
 _APP_PRIVATE_FILES = ("keys.local.bat", "keys_local.bat", "settings.json", os.path.join("data", "mcp_servers.json"),
-                      os.path.join("data", "search_keys.json"))
+                      os.path.join("data", "search_keys.json"), os.path.join("data", "mail.json"))
 _APP_PRIVATE_DIRS = (os.path.join("data", "browser-profile"),)
 
 

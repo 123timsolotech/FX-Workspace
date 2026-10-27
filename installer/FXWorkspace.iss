@@ -27,7 +27,7 @@
 AppId={{6E0F3B52-8F7A-4C1E-9B2D-FA11C0DE2026}
 AppName={#AppName}
 AppVersion={#AppVersion}
-AppVerName={#AppName} {#AppVersion} (beta)
+AppVerName={#AppName} {#AppVersion}
 AppPublisher={#AppPublisher}
 AppPublisherURL=https://github.com/fuxion64-ctrl/FX-Workspace
 AppSupportURL=https://github.com/fuxion64-ctrl/FX-Workspace/issues

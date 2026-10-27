@@ -216,15 +216,40 @@ def download(repo: str, path: str, with_mmproj: bool = True) -> dict:
         total = sum(p["size"] for p in parts) + (proj["size"] if proj else 0)
         _state.update(state="running", repo=repo, file=os.path.basename(path), done=0, total=total, error="", added=None,
                       started=time.time())
-    _cancel.clear()
-    folder = os.path.join(paths.model_dirs()[0], re.sub(r"[^\w.-]+", "_", repo.split("/")[-1]))
+        _cancel.clear()
+    # Include owner and subfolder: repos (and variants within one repo) may
+    # publish identical basenames, especially mmproj-F16.gguf.
+    identity = repo + "/" + path.rpartition("/")[0]
+    folder_name = re.sub(r"[^\w.-]+", "_", repo.split("/")[-1]) + "-" + hashlib.sha256(identity.encode()).hexdigest()[:12]
+    folder = os.path.join(paths.model_dirs()[0], folder_name)
     threading.Thread(target=_run, args=(repo, folder, parts, proj), name="model-finder", daemon=True).start()
     return {"ok": True, **status()}
 
 
+def _matches_hash(path: str, expected: str) -> bool:
+    if not expected:
+        return True
+    with _lock:
+        _state["checking"] = os.path.basename(path)
+    try:
+        h = hashlib.sha256()
+        with open(path, "rb") as f:
+            for chunk in iter(lambda: f.read(1 << 20), b""):
+                if _cancel.is_set():
+                    raise InterruptedError("Cancelled while verifying the model.")
+                h.update(chunk)
+        return h.hexdigest() == expected.lower()
+    finally:
+        with _lock:
+            _state.pop("checking", None)
+
+
 def _fetch(c: httpx.Client, repo: str, part: dict, dest: str) -> None:
     tmp = dest + ".part"
-    if os.path.exists(dest) and os.path.getsize(dest) == part["size"]:
+    if _cancel.is_set():
+        raise InterruptedError("Download cancelled.")
+    if (os.path.exists(dest) and os.path.getsize(dest) == part["size"]
+            and _matches_hash(dest, part.get("sha256") or "")):
         with _lock:
             _state["done"] += part["size"]
         return
@@ -242,6 +267,11 @@ def _fetch(c: httpx.Client, repo: str, part: dict, dest: str) -> None:
         elif r.status_code >= 400:
             raise RuntimeError(f"Hugging Face answered {r.status_code} for {part['path']}")
         else:
+            if r.status_code == 206:
+                match = re.fullmatch(r"bytes (\d+)-(\d+)/(\d+)", r.headers.get("Content-Range", ""))
+                if (not match or int(match[1]) != have or int(match[3]) != part["size"]
+                        or not have <= int(match[2]) < part["size"]):
+                    raise RuntimeError("Invalid resume range from Hugging Face; partial file was kept unchanged.")
             if have and r.status_code != 206:          # the server ignored the range: start over
                 with _lock:
                     _state["done"] -= have
@@ -255,18 +285,11 @@ def _fetch(c: httpx.Client, repo: str, part: dict, dest: str) -> None:
                         _state["done"] += len(chunk)
     if os.path.getsize(tmp) != part["size"]:
         raise RuntimeError(f"{part['path']} is incomplete ({os.path.getsize(tmp)} of {part['size']} bytes) - try again to resume.")
-    if part.get("sha256"):
-        with _lock:
-            _state["checking"] = os.path.basename(dest)
-        h = hashlib.sha256()
-        with open(tmp, "rb") as f:
-            for chunk in iter(lambda: f.read(1 << 20), b""):
-                h.update(chunk)
-        with _lock:
-            _state.pop("checking", None)
-        if h.hexdigest() != part["sha256"]:
-            os.remove(tmp)
-            raise RuntimeError(f"{part['path']} doesn't match the SHA-256 Hugging Face publishes - it was deleted.")
+    if not _matches_hash(tmp, part.get("sha256") or ""):
+        os.remove(tmp)
+        raise RuntimeError(f"{part['path']} doesn't match the SHA-256 Hugging Face publishes - it was deleted.")
+    if _cancel.is_set():
+        raise InterruptedError("Download cancelled; partial file kept.")
     os.replace(tmp, dest)
 
 

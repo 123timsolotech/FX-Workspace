@@ -23,6 +23,7 @@ import time
 
 import chat_guard
 import chat_store
+import model_metrics
 import corroboration
 import privacy
 import roblox_places
@@ -81,11 +82,7 @@ def metrics_of(events: list, started: float | None = None) -> dict:
            "out": sum(int(e.get("tokens_out") or 0) for e in calls),
            "s": round(time.time() - began, 1) if began else 0,
            "model": next((e.get("model") for e in reversed(calls) if e.get("model")), "")}
-    # Writing speed: tokens out over the time spent writing them (each call's duration less its wait for the first
-    # token), so a short reply after a long think still shows the model's real speed. ttft: the first call's wait.
-    gen = sum(max(0.0, float(e.get("duration_ms") or 0) / 1000 - float(e.get("first_token_s") or 0)) for e in calls)
-    if gen > 0.05 and out["out"]:
-        out.update(tps=round(out["out"] / gen, 1), gen_s=round(gen, 1))
+    out.update(model_metrics.aggregate_speed(calls))
     first = next((e.get("first_token_s") for e in calls if isinstance(e.get("first_token_s"), (int, float))), None)
     if first is not None:
         out["ttft"] = round(float(first), 1)

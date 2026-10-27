@@ -111,6 +111,19 @@ def _wanted(name: str) -> bool:
     return ext in TEXT_EXT or ext in DOC_EXT
 
 
+def _allowed(path: str, folder: str | None = None) -> bool:
+    from tools.files import _is_secret_file
+    if _is_secret_file(path):
+        return False
+    if folder:
+        root, target = os.path.realpath(folder), os.path.realpath(path)
+        try:
+            return os.path.commonpath([root, target]) == root
+        except ValueError:
+            return False
+    return True
+
+
 # ---- indexing ----------------------------------------------------------------------------------------------------
 def status() -> dict:
     with _lock:
@@ -129,8 +142,9 @@ def _walk(folder: str):
     for root, dirs, names in os.walk(folder):
         dirs[:] = [d for d in dirs if d.lower() not in SKIP_DIRS and not d.startswith(".")]
         for n in names:
-            if _wanted(n):
-                yield os.path.join(root, n)
+            path = os.path.join(root, n)
+            if _wanted(n) and _allowed(path, folder):
+                yield path
 
 
 def index(folders: list[str]) -> None:
@@ -146,17 +160,23 @@ def index(folders: list[str]) -> None:
             if not os.path.isdir(folder):
                 continue
             for p in _walk(folder):
+                if _cancel.is_set():
+                    with _lock:
+                        _state.update(state="cancelled", at=time.time())
+                    return  # an incomplete scan must not purge unvisited files
                 if len(keep) >= MAX_FILES:
                     break
-                keep.add(p)
+                if p in keep:
+                    continue
                 try:
                     st = os.stat(p)
                 except OSError:
                     continue
                 if st.st_size > MAX_FILE:
                     continue
+                keep.add(p)
                 old = known.get(p)
-                if not old or old[0] != st.st_size or abs((old[1] or 0) - st.st_mtime) > 1:
+                if not old or old[0] != st.st_size or old[1] != st.st_mtime:
                     todo.append((folder, p, st.st_size, st.st_mtime))
         gone = [p for p in known if p not in keep]
         with c:
@@ -165,6 +185,7 @@ def index(folders: list[str]) -> None:
                 c.execute("DELETE FROM files WHERE path = ?", (p,))
         with _lock:
             _state.update(state="running", done=0, total=len(todo), error="")
+        completed = 0
         for i, (folder, p, size, mtime) in enumerate(todo):
             if _cancel.is_set():
                 break
@@ -172,6 +193,8 @@ def index(folders: list[str]) -> None:
                 _state.update(done=i, folder=folder, file=os.path.basename(p))
             err, parts = "", []
             try:
+                if not _allowed(p, folder):
+                    raise ValueError("File is outside the selected folder or protected.")
                 parts = chunks(read_text(p))
             except Exception as e:
                 err = str(e)[:120] or type(e).__name__
@@ -182,8 +205,9 @@ def index(folders: list[str]) -> None:
                               [(t, p, a, b, title) for a, b, t in parts])
                 c.execute("INSERT OR REPLACE INTO files (path, folder, size, mtime, chunks, error) VALUES (?, ?, ?, ?, ?, ?)",
                           (p, folder, size, mtime, len(parts), err))
+            completed += 1
         with _lock:
-            _state.update(state="idle" if not _cancel.is_set() else "cancelled", done=len(todo), at=time.time(), file="")
+            _state.update(state="idle" if not _cancel.is_set() else "cancelled", done=completed, at=time.time(), file="")
     except Exception as e:
         with _lock:
             _state.update(state="failed", error=str(e)[:300])
@@ -196,7 +220,7 @@ def start(folders: list[str]) -> dict:
         if _state["state"] == "running":
             return {"ok": False, "message": "Already indexing."}
         _state.update(state="running", done=0, total=0, error="")
-    _cancel.clear()
+        _cancel.clear()
     threading.Thread(target=index, args=(list(folders),), name="knowledge-index", daemon=True).start()
     return {"ok": True}
 
@@ -238,13 +262,17 @@ def search(query: str, limit: int = 8, folder: str | None = None) -> list[dict]:
             q = _fts_query(query, mode)
             if not q:
                 return []
-            sql = ("SELECT path, line_from, line_to, title, snippet(chunks, 0, '[[', ']]', ' … ', 40), bm25(chunks, 1.0, 0, 0, 0, 2.0), text "
-                   "FROM chunks WHERE chunks MATCH ?" + (" AND path LIKE ?" if folder else "") + " ORDER BY bm25(chunks, 1.0, 0, 0, 0, 2.0) LIMIT ?")
-            args = [q] + ([os.path.abspath(folder) + "%"] if folder else []) + [int(limit)]
+            sql = ("SELECT chunks.path, line_from, line_to, title, snippet(chunks, 0, '[[', ']]', ' … ', 40), bm25(chunks, 1.0, 0, 0, 0, 2.0), text, files.folder "
+                   "FROM chunks JOIN (SELECT path, folder FROM files) AS files ON chunks.path = files.path WHERE chunks MATCH ?"
+                   + (" AND chunks.path LIKE ? ESCAPE '\\'" if folder else "") + " ORDER BY bm25(chunks, 1.0, 0, 0, 0, 2.0) LIMIT ?")
+            prefix = (os.path.join(os.path.abspath(folder), "").replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+                      if folder else "")
+            args = [q] + ([prefix + "%"] if folder else []) + [max(1, min(int(limit), 100))]
             try:
                 rows = c.execute(sql, args).fetchall()
             except sqlite3.OperationalError:
                 rows = []
+            rows = [r for r in rows if os.path.isfile(r[0]) and _allowed(r[0], r[7])]
             if rows:
                 return [{"path": r[0], "lines": [r[1], r[2]], "file": r[3], "snippet": r[4], "score": round(-r[5], 2),
                          "text": r[6]} for r in rows]

@@ -379,7 +379,10 @@ def tools_for_mode(local: bool, mode: str) -> list:
     if shared.messaging_hub.configured():
         source += MESSAGING_TOOLS_ONLY
     have = {t["function"]["name"] for t in source}
-    source += [t for t in TOOLS if t["function"]["name"] in (personal_tools() | notes_wanted()) - have]
+    # Worked out once: inside the comprehension it re-read every skill and rescanned every MCP tool for each of the
+    # ~116 tools - seconds per reply and per context-meter poll (2026-10-27).
+    wanted = (personal_tools() | notes_wanted()) - have
+    source += [t for t in TOOLS if t["function"]["name"] in wanted]
     if shared.app_state["settings"].get("auto_model_routing"):
         source += handoff_tool()
     if mode != "action":

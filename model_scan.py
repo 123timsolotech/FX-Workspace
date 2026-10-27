@@ -19,6 +19,8 @@ from __future__ import annotations
 import os
 import re
 import shutil
+import atomic_io
+import local_runtime
 
 import llama_local
 import paths
@@ -32,6 +34,7 @@ def ini_path() -> str:
     return llama_local._ini_path()
 
 
+@llama_local.serialized_ini
 def ensure_ini() -> str:
     """models.ini exists (made from models.example.ini when missing), then local\\models is scanned."""
     path = ini_path()
@@ -108,13 +111,22 @@ def _own_options(model: str) -> str:
 
 
 def _append(entries: list) -> None:
-    with open(ini_path(), "a", encoding="utf-8") as f:
+    path = ini_path()
+    original = ""
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as f:
+            original = f.read()
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
+        f.write(original)
         for name, model, proj in entries:
             f.write(f"\n[{name}]\nmodel = {model}\n" + (f"mmproj = {proj}\n" if proj else "") + _own_options(model))
+    atomic_io.replace(tmp, path)
     llama_local._ini_cache.update(key=None, configs=None)
     llama_local.invalidate_cache()
 
 
+@llama_local.serialized_ini
 def scan(settings: dict | None = None) -> dict:
     """Add every model file in the model folders that models.ini doesn't have yet."""
     known = _known_files()
@@ -135,6 +147,7 @@ def scan(settings: dict | None = None) -> dict:
     return {"added": [{"name": n, "model": m, "mmproj": p} for n, m, p in added], "folders": folders}
 
 
+@llama_local.serialized_ini
 def add_file(path: str) -> dict:
     """One model by its file path (Settings > Models > Add a model file)."""
     path = os.path.abspath(os.path.expandvars(str(path or "").strip().strip('"')))
@@ -154,9 +167,10 @@ def add_file(path: str) -> dict:
 
 def restart_router() -> bool:
     """New presets reach llama-server's router when it restarts; restarts it when it's running. True if it did."""
-    import llama_builds
-    run = llama_builds.running(force=True)
-    if not run.get("pid"):
-        return False
-    llama_builds.switch(run.get("kind") or "latest", run)
-    return True
+    with local_runtime.reserve(wait=False):
+        import llama_builds
+        run = llama_builds.running(force=True)
+        if not run.get("pid"):
+            return False
+        llama_builds.switch(run.get("kind") or "latest", run)
+        return True

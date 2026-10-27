@@ -967,6 +967,10 @@ def _run_turn(req) -> dict:
 def _run_turn_in_chat(req) -> dict:
     # Hold the selected base instructions steady through model calls and voice playback.
     shared.app_state["turn_system_message"] = system_messages.clean_settings(shared.app_state.get("settings"))
+    # The run starts with the turn, not with the agent: Stop pressed during the message check (often while the model
+    # is still loading) answered "Nothing is running" and the turn went on (2026-10-27). Runs nest; a Stop set here
+    # ends the agent at its first checkpoint, with the usual "Stopped" reply.
+    run_control.begin()
     try:
         start_seq = shared.app_state.get("event_seq", 0)
         _select_request_backend(req)                # before prep, effort/model resolution or Research
@@ -1004,7 +1008,10 @@ def _run_turn_in_chat(req) -> dict:
             result = research.run(req)                 # agent/research.py: plan card, many sources, a report
         else:
             shared.app_state["last_run_history"] = []
-            result = agent.run(req, board=_board)
+            try:
+                result = agent.run(req, board=_board)
+            except RunStopped as e:                  # stopped in a model call before the orchestrator's run began
+                result = agent_loop._stopped_response(e.reason)
             history = shared.app_state.pop("last_run_history", None) or []
             shared.app_state["turn_tool_history"] = history          # careful.claims_without_change (_with_care)
             if (not raw and isinstance(result, dict) and result.get("status") == "success" and not result.get("rejected")
@@ -1036,6 +1043,7 @@ def _run_turn_in_chat(req) -> dict:
             shared.app_state.pop(key, None)
         return result
     finally:
+        run_control.end()
         shared.app_state.pop("turn_system_message", None)
 
 
@@ -1052,6 +1060,8 @@ def _screen(req, raw: bool) -> dict | None:
     previous = next((e.get("t") or "" for e in reversed((chat or {}).get("transcript") or []) if e.get("r") == "u"), "")
     try:
         verdict = chat_guard.screen(req.message, previous, _guard_model)
+    except RunStopped:                          # Stop during the check: the agent's first checkpoint ends the turn
+        return None
     except Exception as e:                      # the limits never cost an answer by crashing
         event_log.log_action(f"Chat limits: the check failed ({e}); the message was not screened.")
         return None

@@ -204,8 +204,9 @@ class ToolExecutor:
                 deadline = max(deadline, self.clock() + 5)     # a card the tool showed (search preview): the user's time
             if self.clock() >= deadline:
                 if spec.read_only:
-                    return {"status": RETRYABLE, "ok": False,
-                            "message": f"{spec.name} timed out after {spec.timeout_s:.0f}s."}
+                    return {"status": PERMANENT, "ok": False,
+                            "message": f"{spec.name} timed out after {spec.timeout_s:.0f}s; its worker may still be running. "
+                                       "Automatic retry was suppressed to avoid overlapping work."}
                 return {"status": PERMANENT, "ok": False,
                         "message": f"{spec.name} timed out after {spec.timeout_s:.0f}s; its outcome is unknown - "
                                    "check the actual state before trying again."}

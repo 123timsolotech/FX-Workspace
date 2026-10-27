@@ -19,13 +19,28 @@ Fixes in this revision:
 3. Model swaps on a --models-max 1 router unload the previous model, so the
    cached model list is invalidated whenever a different model is used.
 """
+import local_runtime
 import configparser
 import os
 import shutil
 import threading
 import time
+from functools import wraps
 
 import requests
+import atomic_io
+
+# Scanning, downloads and Settings all edit the same models.ini. Lock the
+# entire read/modify/write transaction, and let nested catalog reads re-enter.
+_ini_lock = threading.RLock()
+
+
+def serialized_ini(fn):
+    @wraps(fn)
+    def locked(*args, **kwargs):
+        with _ini_lock:
+            return fn(*args, **kwargs)
+    return locked
 
 LLAMA_HOST = os.environ.get("LLAMA_HOST", "127.0.0.1")
 LLAMA_PORT = int(os.environ.get("LLAMA_PORT", "8090"))
@@ -84,15 +99,42 @@ def looks_like_vision(name: str) -> bool:
     return any(hint.replace(".", "-") in key for hint in _VISION_HINTS)
 
 
+def _shared_configs() -> list:
+    """The parsed presets themselves - read-only; list_model_configs() hands out copies. The model catalogue asks
+    for one model's preset several times per model, per tool list: copying all of them each time added up."""
+    cached = _ini_cache["configs"]
+    if cached is not None and _ini_cache["key"] == _ini_key(_ini_path()):
+        return cached
+    list_model_configs()                     # parses (under the models.ini lock) and fills the cache
+    return _ini_cache["configs"] or []
+
+
 def _config_for(name: str):
     if not name:
         return None
     key = _normalize(name)
     try:
-        configs = list_model_configs()
+        configs = _shared_configs()
     except Exception:
         return None
-    return next((c for c in configs if c["name"] == name or _normalize(c["name"]) == key), None)
+    found = next((c for c in configs if c["name"] == name or _normalize(c["name"]) == key), None)
+    return dict(found) if found is not None else None
+
+
+_sizes: dict = {}                            # path -> (when read, bytes or None)
+
+
+def _file_size(path: str) -> int | None:
+    hit = _sizes.get(path)
+    now = time.time()
+    if hit and now - hit[0] < 60:
+        return hit[1]
+    try:
+        size = os.path.getsize(path)
+    except OSError:
+        size = None
+    _sizes[path] = (now, size)
+    return size
 
 
 def vision_known(name: str) -> bool | None:
@@ -125,11 +167,12 @@ def model_file_size(name: str) -> int | None:
     total = 0
     for path in (cfg["model_path"], cfg["mmproj_path"]):
         if path:
-            try:
-                total += os.path.getsize(path)
-            except OSError:
+            size = _file_size(path)
+            if size is None:
                 if path == cfg["model_path"]:
                     return None
+            else:
+                total += size
     return total
 
 
@@ -340,6 +383,7 @@ def _load_ini(path: str) -> configparser.ConfigParser:
 _RESOURCE_KEYS = {"ngl": "ngl", "ctx_size": "ctx-size", "batch_size": "batch-size", "threads": "threads"}
 
 
+@serialized_ini
 def list_model_configs() -> list[dict]:
     """Every model preset in models.ini, with its effective resource settings
     (own value if set, else the [*] default). This is what the Settings UI
@@ -380,6 +424,7 @@ def list_model_configs() -> list[dict]:
     return out
 
 
+@serialized_ini
 def get_default_resources() -> dict:
     """The [*] section's resource settings - what a model uses if it has no
     override of its own."""
@@ -398,6 +443,7 @@ def get_default_resources() -> dict:
             "batch_size": _num("batch-size"), "threads": _num("threads")}
 
 
+@serialized_ini
 def update_model_config(name: str, **fields) -> None:
     """Writes ngl / ctx_size / batch_size / threads overrides into model
     `name`'s own [section] in models.ini. Only keys actually passed in
@@ -442,8 +488,10 @@ def update_model_config(name: str, **fields) -> None:
         except OSError:
             pass  # best-effort safety net; never block the actual save on it
 
-    with open(path, "w", encoding="utf-8") as f:
+    tmp = path + ".tmp"
+    with open(tmp, "w", encoding="utf-8") as f:
         cp.write(f)
+    atomic_io.replace(tmp, path)
     _ini_cache.update(key=None, configs=None)
 
 
@@ -452,6 +500,7 @@ OPTION_KEYS = {"ctx-size", "ngl", "batch-size", "ubatch-size", "threads", "flash
                "n-cpu-moe", "fit", "fit-target", "load-mode"}
 
 
+@serialized_ini
 def model_options(name: str) -> dict:
     """The model's effective preset options (its own, else the [*] defaults), as written."""
     cp = _load_ini(_ini_path())
@@ -460,6 +509,7 @@ def model_options(name: str) -> dict:
     return dict(cp[name]) if name in cp.sections() else {}
 
 
+@serialized_ini
 def model_own_options(name: str) -> dict:
     """Only the options model `name`'s own section sets (not what it inherits from [*])."""
     cp = configparser.ConfigParser(default_section="\0none", interpolation=None)
@@ -470,6 +520,7 @@ def model_own_options(name: str) -> dict:
     return dict(cp[name]) if name in cp.sections() else {}
 
 
+@serialized_ini
 def set_model_options(changes: dict, backup: bool = True) -> str | None:
     """Write several models' options at once: {section ("*" for the defaults):
     {option: value, or None to remove it}}. Only OPTION_KEYS. The file as it
@@ -503,7 +554,7 @@ of one fix). Returns the backup's path. Applies
     tmp = path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         cp.write(f)
-    os.replace(tmp, path)
+    atomic_io.replace(tmp, path)
     _ini_cache.update(key=None, configs=None)
     return backup_path
 
@@ -537,6 +588,7 @@ def model_context_limit(model_name: str = None) -> int:
     return fallback
 
 
+@local_runtime.exclusive
 def force_load(model_id: str, timeout: float = 180.0, back: bool = True) -> float:
     """Sends a throwaway 1-token completion naming model_id, so the router
     loads (or, if a DIFFERENT model is resident under --models-max 1, swaps
@@ -563,6 +615,7 @@ def force_load(model_id: str, timeout: float = 180.0, back: bool = True) -> floa
     return time.time() - t0
 
 
+@local_runtime.exclusive
 def unload_all(timeout: float = 30.0) -> list[str]:
     """Unloads every model the router has loaded (POST /models/unload, one at a time - there is no
     "unload all"), so the GPU is free for something else (image_gen.py). The next chat message loads its

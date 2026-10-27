@@ -191,10 +191,10 @@ def unzip_file(zip_path: str, destination: str, journal=None) -> dict:
             # A zip is untrusted input: refuse any entry that would escape
             # 'dst' via '..' or an absolute path (a 'zip slip' attack)
             # instead of extracting it and finding out afterward.
-            dst_abs = os.path.abspath(dst)
+            dst_abs = os.path.realpath(dst)
             for name in names:
-                member = os.path.abspath(os.path.join(dst, name))
-                if member != dst_abs and not member.startswith(dst_abs + os.sep):
+                member = os.path.realpath(os.path.join(dst, name))
+                if os.path.commonpath([dst_abs, member]) != dst_abs:
                     return {"ok": False, "message": f"Refused to extract unsafe entry '{name}' (path traversal)."}
             # Journal every folder and file the extraction creates or replaces.
             for info in zf.infolist():

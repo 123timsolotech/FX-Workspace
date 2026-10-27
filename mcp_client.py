@@ -54,6 +54,24 @@ class MCPError(Exception):
     pass
 
 
+_safe_descriptions: dict = {}
+
+
+def _safe_description(text: str) -> str:
+    """A server's tool description as offered to models: whitespace folded, cut to 600 characters, withheld when it
+    tries to direct the assistant. Remembered per text - every tool list (each model call, each context-meter poll)
+    asks for every description again (2026-10-27)."""
+    found = _safe_descriptions.get(text)
+    if found is None:
+        desc = re.sub(r"\s+", " ", text)[:600]
+        if untrusted.find_instructions(desc):           # the description is the server's text, not ours
+            desc = "(The server's description was withheld: it contained instructions to the assistant.)"
+        if len(_safe_descriptions) > 4000:
+            _safe_descriptions.clear()
+        found = _safe_descriptions[text] = desc
+    return found
+
+
 def tool_name(server: str, tool: str) -> str:
     """The registry name: mcp__<server>__<tool>, limited to the characters
     function-calling APIs accept (64 max). A name that had to be shortened
@@ -630,10 +648,7 @@ class Hub:
                 params = {"type": "object", "properties": dict(params.get("properties") or {}),
                           "required": [r for r in params.get("required") or [] if isinstance(r, str)]}
                 params["properties"].setdefault("justification", {"type": "string"})
-                desc = re.sub(r"\s+", " ", str(t.get("description") or name))[:600]
-                if untrusted.find_instructions(desc):       # the description is the server's text, not ours
-                    desc = "(The server's description was withheld: it contained instructions to the assistant.)"
-                desc = f"[MCP server '{s.name}'] " + desc
+                desc = f"[MCP server '{s.name}'] " + _safe_description(str(t.get("description") or name))
                 out.append({"type": "function", "function": {"name": tool_name(s.name, name), "description": desc,
                                                              "parameters": params},
                             "_mcp": {"server": s.name, "tool": name}})

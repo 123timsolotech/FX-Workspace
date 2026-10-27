@@ -158,7 +158,8 @@ def kind_of(name: str) -> str:
 
 
 class FileStore:
-    """data/uploads/<id>/<name> plus meta.json. Files older than KEEP_DAYS go."""
+    """data/uploads/<id>/attachment.<ext> plus meta.json; reads legacy filenames too.
+    Files older than KEEP_DAYS go."""
     KEEP_DAYS = 30
 
     def __init__(self, root: str):
@@ -185,10 +186,13 @@ class FileStore:
         fid = uuid.uuid4().hex[:12]
         folder = self._dir(fid)
         os.makedirs(folder, exist_ok=True)
-        with open(os.path.join(folder, name), "wb") as f:
+        # Keep the payload separate from our metadata, including on Windows
+        # where META.JSON and meta.json name the same file.
+        stored_name = "attachment" + os.path.splitext(name)[1].lower()
+        with open(os.path.join(folder, stored_name), "wb") as f:
             f.write(data)
-        meta = {"id": fid, "name": name, "kind": kind, "size": len(data), "created": time.time()}
-        meta.update(self._describe(os.path.join(folder, name), kind))
+        meta = {"id": fid, "name": name, "stored_name": stored_name, "kind": kind, "size": len(data), "created": time.time()}
+        meta.update(self._describe(os.path.join(folder, stored_name), kind))
         with open(os.path.join(folder, "meta.json"), "w", encoding="utf-8") as f:
             json.dump(meta, f)
         self.prune()
@@ -218,7 +222,7 @@ class FileStore:
                 meta = json.load(f)
         except (KeyError, OSError, ValueError):
             return None
-        meta["path"] = os.path.join(self._dir(fid), meta["name"])
+        meta["path"] = os.path.join(self._dir(fid), meta.get("stored_name") or meta["name"])
         return meta
 
     def adopt(self, other: "FileStore") -> dict:

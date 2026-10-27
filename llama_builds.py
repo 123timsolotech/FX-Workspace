@@ -21,6 +21,7 @@ exit just as the launcher would have stopped its own.
 """
 from __future__ import annotations
 
+import local_runtime
 import ntpath
 import os
 import re
@@ -98,36 +99,71 @@ def _port_of(cmdline: list) -> int:
     return 8080                       # llama-server's own default
 
 
+def _router_at(psutil, pid) -> dict | None:
+    """{"pid", "exe", "cmdline"} when process `pid` is the router on our port, else None."""
+    try:
+        p = psutil.Process(pid)
+        if not p.name().lower().startswith("llama-server"):
+            return None
+        cmd = list(p.cmdline() or [])
+        if "--models-preset" not in cmd or _port_of(cmd) != llama_local.LLAMA_PORT:
+            return None
+        try:
+            exe = p.exe()
+        except Exception:
+            exe = None
+        return {"pid": pid, "exe": exe or (cmd[0] if cmd else None), "cmdline": cmd}
+    except Exception:
+        return None
+
+
 def _find_router() -> dict | None:
-    """The router process on our port: {"pid", "exe", "cmdline"} (psutil), or None."""
+    """The router process on our port: {"pid", "exe", "cmdline"} (psutil), or None.
+    The process we found last, else the one listening on the port - a few ms. Reading every process's command line
+    took 3-8 s on a PC with ~450 processes, and the Labs page and every reply asked for it (2026-10-27)."""
     try:
         import psutil
     except ImportError:
         return None
-    for p in psutil.process_iter(["pid", "name", "exe", "cmdline"]):
-        try:
-            info = p.info
-            if not str(info.get("name") or "").lower().startswith("llama-server"):
-                continue
-            cmd = list(info.get("cmdline") or [])
-            if "--models-preset" not in cmd or _port_of(cmd) != llama_local.LLAMA_PORT:
-                continue
-            return {"pid": info["pid"], "exe": info.get("exe") or (cmd[0] if cmd else None), "cmdline": cmd}
-        except Exception:
-            continue
+    last = (_run_cache.get("run") or {}).get("pid")
+    if last:
+        found = _router_at(psutil, last)
+        if found:
+            return found
+    try:
+        for c in psutil.net_connections("tcp"):
+            if c.status == psutil.CONN_LISTEN and c.laddr and c.laddr.port == llama_local.LLAMA_PORT and c.pid:
+                found = _router_at(psutil, c.pid)
+                if found:
+                    return found
+    except Exception:
+        pass
+    for p in psutil.process_iter(["pid", "name"]):           # last resort: by name, command lines of those only
+        if str(p.info.get("name") or "").lower().startswith("llama-server"):
+            found = _router_at(psutil, p.info["pid"])
+            if found:
+                return found
     return None
 
 
+_find_lock = threading.Lock()
+
+
 def running(force: bool = False) -> dict:
-    """{"kind", "exe", "pid", "cmdline"} of the router now serving; kind None when unknown."""
-    now = time.time()
-    if not force and _run_cache["run"] is not None and now - _run_cache["at"] < _RUN_TTL:
+    """{"kind", "exe", "pid", "cmdline"} of the router now serving; kind None when unknown.
+    One lookup at a time: callers that arrive while one runs take its answer."""
+    if not force and _run_cache["run"] is not None and time.time() - _run_cache["at"] < _RUN_TTL:
         return dict(_run_cache["run"])
-    found = _find_router() or {}
-    exe = found.get("exe") or llama_local.server_executable()
-    run = {"kind": kind_of(exe), "exe": exe, "pid": found.get("pid"), "cmdline": found.get("cmdline") or []}
-    _run_cache.update(at=now, run=run)
-    return dict(run)
+    arrived = _run_cache.get("starts", 0)           # lookups started so far (one at a time, under _find_lock)
+    with _find_lock:
+        if _run_cache["run"] is not None and _run_cache.get("done_start", 0) > arrived:
+            return dict(_run_cache["run"])          # one that started after this call arrived finished meanwhile
+        start = _run_cache["starts"] = _run_cache.get("starts", 0) + 1
+        found = _find_router() or {}
+        exe = found.get("exe") or llama_local.server_executable()
+        run = {"kind": kind_of(exe), "exe": exe, "pid": found.get("pid"), "cmdline": found.get("cmdline") or []}
+        _run_cache.update(at=time.time(), run=run, done_start=start)
+        return dict(run)
 
 
 def forget():
@@ -135,6 +171,7 @@ def forget():
 
 
 # ---- switching ---------------------------------------------------------------------------------------
+@local_runtime.exclusive
 def ensure_for(model_name: str, back: bool = True, on_switch=None) -> str | None:
     """Make the router run on the build model_name needs. back=False only ever moves TO the build a model
     requires (PrismML for Ternary Bonsai), never back - for calls that aren't the user's own pick.
@@ -224,6 +261,7 @@ def _wait_ready(timeout: float) -> bool:
     return False
 
 
+@local_runtime.exclusive
 def switch(kind: str, run: dict | None = None) -> None:
     """Restart the router on `kind`'s build. Raises RuntimeError when it doesn't come up."""
     import events as event_log
@@ -300,6 +338,7 @@ def status() -> dict:
     return {"mode": mode(), "running": run["kind"], "running_exe": run["exe"], "builds": builds}
 
 
+@local_runtime.exclusive
 def apply(model_name: str = "") -> str | None:
     """Right after the setting changes: move the router now (under "auto" the model in use decides).
     Returns the build switched to, or None when it already runs the right one (or can't be told)."""
