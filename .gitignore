@@ -57,3 +57,6 @@ desktop/node_modules/
 desktop/dist/
 installer/stage/
 installer/output/
+installer/cache/
+# the installed app's Tor (installer\build.ps1 stages it; from source it runs from installer/cache)
+/tor/

@@ -100,6 +100,8 @@ app = FastAPI()
 approvals.broker.remote_turn = lambda: (shared.app_state.get("turn_origin") or "pc") != "pc"
 # The network layer reads its settings (Settings > Network) from the live settings.
 netlayer.configure(lambda: shared.app_state["settings"])
+# Through the built-in Tor each chat gets its own circuits (1.4.4).
+netlayer.set_isolation(lambda: (shared.app_state.get("active_chat") or {}).get("id") or "")
 finance.configure(lambda: shared.app_state["settings"])
 osint_collector.configure(lambda: shared.app_state["settings"])
 

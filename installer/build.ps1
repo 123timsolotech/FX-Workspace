@@ -61,6 +61,41 @@ $missing = Select-String -Path (Join-Path $Root 'index.html') -Pattern 'src="/([
     ForEach-Object { $_.Matches } | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique |
     Where-Object { -not (Test-Path (Join-Path $Stage "static\$_")) }
 if ($missing) { throw "The page loads scripts the installer wouldn't include: $($missing -join ', ')" }
+# Tor (1.4.4): the Tor Project's Expert Bundle for Windows, its signature checked against the Tor Browser
+# developers' pinned key (installer\verify_tor.py) before anything is staged - the build stops on a bad one. Cached in
+# installer\cache\tor\<version>\ (the app run from source uses the same copy). Shipped: tor.exe, the GeoIP data,
+# lyrebird (obfs4 and Snowflake bridges) and the bundle's licences - not the relay key tool or Conjure.
+$TorVersion = (Get-Content (Join-Path $Here 'tor.version') -Raw).Trim()
+$TorCache = Join-Path $Here "cache\tor\$TorVersion"
+$TorUrl = "https://dist.torproject.org/torbrowser/$TorVersion/tor-expert-bundle-windows-x86_64-$TorVersion.tar.gz"
+New-Item -ItemType Directory -Force $TorCache | Out-Null
+$tgz = Join-Path $TorCache 'bundle.tar.gz'
+if (-not (Test-Path "$TorCache\x\tor\tor.exe")) {
+    Invoke-WebRequest $TorUrl -OutFile $tgz -UseBasicParsing
+    Invoke-WebRequest "$TorUrl.asc" -OutFile "$tgz.asc" -UseBasicParsing
+    Invoke-WebRequest 'https://keys.openpgp.org/vks/v1/by-fingerprint/EF6E286DDA85EA2A4BA7DE684E2C6E8793298290' -OutFile "$TorCache\signing-key.asc" -UseBasicParsing
+    $Py = Find-Tool @((Join-Path $Root '.venv\Scripts\python.exe'))
+    if (-not $Py) { $Py = (Get-Command python).Source }
+    $PyLib = Join-Path $Here 'cache\pylib'
+    if (-not (Test-Path "$PyLib\pgpy")) { & $Py -m pip install --no-cache-dir --quiet --disable-pip-version-check --target $PyLib pgpy }
+    $env:PYTHONPATH = $PyLib
+    $sha = & $Py (Join-Path $Here 'verify_tor.py') $tgz "$tgz.asc" "$TorCache\signing-key.asc"
+    $env:PYTHONPATH = $null
+    if ($LASTEXITCODE) { Remove-Item $TorCache -Recurse -Force; throw "The Tor bundle's signature did not verify - nothing was staged." }
+    New-Item -ItemType Directory -Force "$TorCache\x" | Out-Null
+    tar -xzf $tgz -C "$TorCache\x"
+    if ($LASTEXITCODE) { throw 'Unpacking the Tor bundle failed.' }
+    Set-Content "$TorCache\sha256.txt" $sha
+}
+$torFiles = @('tor\tor.exe', 'tor\pluggable_transports\lyrebird.exe', 'tor\pluggable_transports\pt_config.json',
+              'data\geoip', 'data\geoip6', 'data\torrc-defaults') + (Get-ChildItem "$TorCache\x\docs" -Filter *.txt | ForEach-Object { "docs\$($_.Name)" })
+foreach ($f in $torFiles) {
+    $dst = Join-Path $Stage "tor\$f"
+    New-Item -ItemType Directory -Force (Split-Path -Parent $dst) | Out-Null
+    Copy-Item (Join-Path "$TorCache\x" $f) $dst
+}
+Set-Content (Join-Path $Stage 'tor\VERSION') $TorVersion
+Write-Host "   Tor $TorVersion (signature verified, sha256 $((Get-Content "$TorCache\sha256.txt").Substring(0, 12))...)"
 $notYet = $new | Where-Object { $_ -notmatch $skip }
 if ($notYet) { Write-Host "   not committed yet (included): $($notYet -join ', ')" -ForegroundColor Yellow }
 # The install's file list (Windows paths, relative to the app folder) - an update removes what drops out of it.

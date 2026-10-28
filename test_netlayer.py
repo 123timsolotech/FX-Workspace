@@ -124,6 +124,11 @@ class LayerTest(unittest.TestCase):
         netlayer.set_session_direct(False)
         self.addCleanup(netlayer._probe_cache.clear)
         self.addCleanup(netlayer.clear_blocked)
+        # These tests cover a Tor already running on this PC; the built-in one (1.4.4) has its own tests
+        # (test_tor_service) - none of them may start the real one.
+        no_builtin = patch.object(netlayer.tor_service, "available", return_value=False)
+        no_builtin.start()
+        self.addCleanup(no_builtin.stop)
 
     def guard(self):
         """Install the socket/DNS guard for this test only."""
@@ -145,6 +150,7 @@ class EveryClientGoesThroughTheLayerTests(unittest.TestCase):
         "llm_compat.py": "OpenAI() only in the _is_local branch - llama-server on this PC",
         "sys_tools.py": "port_check: gated by _not_through_route and the socket guard",
         "netlayer.py": "the layer itself",
+        "tor_service.py": "socket.create_connection only to the built-in Tor's control port on 127.0.0.1",
     }
 
     def test_no_stray_direct_clients(self):

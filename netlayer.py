@@ -62,6 +62,7 @@ from urllib.parse import urlparse
 import httpx
 
 import privacy
+import tor_service
 
 COMPONENTS = ("search", "models", "other")
 COMPONENT_LABELS = {"search": "Web search & page reads", "models": "Cloud models", "other": "Downloads, MCP & integrations"}
@@ -69,6 +70,7 @@ ROUTES = ("direct", "system", "proxy", "tor")
 ROUTE_LABELS = {"direct": "Direct", "system": "System proxy", "proxy": "Custom proxy", "tor": "Tor"}
 OVERRIDES = ("app", "direct", "proxy", "tor")
 TOR_PORTS = (9050, 9150)                  # Tor Expert Bundle, Tor Browser
+TOR_WAIT_S = 60                           # how long a request waits for the built-in Tor to connect
 LOG_MAX = 500
 LOG_SAVE_MAX = 5000                       # lines kept in data/netlog.jsonl
 LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "netlog.jsonl")
@@ -78,6 +80,9 @@ DEFAULT_SETTINGS = {
     "net_route": "direct",                # direct | system | proxy | tor
     "net_proxy": "",                      # socks5h://host:port or http://host:port
     "net_tor_port": 0,                    # 0: find 9050 / 9150
+    "net_tor_source": "builtin",          # builtin: the app's own Tor (tor_service, 1.4.4) | external: one on this PC
+    "net_tor_bridges": "off",             # off | obfs4 | snowflake (the built-in Tor only)
+    "net_tor_bridge_lines": "",           # obfs4 bridge lines the user pasted
     "net_components": {c: "app" for c in COMPONENTS},
     "net_require_vpn": False,
     "net_log_save": False,                # connection log on disk (never a temporary chat's)
@@ -143,6 +148,9 @@ def clean_settings(s: dict) -> dict:
         "net_route": s.get("net_route") if s.get("net_route") in ROUTES else "direct",
         "net_proxy": _proxy_url(s.get("net_proxy"))[:300],
         "net_tor_port": tor_port if 0 < tor_port < 65536 else 0,
+        "net_tor_source": s.get("net_tor_source") if s.get("net_tor_source") in ("builtin", "external") else "builtin",
+        "net_tor_bridges": s.get("net_tor_bridges") if s.get("net_tor_bridges") in tor_service.BRIDGE_MODES else "off",
+        "net_tor_bridge_lines": "\n".join(tor_service.clean_bridge_lines(s.get("net_tor_bridge_lines"))),
         "net_components": {c: comps.get(c) if comps.get(c) in OVERRIDES else "app" for c in COMPONENTS},
         "net_require_vpn": bool(s.get("net_require_vpn")) if isinstance(s.get("net_require_vpn"), bool) else False,
         "net_log_save": bool(s.get("net_log_save")) if isinstance(s.get("net_log_save"), bool) else False,
@@ -299,6 +307,31 @@ def _tor_proxy(port_setting: int) -> str:
     return f"socks5h://127.0.0.1:{ports[0]}"      # not running: the kill switch will say so
 
 
+_isolation_fn = lambda: ""                 # noqa: E731 - api/server sets it: the current chat's id
+
+
+def set_isolation(fn):
+    """fn() -> a key per chat; through the built-in Tor each key gets its own circuits (IsolateSOCKSAuth)."""
+    global _isolation_fn
+    _isolation_fn = fn
+
+
+def _builtin_tor(s: dict) -> bool:
+    return s["net_tor_source"] == "builtin" and tor_service.available()
+
+
+def uses_builtin_tor() -> bool:
+    """Does any component's route go through the app's own Tor? (tor_service stops it when none does.)"""
+    s = settings()
+    if not _builtin_tor(s) or _state["session_direct"]:
+        return False
+    return any((s["net_route"] if s["net_components"].get(c, "app") == "app" else s["net_components"][c]) == "tor"
+               for c in COMPONENTS)
+
+
+tor_service.set_wanted(uses_builtin_tor)
+
+
 def route_for(comp: str = "other") -> Route:
     """The route a component's traffic takes right now."""
     s = settings()
@@ -307,6 +340,14 @@ def route_for(comp: str = "other") -> Route:
     if kind != "direct" and (_state["session_direct"] or _DIRECT_OK.get()):
         why = "for this session" if _state["session_direct"] else "for this action"
         return Route("direct", "", f"Direct ({why}, by your choice)")
+    if kind == "tor" and _builtin_tor(s):
+        # The app's own Tor, started on first use. Each chat's requests carry their own SOCKS username, so they get
+        # their own circuits (and exit).
+        proxy = tor_service.ensure(s["net_tor_bridges"], s["net_tor_bridge_lines"])
+        if not proxy:
+            return Route("tor", "", "Tor (built in)", reason=tor_service.status().get("error") or "The built-in Tor couldn't start.")
+        key = re.sub(r"[^\w-]", "", str(_isolation_fn() or ""))[:40] or "app"
+        return Route("tor", proxy.replace("://", f"://fx-{key}:x@", 1), "Tor (built in)")
     if kind == "tor":
         proxy = _tor_proxy(s["net_tor_port"])
         return Route("tor", proxy, f"Tor ({proxy.split('://')[1]})")
@@ -361,6 +402,16 @@ def check(route: Route, comp: str, host: str = ""):
     if route.routed:
         if not route.proxy:
             _block(route.reason or "The route has no address.", "kill", comp, host)
+        if route.label == "Tor (built in)":
+            # While the app's own Tor connects (about 10 s, longer the first time), a request waits for it instead of
+            # failing - and never goes direct.
+            if not tor_service.wait_ready(TOR_WAIT_S):
+                st = tor_service.status()
+                why = (f"Tor couldn't connect: {st['error']}" if st["state"] == "failed" else
+                       f"Tor is still connecting ({st['progress']}%: {st['summary'] or 'starting'})")
+                _block(f"{why}, so the request was blocked instead of going direct (kill switch). Wait a moment and try "
+                       "again, use bridges if your network blocks Tor, or go direct for this action.", "kill", comp, host)
+            return
         ep = route.endpoint()
         if not probe(*ep):
             _block(f"{route.label} isn't reachable, so the request was blocked instead of going direct (kill switch). "
