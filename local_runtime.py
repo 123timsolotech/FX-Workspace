@@ -8,6 +8,9 @@ from functools import wraps
 import threading
 
 lock = threading.RLock()
+# The model being loaded while the reservation is held for it (the load ahead while you type): a reply queued
+# behind it says "Loading <model>" rather than a thinking phrase (1.4.4).
+loading = {"model": None, "since": 0.0}
 
 
 @contextmanager

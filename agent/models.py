@@ -542,7 +542,17 @@ def _ensure_build(model_name: str, back: bool = True):
     return switched
 
 
-@local_runtime.exclusive(stop=lambda: run_control.checkpoint())
+def _queued_wait():
+    """While a reply waits for the local model: Stop can end the wait, and when the wait is a model loading (the
+    load ahead while you type) the Thinking row says so - "Loading <model> into memory · 12s" - instead of a
+    thinking phrase (1.4.4)."""
+    run_control.checkpoint()
+    name, ev = local_runtime.loading["model"], shared.app_state.get("running_model_event")
+    if name and isinstance(ev, dict) and ev.get("status") == "running" and ev.get("phase") != "loading":
+        event_log.update_event(ev, phase="loading", loading=name, loading_since=local_runtime.loading["since"], model=name)
+
+
+@local_runtime.exclusive(stop=lambda: _queued_wait())
 def call_local(messages, requires_vision: bool, model_name: str = None):
     reported = llama_local.server_models(force=True)
     if reported is None:
@@ -817,6 +827,25 @@ def _unwrap_schema_reply(res, turn_tools: list):
     return res
 
 
+def _local_needs_vision(messages) -> bool:
+    """Whether this local call needs a vision model. An image from an earlier turn doesn't: a chat with Qwen chosen
+    and one old picture in it swapped to the vision model on every message, and the typing warm-up swapped back -
+    two reloads a message (1.4.4). Only an image in this turn escalates; when a vision model is already loaded,
+    the old images go along at no cost."""
+    if not has_images(messages):
+        return False
+    if history.images_this_turn(messages):
+        return True
+    return llama_local.is_vision_model(shared.app_state.get("local_engaged") or "")
+
+
+def _local_payload(messages) -> tuple[list, bool]:
+    """The messages for a local call and whether they need vision - earlier turns' images as a note when they don't."""
+    if has_images(messages) and not _local_needs_vision(messages):
+        return history.stub_earlier_images(messages), False
+    return messages, has_images(messages)
+
+
 def _fit_for_local() -> str | None:
     """Pick the local model that will run this call, then trim history to ITS
     real window. The order matters: budgeting against the currently loaded
@@ -824,7 +853,7 @@ def _fit_for_local() -> str | None:
     (a 250K text model -> a 32K vision model) sent requests the router
     rejected for exceeding its context. Returns the chosen model (or None)."""
     demote_old_images(config.IMAGES_KEPT_LOCAL)
-    needs_vision = has_images(shared.app_state["conversation"])
+    needs_vision = _local_needs_vision(shared.app_state["conversation"])
     try:
         planned = resolve_local_model(needs_vision)
     except Exception:
@@ -993,12 +1022,11 @@ def call_model():
 
     if mode == config.MODE_LOCAL:
         try:
-            return call_local(messages, requires_vision, model_name=planned)
+            return call_local(*_local_payload(messages), model_name=planned)
         except RuntimeError as e:
             if not _refit_after_overflow(e):
                 raise
-        messages = build_messages()
-        return call_local(messages, has_images(messages), model_name=planned)
+        return call_local(*_local_payload(build_messages()), model_name=planned)
     if mode == config.MODE_CLOUD:
         return call_cloud(messages, requires_vision)
     try:
@@ -1008,7 +1036,7 @@ def call_model():
         # The cloud budget is far larger than most local windows; re-fit first.
         planned = _fit_for_local()
         messages = build_messages(prompts.SYSTEM_PROMPT_COMPACT)
-        return call_local(messages, has_images(messages), model_name=planned)
+        return call_local(*_local_payload(messages), model_name=planned)
 
 
 # ==============================================================================

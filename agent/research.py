@@ -552,7 +552,9 @@ def depth_of(req) -> str:
 
 
 def wants_resume(text: str) -> bool:
-    return bool(re.fullmatch(r"\s*(resume|continue)( (the )?(last )?research)?[.!]?\s*", text or "", re.I))
+    # "retry" and "try again" too: a Research turn once took "retry" as the question to research (1.4.4).
+    return bool(re.fullmatch(r"\s*(please )?(resume|continue|retry|try again|again|redo( it)?|keep going|go on)"
+                             r"( (the|that) )?( ?(last|previous) )?( ?research)?( please)?[.!]?\s*", text or "", re.I))
 
 
 def _fail(r, message: str) -> dict:
@@ -580,6 +582,11 @@ def run(req) -> dict:
     tools = shared.app_state.get("turn_tools") or ()
     finance_mode = "invest" in tools or getattr(req, "command", None) == "invest"
     resumed = Research.load_unfinished(s, _browser_fallback(s)) if wants_resume(question) and not privacy.active() else None
+    if wants_resume(question) and not resumed:
+        shared.state_lock.release()
+        why = ("A temporary chat's research isn't kept, so there's nothing to pick up."
+               if privacy.active() else "There's no stopped or failed research from the last week to pick up.")
+        return {"status": "error", "message": f"{why} Say what to research and I'll start a new one."}
     r = resumed or Research(question, level, s, browser_fallback=_browser_fallback(s), bias="biascheck" in tools,
                             depth=depth_of(req), finance_mode=finance_mode)
     # Every page read gets a number, plus the finance backbone's figures and filings: room for all of them.

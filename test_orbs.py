@@ -77,7 +77,8 @@ class BlendTests(unittest.TestCase):
         r = run_js("""
           const form = orbForm, o = { act: 'think', from: null, t0: 0 };
           orbRetarget(o, 'tool', 1, 1000, form);
-          const mid = orbState(o, 1.2, 1200, form), end = orbState(o, 1.5, 1500, form), want = ORB_IDX.map(i => form('tool', 1.5, i));
+          const e = 1000 + ORB_BLEND + 50;
+          const mid = orbState(o, 1.2, 1200, form), end = orbState(o, e / 1000, e, form), want = ORB_IDX.map(i => form('tool', e / 1000, i));
           console.log(JSON.stringify({ blending: mid !== null, done: o.from === null, same: JSON.stringify(end) === JSON.stringify(want) }));""")
         self.assertEqual(r, {"blending": True, "done": True, "same": True})
 

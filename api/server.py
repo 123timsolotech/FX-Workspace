@@ -1456,6 +1456,7 @@ def warm_local_model(body: WarmRequest):
     def go():
         try:
             with local_runtime.reserve(wait=False):         # a turn that started meanwhile loads it itself
+                local_runtime.loading.update(model=model, since=time.time())
                 system_metrics.begin_model_load()
                 seconds = llama_local.force_load(model, timeout=180)
                 system_metrics.finish_model_load(model)
@@ -1466,6 +1467,7 @@ def warm_local_model(body: WarmRequest):
             model_monitor.record(model, label="Load the model", source="Loading ahead while you type", ok=False)
             event_log.log_action(f"Couldn't load {model} ahead of the message: {str(e)[:160]}")
         finally:
+            local_runtime.loading.update(model=None, since=0.0)
             _warming["model"] = None
     _warming["model"] = model
     threading.Thread(target=go, name="model-warm", daemon=True).start()

@@ -61,6 +61,29 @@ def has_images(messages) -> bool:
     return any(is_image_message(m) for m in messages)
 
 
+def images_this_turn(messages) -> bool:
+    """An image after the newest real user turn began: attached to this message, or a screenshot taken in this turn."""
+    starts = turn_start_indexes(messages)
+    first = starts[-1] if starts else 0
+    return any(is_image_message(m) for m in messages[first:])
+
+
+def stub_earlier_images(messages) -> list:
+    """A copy where images from earlier turns are a text note - for a text-only model, so an old image doesn't
+    swap the chat's model for a vision one on every later message (1.4.4)."""
+    starts = turn_start_indexes(messages)
+    first = starts[-1] if starts else 0
+    out = []
+    for i, m in enumerate(messages):
+        if i < first and is_image_message(m):
+            texts = [p.get("text", "") for p in m["content"] if isinstance(p, dict) and p.get("type") == "text"]
+            m = {**m, "content": (" ".join(texts) or "[image]")
+                 + " [image from earlier in this chat - not sent: this model can't read images. Attach it again to "
+                   "have a vision model look at it]"}
+        out.append(m)
+    return out
+
+
 def strip_images(messages):
     out = []
     for msg in messages:
