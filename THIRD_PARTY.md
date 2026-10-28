@@ -10,6 +10,7 @@ the publisher gives one. Each keeps its own license - read it before you use a m
 |---|---|---|
 | [Inter](https://github.com/rsms/inter) | the new interface's text (`static/fonts`) | SIL Open Font License 1.1 (`static/fonts/OFL-Inter.txt`) |
 | [Source Serif 4](https://github.com/adobe-fonts/source-serif) | replies and headings in the new interface (`static/fonts`) | SIL Open Font License 1.1 (`static/fonts/OFL-SourceSerif4.txt`) |
+| [Google Sans Flex](https://github.com/google/fonts/tree/main/ofl/googlesansflex) | the Gemini-inspired appearance's text (`static/fonts`, Latin subset, weight axis only) | SIL Open Font License 1.1 (`static/fonts/OFL-GoogleSansFlex.txt`) |
 
 ## Engines
 

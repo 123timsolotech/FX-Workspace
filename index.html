@@ -5221,6 +5221,201 @@ html.voice-on .idle-screen { display: none !important; }
 :root[data-ui="new"] .modal-content > h3, :root[data-ui="new"] #settings-body > h3 { font-family: var(--serif); font-weight: 400; font-size: 27px; letter-spacing: -0.01em; }
 :root[data-ui="new"] .modal-content { padding-inline: clamp(24px, 4vw, 56px); }
 :root[data-ui="new"] .set-group { border-radius: 14px; }
+
+/* ===========================================================================
+   The AI-inspired appearances, matched to the apps (1.4.3). Values measured on the apps' own public pages
+   (2026-10-28): page, sidebar and message-box colours, radii, borders and type. Their fonts are their own, so each
+   uses the open font closest to it, or the one the app itself falls back to: Grok -> Inter (its own fallback),
+   Gemini -> Google Sans Flex (SIL OFL, static/fonts), ChatGPT -> the system UI font (what it uses on Windows),
+   Claude -> its serif fallback Georgia over Source Serif 4, and the system sans. No logos, names or assets of theirs.
+   After every other rule, and [data-ui] in each selector, so neither the new interface nor older skin rules win.
+   =========================================================================== */
+
+/* ---- Grok: warm near-black (#131211) or warm paper (#F9F8F7); a 24 px rounded-rectangle box in two rows; Inter;
+   tight, semi-bold headings; X's blue on the send button; hairline borders everywhere. ---- */
+:root[data-ui][data-skin="void"] {
+  --bg: #131211; --bg-sidebar: #131211; --surface: #201f1d; --surface-2: #1b1a18; --surface-3: #2a2927;
+  --hover: rgba(252, 252, 252, .06); --border: #252422; --border-strong: #34332f;
+  --text: #fcfcfc; --text-2: #d6d5d2; --muted: #9a9996; --faint: #7c7b78;
+  --accent: #fcfcfc; --accent-ink: #131211; --accent-soft: rgba(252, 252, 252, .08); --accent-text: #fcfcfc;
+  --grok-blue: #1d9bf0; --user-bubble: #201f1d; --code-bg: #1a1917;
+  --sans: "Inter", ui-sans-serif, system-ui, "Segoe UI", sans-serif; --serif: var(--sans); --reply-font: var(--sans); --reply-size: 15.5px;
+  --radius: 16px;
+}
+:root[data-ui][data-skin="void"][data-tone="light"] {
+  --bg: #f9f8f7; --bg-sidebar: #f9f8f7; --surface: #ffffff; --surface-2: #f2f1ef; --surface-3: #e9e8e5;
+  --hover: rgba(15, 13, 10, .05); --border: #e6e5e3; --border-strong: #d4d3cf;
+  --text: #050505; --text-2: #2c2b29; --muted: #66655f; --faint: #7a7974;
+  --accent: #050505; --accent-ink: #ffffff; --accent-soft: rgba(15, 13, 10, .06); --accent-text: #050505;
+  --user-bubble: #ffffff; --code-bg: #f2f1ef;
+}
+:root[data-ui][data-skin="void"] body { font-feature-settings: normal; }
+:root[data-ui][data-skin="void"] .greeting { font-family: var(--sans); font-size: 24px; font-weight: 550; letter-spacing: -0.02em; }
+:root[data-ui][data-skin="void"] .composer { border-radius: 24px; border: 1px solid var(--border); background: var(--surface); box-shadow: none; padding: 14px 10px 10px 18px; }
+:root[data-ui][data-skin="void"] .composer:focus-within { border-color: var(--border-strong); box-shadow: none; }
+:root[data-ui][data-skin="void"] #prompt { font-size: 16px; }
+:root[data-ui][data-skin="void"] .composer-row .tool-btn { border: 0; border-radius: 999px; height: 36px; min-width: 36px; color: var(--text-2); }
+:root[data-ui][data-skin="void"] .composer-row .tool-btn:hover, :root[data-ui][data-skin="void"] .engine-btn:hover { background: var(--hover); }
+:root[data-ui][data-skin="void"] .engine-btn { border-radius: 999px; height: 36px; color: var(--muted); font-weight: 500; }
+:root[data-ui][data-skin="void"] .send-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--grok-blue); color: #fff; }
+:root[data-ui][data-skin="void"] .send-btn:disabled { background: color-mix(in srgb, var(--grok-blue) 40%, var(--surface)); color: color-mix(in srgb, #fff 70%, var(--surface)); opacity: 1; }
+:root[data-ui][data-skin="void"] .msg-user { border-radius: 20px 20px 6px 20px; border: 1px solid var(--border); background: var(--user-bubble); }
+:root[data-ui][data-skin="void"] .sidebar { border-right: 1px solid var(--border); }
+:root[data-ui][data-skin="void"] .sb-item { border-radius: 999px; font-size: 14px; }
+:root[data-ui][data-skin="void"] :is(.sb-places, .sb-labs) .sb-item.on { background: var(--surface-3); }
+:root[data-ui][data-skin="void"] .sb-search input, :root[data-ui][data-skin="void"] #sb-q { border-radius: 999px; }
+:root[data-ui][data-skin="void"] .chip { border-radius: 999px; background: transparent; border: 1px solid var(--border); color: var(--text-2); }
+:root[data-ui][data-skin="void"] .popover { border-radius: 16px; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 12px 32px rgba(0, 0, 0, .35); padding: 6px; }
+:root[data-ui][data-skin="void"][data-tone="light"] .popover { box-shadow: 0 12px 32px rgba(15, 13, 10, .12); }
+:root[data-ui][data-skin="void"] .pop-item { border-radius: 10px; }
+:root[data-ui][data-skin="void"] :is(.btn.primary) { border-radius: 999px; background: var(--text); color: var(--bg); border-color: var(--text); }
+:root[data-ui][data-skin="void"] .btn { border-radius: 999px; }
+:root[data-ui][data-skin="void"] #settings .modal { border-radius: 20px; }
+:root[data-ui][data-skin="void"] :is(.modal-nav h2, #settings-body > h3) { font-family: var(--sans); font-weight: 550; letter-spacing: -0.02em; }
+
+/* ---- ChatGPT: white or graphite (#212121) with a darker sidebar (#181818 / #F9F9F9); the system font; one pill line
+   (+ | message | voice | send) that opens to two rows when the message does; a black or white round send button and
+   the blue voice button; plain sidebar rows; 16 px rounded menus. ---- */
+:root[data-ui][data-skin="mono"] {
+  --bg: #212121; --bg-sidebar: #181818; --surface: #303030; --surface-2: #2a2a2a; --surface-3: #3a3a3a;
+  --hover: rgba(255, 255, 255, .06); --border: #3a3a3a; --border-strong: #4a4a4a;
+  --text: #ffffff; --text-2: #e3e3e3; --muted: #afafaf; --faint: #8f8f8f;
+  --accent: #ffffff; --accent-ink: #0d0d0d; --accent-soft: rgba(255, 255, 255, .08); --accent-text: #ffffff;
+  --gpt-voice: #3566f0; --user-bubble: #303030; --code-bg: #171717;
+  --sans: ui-sans-serif, -apple-system, system-ui, "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif; --serif: var(--sans); --reply-font: var(--sans); --reply-size: 16px;
+}
+:root[data-ui][data-skin="mono"][data-tone="light"] {
+  --bg: #ffffff; --bg-sidebar: #f9f9f9; --surface: #ffffff; --surface-2: #f4f4f4; --surface-3: #ececec;
+  --hover: rgba(0, 0, 0, .05); --border: #e5e5e5; --border-strong: #d9d9d9;
+  --text: #0d0d0d; --text-2: #363636; --muted: #5d5d5d; --faint: #6e6e6e;
+  --accent: #0d0d0d; --accent-ink: #ffffff; --accent-soft: rgba(0, 0, 0, .06); --accent-text: #0d0d0d;
+  --user-bubble: #f4f4f4; --code-bg: #f9f9f9;
+}
+:root[data-ui][data-skin="mono"] body { font-feature-settings: normal; }
+:root[data-ui][data-skin="mono"] .greeting { font-family: var(--sans); font-size: 28px; font-weight: 400; letter-spacing: -0.01em; }
+/* One line: the + first, the message, then the rest; .multiline (autoGrow) puts the message on a row of its own. */
+:root[data-ui][data-skin="mono"] .composer { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; border-radius: 28px; padding: 8px 10px; border: 1px solid rgba(0, 0, 0, .1);
+  background: var(--surface); box-shadow: 0 0 0 1px rgba(0, 0, 0, .04), 0 2px 8px rgba(0, 0, 0, .04); }
+:root[data-ui][data-skin="mono"]:not([data-tone="light"]) .composer { border-color: rgba(255, 255, 255, .1); box-shadow: inset 0 0 1px rgba(255, 255, 255, .2); }
+:root[data-ui][data-skin="mono"] .composer-row { display: contents; }
+:root[data-ui][data-skin="mono"] .composer-chips { flex-basis: 100%; order: -2; }
+:root[data-ui][data-skin="mono"] #add-btn { order: -1; }
+:root[data-ui][data-skin="mono"] #prompt { flex: 1 1 200px; min-width: 0; order: 0; font-size: 16px; padding: 6px 4px; }
+:root[data-ui][data-skin="mono"] .composer-row > :not(#add-btn) { order: 1; }
+:root[data-ui][data-skin="mono"] .composer-row .grow-space { display: none; }
+:root[data-ui][data-skin="mono"] .composer.multiline #prompt { flex-basis: 100%; order: -1; padding: 6px 8px 2px; }
+:root[data-ui][data-skin="mono"] .composer.multiline #add-btn { order: 0; }
+:root[data-ui][data-skin="mono"] .composer.multiline #tools-btn { margin-right: auto; }   /* + and tools left, the rest right */
+:root[data-ui][data-skin="mono"] .composer-row .tool-btn { border: 0; border-radius: 999px; height: 36px; min-width: 36px; color: var(--text); }
+:root[data-ui][data-skin="mono"] #tools-btn > span:not(.tools-count) { display: none; }
+:root[data-ui][data-skin="mono"] .composer-row .tool-btn:hover, :root[data-ui][data-skin="mono"] .engine-btn:hover { background: var(--hover); }
+:root[data-ui][data-skin="mono"] .engine-btn { border-radius: 999px; height: 36px; color: var(--muted); }
+:root[data-ui][data-skin="mono"] .send-btn { width: 36px; height: 36px; border-radius: 50%; background: var(--text); color: var(--bg); }
+:root[data-ui][data-skin="mono"] .send-btn:disabled { background: var(--gpt-voice); color: #fff; opacity: 1; }
+:root[data-ui][data-skin="mono"] .msg-user { border-radius: 18px; background: var(--user-bubble); border: 0; padding: 10px 16px; }
+:root[data-ui][data-skin="mono"] .sidebar { border-right: 0; }
+:root[data-ui][data-skin="mono"] .sb-item { border-radius: 10px; font-size: 14px; }
+:root[data-ui][data-skin="mono"] :is(.sb-places, .sb-labs) .sb-item.on { background: var(--surface-3); }
+:root[data-ui][data-skin="mono"]:not([data-tone="light"]) :is(.sb-places, .sb-labs) .sb-item.on { background: #242424; }
+:root[data-ui][data-skin="mono"] .chip { border-radius: 999px; background: transparent; border: 1px solid var(--border); color: var(--text); font-weight: 500; }
+:root[data-ui][data-skin="mono"] .popover { border-radius: 16px; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 8px 24px rgba(0, 0, 0, .16); padding: 6px; }
+:root[data-ui][data-skin="mono"]:not([data-tone="light"]) .popover { background: #353535; border-color: #404040; box-shadow: 0 8px 24px rgba(0, 0, 0, .5); }
+:root[data-ui][data-skin="mono"] .pop-item { border-radius: 10px; }
+:root[data-ui][data-skin="mono"] .btn { border-radius: 999px; }
+:root[data-ui][data-skin="mono"] .btn.primary { background: var(--text); color: var(--bg); border-color: var(--text); }
+:root[data-ui][data-skin="mono"] #settings .modal { border-radius: 16px; }
+:root[data-ui][data-skin="mono"] :is(.modal-nav h2, #settings-body > h3) { font-family: var(--sans); font-weight: 600; letter-spacing: -0.01em; }
+
+/* ---- Gemini: near-black (#0E0F12) or white with a side panel (#1F1F1F / white); Google Sans Flex, the greeting large
+   and light (weight 320); one rounded line (+ | message | model | mic) on #1E1F20; a soft blue glow behind it on
+   Home; pill-shaped rows and buttons, blue for the main action. ---- */
+:root[data-ui][data-skin="prism"] {
+  --bg: #0e0f12; --bg-sidebar: #1f1f1f; --surface: #1e1f20; --surface-2: #282a2c; --surface-3: #333537;
+  --hover: rgba(227, 227, 227, .08); --border: #2e3033; --border-strong: #444746;
+  --text: #e3e3e3; --text-2: #c4c7c5; --muted: #a8abae; --faint: #8e918f;
+  --accent: #a8c7fa; --accent-ink: #062e6f; --accent-soft: rgba(168, 199, 250, .14); --accent-text: #a8c7fa;
+  --gem-action: #1f3b9b; --gem-action-ink: #dce2fe; --gem-glow: #18275b; --user-bubble: #333537; --code-bg: #1b1c1d;
+  --sans: "Google Sans Flex", "Google Sans", ui-sans-serif, system-ui, "Segoe UI", sans-serif; --serif: var(--sans); --reply-font: var(--sans); --reply-size: 16px;
+}
+:root[data-ui][data-skin="prism"][data-tone="light"] {
+  --bg: #f8f9fa; --bg-sidebar: #ffffff; --surface: #ffffff; --surface-2: #f0f4f9; --surface-3: #e1e5ea;
+  --hover: rgba(31, 31, 31, .06); --border: #e1e3e1; --border-strong: #c4c7c5;
+  --text: #1f1f1f; --text-2: #444746; --muted: #5e6368; --faint: #6f7377;
+  --accent: #0b57d0; --accent-ink: #ffffff; --accent-soft: rgba(11, 87, 208, .1); --accent-text: #0b57d0;
+  --gem-action: #0b57d0; --gem-action-ink: #ffffff; --gem-glow: #c7e3fc; --user-bubble: #e9eef6; --code-bg: #f0f4f9;
+}
+:root[data-ui][data-skin="prism"] body { font-feature-settings: normal; }
+:root[data-ui][data-skin="prism"] .greeting { font-family: var(--sans); font-size: clamp(30px, 3.2vw, 36px); font-weight: 320; letter-spacing: 0; }
+:root[data-ui][data-skin="prism"] #greeting-text { background: none; -webkit-background-clip: border-box; background-clip: border-box; color: var(--text); }
+:root[data-ui][data-skin="prism"] .welcome { background: radial-gradient(ellipse 62% 58% at 50% 58%, var(--gem-glow) 0%, color-mix(in srgb, var(--gem-glow) 55%, transparent) 38%, transparent 74%); }
+:root[data-ui][data-skin="prism"] .composer { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; border-radius: 32px; padding: 10px 12px 10px 14px; border: 0;
+  background: var(--surface); box-shadow: none; }
+:root[data-ui][data-skin="prism"][data-tone="light"] .composer { box-shadow: 0 1px 3px rgba(60, 64, 67, .12), 0 4px 18px rgba(60, 64, 67, .06); }
+:root[data-ui][data-skin="prism"] .composer-row { display: contents; }
+:root[data-ui][data-skin="prism"] .composer-chips { flex-basis: 100%; order: -2; }
+:root[data-ui][data-skin="prism"] #add-btn { order: -1; }
+:root[data-ui][data-skin="prism"] #prompt { flex: 1 1 200px; min-width: 0; order: 0; font-size: 17px; padding: 8px 4px; }
+:root[data-ui][data-skin="prism"] .composer-row > :not(#add-btn) { order: 1; }
+:root[data-ui][data-skin="prism"] .composer-row .grow-space { display: none; }
+:root[data-ui][data-skin="prism"] .composer.multiline #prompt { flex-basis: 100%; order: -1; padding: 6px 8px 2px; }
+:root[data-ui][data-skin="prism"] .composer.multiline #add-btn { order: 0; }
+:root[data-ui][data-skin="prism"] .composer.multiline #tools-btn { margin-right: auto; }   /* + and tools left, the rest right */
+:root[data-ui][data-skin="prism"] .composer-row .tool-btn { border: 0; border-radius: 999px; height: 40px; min-width: 40px; color: var(--text); }
+:root[data-ui][data-skin="prism"] #tools-btn > span:not(.tools-count) { display: none; }
+:root[data-ui][data-skin="prism"] .composer-row .tool-btn:hover, :root[data-ui][data-skin="prism"] .engine-btn:hover { background: var(--hover); }
+:root[data-ui][data-skin="prism"] .engine-btn { border-radius: 999px; height: 40px; color: var(--text); font-weight: 500; }
+:root[data-ui][data-skin="prism"] .send-btn { width: 40px; height: 40px; border-radius: 50%; background: transparent; color: var(--text); }
+:root[data-ui][data-skin="prism"] .send-btn:not(:disabled) { background: var(--gem-action); color: var(--gem-action-ink); }
+:root[data-ui][data-skin="prism"] .send-btn:disabled { opacity: .45; }
+:root[data-ui][data-skin="prism"] .msg-user { border-radius: 24px 6px 24px 24px; background: var(--user-bubble); border: 0; padding: 12px 18px; }
+:root[data-ui][data-skin="prism"] .sidebar { background: var(--bg-sidebar); border-right: 0; }
+:root[data-ui][data-skin="prism"] .sb-item { border-radius: 999px; font-size: 14px; }
+:root[data-ui][data-skin="prism"] :is(.sb-places, .sb-labs) .sb-item.on { background: color-mix(in srgb, var(--accent) 20%, transparent); color: var(--text); }
+:root[data-ui][data-skin="prism"][data-tone="light"] :is(.sb-places, .sb-labs) .sb-item.on { background: #d3e3fd; color: #041e49; }
+:root[data-ui][data-skin="prism"] .chip { border-radius: 12px; background: var(--surface-2); border: 0; color: var(--text); }
+:root[data-ui][data-skin="prism"] .popover { border-radius: 16px; border: 0; background: var(--surface-2); box-shadow: 0 4px 8px 3px rgba(0, 0, 0, .15), 0 1px 3px rgba(0, 0, 0, .3); padding: 8px 0; }
+:root[data-ui][data-skin="prism"][data-tone="light"] .popover { background: #ffffff; }
+:root[data-ui][data-skin="prism"] .pop-item { border-radius: 0; padding-inline: 16px; }
+:root[data-ui][data-skin="prism"] .btn { border-radius: 999px; }
+:root[data-ui][data-skin="prism"] .btn.primary { background: var(--gem-action); color: var(--gem-action-ink); border-color: var(--gem-action); }
+:root[data-ui][data-skin="prism"] #settings .modal { border-radius: 28px; }
+:root[data-ui][data-skin="prism"] :is(.modal-nav h2, #settings-body > h3) { font-family: var(--sans); font-weight: 400; letter-spacing: 0; }
+
+/* Grok, ChatGPT and Gemini: a bare + and a plain-text model button - no circle behind the one, no border round the
+   other; both light up only on hover. */
+:root[data-ui]:is([data-skin="void"], [data-skin="mono"], [data-skin="prism"]) .add-btn { background: transparent; border-color: transparent; width: 36px; min-width: 36px; }
+:root[data-ui]:is([data-skin="void"], [data-skin="mono"], [data-skin="prism"]) .add-btn:is(:hover, [aria-expanded="true"]) { background: var(--hover); border-color: transparent; }
+:root[data-ui]:is([data-skin="void"], [data-skin="mono"], [data-skin="prism"]) .setup-btn { border-color: transparent; }
+:root[data-ui]:is([data-skin="void"], [data-skin="mono"], [data-skin="prism"]) .setup-btn[aria-expanded="true"] { border-color: transparent; background: var(--hover); }
+/* Claude: the + and the tools are small bordered squares, the model button plain. */
+:root[data-ui][data-skin="clay"] .add-btn { border-radius: 8px; background: transparent; border: 1px solid var(--border); }
+:root[data-ui][data-skin="clay"] .setup-btn { border-color: transparent; }
+
+/* ---- Claude: warm paper (#FAF9F5) or warm charcoal (#262624); Claude's serif for replies and the greeting (its own
+   fallback, Georgia, with Source Serif 4), the system sans for the rest; a two-row box, 20 px corners, a soft shadow;
+   bordered square-ish + and tools buttons; the clay send button; quiet grey selection in the sidebar. ---- */
+:root[data-ui][data-skin="clay"] {
+  --serif: Georgia, "Source Serif 4", ui-serif, serif; --sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --reply-font: var(--serif); --reply-size: 16.5px;
+}
+:root[data-ui][data-skin="clay"] body { font-feature-settings: normal; }
+:root[data-ui][data-skin="clay"] .greeting { font-family: var(--serif); font-size: clamp(32px, 3.6vw, 40px); font-weight: 400; letter-spacing: -0.01em; }
+:root[data-ui][data-skin="clay"] .composer { border-radius: 20px; border: 1px solid color-mix(in srgb, var(--border-strong) 70%, transparent); background: var(--surface);
+  box-shadow: 0 .25rem 1.25rem rgba(0, 0, 0, .035), 0 0 0 .5px rgba(0, 0, 0, .04); padding: 14px 12px 10px 16px; }
+:root[data-ui][data-skin="clay"]:not([data-tone="light"]) .composer { background: #30302e; border-color: rgba(222, 220, 209, .15); box-shadow: 0 .25rem 1.25rem rgba(0, 0, 0, .25); }
+:root[data-ui][data-skin="clay"] .composer-row .tool-btn { border: 1px solid var(--border); border-radius: 8px; height: 32px; min-width: 32px; color: var(--text-2); }
+:root[data-ui][data-skin="clay"] .engine-btn { border-radius: 8px; color: var(--text-2); }
+:root[data-ui][data-skin="clay"] .send-btn { width: 32px; height: 32px; border-radius: 8px; background: var(--accent); color: #fff; }
+:root[data-ui][data-skin="clay"] .send-btn:disabled { opacity: .5; }
+:root[data-ui][data-skin="clay"] .msg-user { border-radius: 12px; background: var(--user-bubble); border: 0; font-family: var(--sans); }
+:root[data-ui][data-skin="clay"] .sb-item { border-radius: 8px; font-size: 14px; }
+:root[data-ui][data-skin="clay"] :is(.sb-places, .sb-labs) .sb-item.on { background: var(--surface-3); }
+:root[data-ui][data-skin="clay"] .chip { border-radius: 8px; background: transparent; border: 1px solid var(--border); color: var(--text-2); }
+:root[data-ui][data-skin="clay"] .popover { border-radius: 12px; border: 1px solid var(--border); background: var(--surface); box-shadow: 0 4px 20px rgba(0, 0, 0, .08); }
+:root[data-ui][data-skin="clay"]:not([data-tone="light"]) .popover { background: #30302e; box-shadow: 0 4px 20px rgba(0, 0, 0, .35); }
+:root[data-ui][data-skin="clay"] .pop-item { border-radius: 8px; }
+:root[data-ui][data-skin="clay"] .btn { border-radius: 8px; }
+:root[data-ui][data-skin="clay"] #settings .modal { border-radius: 16px; }
 </style>
 <link rel="stylesheet" href="/fonts/fonts.css">
 </head>
@@ -6234,8 +6429,8 @@ function fitTextColors() {
 const SKIN_VOICE = {
   clay: { greet: (part, name) => name ? `${part}, ${name}` : part, ask: 'How can I help you today?' },
   mono: { greet: () => ['What’s on your mind today?', 'Where should we begin?', 'What can I help with?'][new Date().getDate() % 3], ask: 'Ask anything' },
-  void: { greet: () => 'What do you want to know?', ask: 'What do you want to know?' },
-  prism: { greet: (part, name) => name ? `Hello, ${name}` : 'Hello there', ask: 'Ask anything', done: () => 'Show thinking' },
+  void: { greet: () => 'What should we explore?', ask: 'What do you want to know?' },
+  prism: { greet: (part, name) => name ? `Hi ${name}. Where should we start?` : 'Where should we start?', ask: 'Ask anything', done: () => 'Show thinking' },
 };
 function skinVoice() { return SKIN_VOICE[document.documentElement.dataset.skin] || null; }
 function askText() { const v = skinVoice(); return (v && v.ask) || 'How can I help you today?'; }
@@ -9117,7 +9312,16 @@ function pickSlash(cmd) {
   if (c && !c.server && !c.args) { promptEl.value = ''; autoGrow(); updateSend(); c.run(''); return; }   // nothing to type after it
   promptEl.value = `/${cmd} `; promptEl.focus(); autoGrow(); updateSend();
 }
-function autoGrow() { promptEl.style.height = 'auto'; promptEl.style.height = Math.min(promptEl.scrollHeight, 220) + 'px'; }
+function autoGrow() {
+  promptEl.style.height = 'auto'; promptEl.style.height = Math.min(promptEl.scrollHeight, 220) + 'px';
+  // The one-line message boxes (ChatGPT, Gemini) open to two rows once the message wraps or has a line break.
+  // It closes again only once the message fits on one line of the wider row, or it would flip back and forth.
+  const box = $('composer'), lh = parseFloat(getComputedStyle(promptEl).lineHeight) || 22;
+  if (!box) return;
+  const open = box.classList.contains('multiline');
+  const multi = promptEl.value.includes('\n') || promptEl.scrollHeight > (open ? lh * 1.5 : lh * 1.8) + 16;
+  if (open !== multi) { box.classList.toggle('multiline', multi); promptEl.style.height = 'auto'; promptEl.style.height = Math.min(promptEl.scrollHeight, 220) + 'px'; }
+}
 function updateSend() { renderRunControls(); }
 
 /* ---- Run controls --------------------------------------------------------

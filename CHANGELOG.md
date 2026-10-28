@@ -9,7 +9,8 @@ Parts marked **Beta** work, but are still being finished.
 [Full notes](docs/releases/1.4.3.md)
 
 - **Orbs, a new thinking mark:** three orbs that fly into a new pattern for each kind of work - thinking, reading, searching, a tool, writing, drawing, waiting - dressed for each appearance. Legacy keeps the old marks.
-- **Every appearance checked**, screen by screen in light and dark: contrast, focus rings and cut-off text fixed everywhere. The Claude, ChatGPT, Grok and Gemini looks are out of Beta.
+- **Every appearance checked**, screen by screen in light and dark: contrast, focus rings and cut-off text fixed everywhere.
+- **Claude, ChatGPT, Grok and Gemini looks rebuilt to match the apps** - colours, message box shapes, fonts and menus measured on their own pages - and out of Beta.
 - **A welcome for new installs:** a chat model that suits this PC in one click, a look, and what stays on this PC.
 - **What's new** shows once after an update.
 - **Settings search goes to the setting itself;** Connections (connectors, MCP servers, channels) and Web search and network are one page each.

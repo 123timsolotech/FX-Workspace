@@ -114,6 +114,28 @@ class SettingsTests(unittest.TestCase):
         self.assertNotIn('AI-inspired <span class="beta-tag">Beta</span>', HTML)
 
 
+class AiLooksTests(unittest.TestCase):
+    """The Claude, ChatGPT, Grok and Gemini appearances follow values measured on the apps' own pages (1.4.3)."""
+
+    def test_each_has_its_own_type(self):
+        self.assertIn('--sans: "Inter", ui-sans-serif', HTML)                              # Grok: its own fallback
+        self.assertIn('--sans: ui-sans-serif, -apple-system, system-ui, "Segoe UI"', HTML)    # ChatGPT: the system font
+        self.assertIn('--sans: "Google Sans Flex", "Google Sans"', HTML)                       # Gemini
+        self.assertIn('--serif: Georgia, "Source Serif 4"', HTML)                               # Claude's serif fallback
+        css = (ROOT / "static" / "fonts" / "fonts.css").read_text(encoding="utf-8")
+        self.assertIn("font-family: 'Google Sans Flex';", css)
+        for f in ("googlesansflex-normal-latin.woff2", "googlesansflex-normal-latin-ext.woff2", "OFL-GoogleSansFlex.txt"):
+            self.assertTrue((ROOT / "static" / "fonts" / f).is_file(), f)
+        self.assertIn("Google Sans Flex", (ROOT / "THIRD_PARTY.md").read_text(encoding="utf-8"))
+
+    def test_measured_shapes_and_colours(self):
+        self.assertIn('--bg: #131211;', HTML)                                                  # Grok's warm near-black
+        self.assertIn(':root[data-ui][data-skin="void"] .composer { border-radius: 24px;', HTML)   # not a pill
+        self.assertIn(':root[data-ui][data-skin="mono"] .composer { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; border-radius: 28px;', HTML)
+        self.assertIn('--bg: #0e0f12; --bg-sidebar: #1f1f1f;', HTML)                           # Gemini
+        self.assertIn("box.classList.toggle('multiline', multi)", HTML)                      # one line opens to two rows
+
+
 class NcmWorkerTests(unittest.TestCase):
     def test_the_first_level_comes_from_the_checkpoint_when_the_model_cant_write_it(self):
         # Found in 1.4.3's live check: HazyResearch's current TinyStories config has neither predict_level0 nor
