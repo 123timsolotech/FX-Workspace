@@ -39,7 +39,9 @@ import tools.schemas as schemas
 def _stopped_response(reason: str = None) -> dict:
     """Leave the conversation consistent after a stop: every tool call the
     model asked for gets a result, so the next request isn't rejected by the
-    model API for a dangling tool call."""
+    model API for a dangling tool call. What the reply had written when it was stopped stays: in the chat
+    ("partial") and in the conversation, so the model knows what the user already read (1.4.2)."""
+    partial = model_output.split_reasoning(stream_hub.hub.take_stopped())[0].strip()
     conv = shared.app_state["conversation"]
     for i in range(len(conv) - 1, -1, -1):
         m = conv[i]
@@ -53,7 +55,8 @@ def _stopped_response(reason: str = None) -> dict:
             break
         if m.get("role") == "user":
             break
-    conv.append({"role": "assistant", "content": "(The user stopped this task. Nothing further was run.)"})
+    conv.append({"role": "assistant", "content": f"{partial}\n\n(The user stopped this reply here. Nothing further was run.)"
+                 if partial else "(The user stopped this task. Nothing further was run.)"})
     active = shared.task_board.active_step()
     if active:
         shared.task_board.update(active["n"], "failed", "Stopped by you")
@@ -66,6 +69,7 @@ def _stopped_response(reason: str = None) -> dict:
             "message": ("Stopped: this task reached the time limit for its effort level. Nothing else will run - "
                         "raise the effort in Settings > Agent for longer tasks." if timed_out else
                         "Stopped. Nothing else will run for this request."),
+            **({"partial": partial} if partial else {}),
             "plan": shared.task_board.as_dict()}
 
 

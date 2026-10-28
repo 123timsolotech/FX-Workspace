@@ -17,6 +17,9 @@ Parts marked **Beta** work, but are still being finished.
 - **Sandboxed chats** and Windows Sandbox runs for risky tasks.
 - **Labs:** an MoE cache speed test and the NCM story writer (Beta).
 - **Safer:** prompt-injection defences, fair answers on politics, and a Relaxed limits switch for uncensored models.
+- **Update now** in Settings › About, checksum-checked. Updates remove old packages and the old engine build, and pip keeps no cache.
+- **Setup runs inside the wizard,** with no console window, and `run.bat` opens the app instead of Edge.
+- **Stop keeps the half-written reply** instead of erasing it.
 
 ## 1.4.1 - 2026-10-27
 

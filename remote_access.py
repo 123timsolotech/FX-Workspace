@@ -37,9 +37,11 @@ MIN_PASSWORD = 8
 TAILSCALE_NET = ipaddress.ip_network("100.64.0.0/10")
 # Reachable without signing in: the sign-in page itself and what an installed home-screen app needs.
 OPEN_PATHS = ("/remote/login", "/remote/manifest.webmanifest", "/remote/icon.svg")
-# Never from a phone: settings, keys, permissions, network and this feature's own controls.
+# Never from a phone: settings, keys, permissions, network, this feature's own controls, installing an update and
+# quitting the desktop app.
 PHONE_BLOCKED = (("POST", "/api/settings"), ("POST", "/api/keys"), ("*", "/api/remote"), ("POST", "/api/permissions"),
-                 ("POST", "/api/network"), ("POST", "/api/channels"), ("POST", "/api/mcp"), ("POST", "/api/connectors"))
+                 ("POST", "/api/network"), ("POST", "/api/channels"), ("POST", "/api/mcp"), ("POST", "/api/connectors"),
+                 ("POST", "/api/version/install"), ("POST", "/api/shell"))
 
 _lock = threading.RLock()
 _fails: dict = {}                     # ip -> [failure times]

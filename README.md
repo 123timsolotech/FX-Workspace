@@ -16,6 +16,7 @@ Everything runs on this PC by default. Nothing is sent anywhere unless you use a
 - Use it from your phone, or from Discord, Slack (Beta) and a webhook.
 - A Soul file and memory that updates instead of piling up.
 - Sandboxed chats for risky tasks.
+- Update now from inside the app, with old files cleaned up.
 
 See the [changelog](CHANGELOG.md) for every version, or the [full 1.4.2 notes](docs/releases/1.4.2.md).
 

@@ -10,9 +10,15 @@
 ; UPDATING: run a newer installer over an installed copy. It finds it (same AppId), asks nothing it already knows
 ; (folder, models folder, components, shortcuts), closes the app, replaces the app's own files, removes the ones
 ; the new version no longer has (.fx-manifest: the list of files the last install put there - nothing else is ever
-; deleted), and runs install.ps1 again, which brings the Python packages up to date and keeps what is there.
-; Kept as they are: data\ (chats, pictures, videos, music, memory), settings.json, keys.local.bat, models.ini, local\
-; (llama.cpp and models), .venv, and any file that isn't the app's.
+; deleted), and runs install.ps1 -Update, which brings the Python packages and the app's own llama.cpp up to date
+; and removes what the old version left behind: packages it no longer uses, the old engine build's files,
+; __pycache__, old models.ini backups (update_cleanup.py). pip keeps no download cache.
+; Kept as they are: data\ (chats, pictures, videos, music, memory), settings.json, keys.local.bat, models.ini, your
+; models, and any file that isn't the app's.
+;
+; install.ps1 runs hidden: its output shows line by line on the wizard's progress page and goes to
+; data\logs\setup.log. Settings > About > Update now runs this wizard with /SILENT /FXRESTART=1: no questions,
+; a progress window, and the app opens again when it's done (app_version.py).
 
 #ifndef AppVersion
   #define AppVersion "0.0.0"
@@ -96,9 +102,8 @@ Name: "{userstartup}\{#AppName}"; Filename: "{app}\{#AppExe}"; Parameters: "--hi
 Root: HKCU; Subkey: "Environment"; ValueType: string; ValueName: "AGENTIC_HOME"; ValueData: "{code:ModelsDir}"; Check: CustomModelsDir; Flags: uninsdeletevalue
 
 [Run]
-Filename: "powershell.exe"; \
-  Parameters: "-NoProfile -ExecutionPolicy Bypass -Command ""$env:AGENTIC_HOME='{code:ModelsDir}'; & '{app}\install.ps1' -Yes -SkipShortcut {code:SetupFlags}; if ($LASTEXITCODE) {{ Read-Host 'Setup hit a problem (see above). Press Enter to close' }"""; \
-  WorkingDir: "{app}"; StatusMsg: "{code:SetupStatus}"; Flags: waituntilterminated
+; install.ps1 runs from CurStepChanged (ssPostInstall), with its output on the progress page; after an Update now
+; (silent) the app is opened again from there too - a [Run] entry without postinstall would run BEFORE setup.
 Filename: "{app}\{#AppExe}"; Description: "Start {#AppName} now"; WorkingDir: "{app}"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
@@ -206,18 +211,16 @@ end;
 
 function SetupFlags(Param: String): String;
 begin
-  Result := '';
+  Result := ' -Quiet';
+  if IsUpdate then Result := Result + ' -Update';
   if not WizardIsComponentSelected('engine') then Result := Result + ' -SkipLlama';
   if not WizardIsComponentSelected('model') then Result := Result + ' -SkipModel';
   if WizardIsComponentSelected('images') then Result := Result + ' -Images';
 end;
 
-function SetupStatus(Param: String): String;
+function ReopenAfterUpdate: Boolean;
 begin
-  if IsUpdate then
-    Result := 'Updating the app''s Python packages (a window shows the progress)...'
-  else
-    Result := 'Setting up Python, the app''s packages and the model engine (a window shows the progress)...';
+  Result := ExpandConstant('{param:FXRESTART|0}') = '1';
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
@@ -239,15 +242,17 @@ begin
               'Kept exactly as they are:' + NewLine +
               Space + 'your chats, pictures, videos, music, memory and settings (data\)' + NewLine +
               Space + 'your API keys (keys.local.bat) and model list (models.ini)' + NewLine +
-              Space + 'your models and the model engine (' + ModelsDir('') + ')' + NewLine +
-              Space + 'the Python environment (.venv) - only packages the new version needs change' + NewLine + NewLine +
+              Space + 'your models (' + ModelsDir('') + ')' + NewLine + NewLine +
+              'Brought up to date, with the old versions removed:' + NewLine +
+              Space + 'the app''s Python packages (ones it no longer uses are uninstalled)' + NewLine +
+              Space + 'the model engine (llama.cpp), when it''s the one setup installed' + NewLine + NewLine +
               'FX Workspace is closed first if it is running.'
   else
     Result := MemoDirInfo + NewLine + NewLine +
               'Models and engines folder:' + NewLine + Space + ModelsDir('') + NewLine + NewLine +
               MemoComponentsInfo + NewLine + NewLine + MemoTasksInfo + NewLine + NewLine +
-              'After copying the files, setup downloads Python (if missing), the app''s packages and what you chose - ' +
-              'a window shows the progress. Every download is checked against its published SHA-256.';
+              'After copying the files, setup downloads Python (if missing), the app''s packages and what you chose. ' +
+              'Every download is checked against its published SHA-256.';
 end;
 
 { ---- installing ------------------------------------------------------------------------------------------ }
@@ -291,10 +296,70 @@ begin
   end;
 end;
 
+{ ---- the setup step (install.ps1), hidden, its output on the progress page -------------------------------- }
+var
+  SetupTail: TStringList;          { the last lines, for the message when it fails }
+  SetupLogFile: String;            { data\logs\setup.log }
+
+procedure SetupOutput(const S: String; const Error, FirstLine: Boolean);
+var Line: String;
+begin
+  Line := Trim(S);
+  if Line = '' then Exit;
+  SaveStringToFile(SetupLogFile, Line + #13#10, True);
+  SetupTail.Add(Line);
+  if SetupTail.Count > 8 then SetupTail.Delete(0);
+  if Copy(Line, 1, 3) = '== ' then
+    WizardForm.StatusLabel.Caption := Copy(Line, 4, 120) + '...'
+  else
+    WizardForm.FilenameLabel.Caption := Copy(Line, 1, 140);
+end;
+
+procedure RunSetupScript;
+var Code: Integer; Ok: Boolean; Params: String;
+begin
+  SetupLogFile := ExpandConstant('{app}\data\logs\setup.log');
+  ForceDirectories(ExtractFilePath(SetupLogFile));
+  SaveStringToFile(SetupLogFile, 'FX Workspace {#AppVersion} setup - ' + GetDateTimeString('yyyy-mm-dd hh:nn', '-', ':') + #13#10, False);
+  { No redirection inside PowerShell: under 'Stop', Windows PowerShell 5.1 turns a redirected native program's
+    stderr line (a pip notice) into a terminating error. The wizard reads stdout and stderr itself. }
+  Params := '-NoProfile -ExecutionPolicy Bypass -Command "$env:AGENTIC_HOME=''' + ModelsDir('') + '''; ' +
+            '& ''' + ExpandConstant('{app}\install.ps1') + ''' -Yes -SkipShortcut' + SetupFlags('') + '; exit $LASTEXITCODE"';
+  SetupTail := TStringList.Create;
+  try
+    if IsUpdate then
+      WizardForm.StatusLabel.Caption := 'Updating the app''s packages and the model engine...'
+    else
+      WizardForm.StatusLabel.Caption := 'Setting up Python, the app''s packages and the model engine...';
+    WizardForm.ProgressGauge.Style := npbstMarquee;
+    Ok := ExecAndLogOutput('powershell.exe', Params, ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, Code, @SetupOutput);
+    WizardForm.ProgressGauge.Style := npbstNormal;
+    if (not Ok) or (Code <> 0) then
+      SuppressibleMsgBox('Setup copied the app, but its last step hit a problem:' + #13#10#13#10 + SetupTail.Text + #13#10 +
+                         'The full log is in ' + SetupLogFile + '. Running this installer again usually fixes it.',
+                         mbError, MB_OK, IDOK);
+  finally
+    SetupTail.Free;
+  end;
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
+var Code: Integer;
 begin
   if (CurStep = ssInstall) and IsUpdate then
+  begin
+    { From 1.4.1 and older: remember the old requirements, so packages only they needed can go (update_cleanup.py). }
+    if FileExists(ExpandConstant('{app}\requirements.txt')) and DirExists(ExpandConstant('{app}\.venv')) and
+       not FileExists(ExpandConstant('{app}\.venv\fx-requirements.txt')) then
+      FileCopy(ExpandConstant('{app}\requirements.txt'), ExpandConstant('{app}\.venv\fx-requirements.txt'), False);
     RemoveStaleFiles;
+  end;
+  if CurStep = ssPostInstall then
+  begin
+    RunSetupScript;
+    if ReopenAfterUpdate then        { Update now: the app comes back once everything is done }
+      ExecAsOriginalUser(ExpandConstant('{app}\{#AppExe}'), '', ExpandConstant('{app}'), SW_SHOWNORMAL, ewNoWait, Code);
+  end;
 end;
 
 { ---- uninstalling ---------------------------------------------------------------------------------------- }

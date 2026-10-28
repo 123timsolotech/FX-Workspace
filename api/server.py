@@ -733,7 +733,18 @@ def get_context(mode: str | None = None, model: str | None = None):
 def get_shell():
     """What the desktop app applies about once a second (desktop/main.js): close-to-tray, and the mini window -
     open, opacity, click-through, place, and Roblox Studio's window to sit over (mini_window.py)."""
-    return mini_window.shell_state()
+    return {**mini_window.shell_state(), **({"quit": True} if _shell_quit.is_set() else {})}
+
+
+_shell_quit = threading.Event()
+
+
+@app.post("/api/shell/quit")
+def shell_quit():
+    """Quit the desktop app for good, as the tray's Quit does (closing the window only hides it now). The installer
+    asks this before it updates the app (installer/close-app.ps1); the app sees it on its next poll."""
+    _shell_quit.set()
+    return {"ok": True}
 
 
 class ShellWindowBody(BaseModel):
@@ -1485,6 +1496,8 @@ def _start_background_services():
         threading.Timer(3, lambda: remote_access.sync()).start()
     # Channels you connected (channels.py): their listeners, the same way.
     threading.Timer(4, lambda: __import__("channels").start_all()).start()
+    # The installer Update now downloaded has done its job once this version runs (app_version.py).
+    threading.Timer(20, app_version.clean_downloads).start()
     # A crash leaves temporary chats' folders behind: nothing of them survives a restart (privacy.py).
     swept = privacy.sweep()
     if swept:
@@ -1951,6 +1964,18 @@ def app_version_now():
 def app_version_check():
     """Settings > About > Check for updates (only when pressed): the newest GitHub release and its installer."""
     return app_version.check(force=True)
+
+
+@app.post("/api/version/install")
+def app_version_install():
+    """Settings > About > Update now: download the new installer (checksum-checked) and run it; it closes and
+    reopens the app (app_version.install)."""
+    return app_version.install()
+
+
+@app.get("/api/version/install")
+def app_version_progress():
+    return app_version.progress()
 
 
 @app.get("/api/app-window")

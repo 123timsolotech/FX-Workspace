@@ -171,6 +171,45 @@ class HubTests(unittest.TestCase):
         self.assertEqual(newest, hub.seq)
         self.assertEqual(hub.since(newest, timeout=0.05), ([], newest))
 
+    def test_a_stopped_call_keeps_what_it_wrote_once(self):
+        hub = stream_hub.StreamHub()
+        hub.publish("start", call=1)
+        hub.publish("delta", call=1, channel="content", text="The first half")
+        hub.publish("delta", call=1, channel="reasoning", text="not shown")
+        hub.publish("end", call=1, finish="stopped", has_tools=False)
+        self.assertEqual(hub.take_stopped(), "The first half")
+        self.assertEqual(hub.take_stopped(), "")
+        hub.publish("start", call=2)                       # a finished call leaves nothing behind
+        hub.publish("delta", call=2, channel="content", text="All of it")
+        hub.publish("end", call=2, finish="stop", has_tools=False)
+        self.assertEqual(hub.take_stopped(), "")
+
+    def test_stopped_response_keeps_the_partial_reply(self):
+        import agent.loop as loop
+        import agent.sessions as sessions
+        import core.state as shared
+        from unittest.mock import patch
+        hub = stream_hub.StreamHub()
+        hub.publish("start", call=7)
+        hub.publish("delta", call=7, channel="content", text="<think>plan</think>Paris is the capital")
+        hub.publish("end", call=7, finish="stopped", has_tools=False)
+        with patch.object(stream_hub, "hub", hub), \
+                patch.dict(shared.app_state, {"conversation": [{"role": "user", "content": "capital of France?"}]}):
+            result = loop._stopped_response()
+            last = shared.app_state["conversation"][-1]["content"]
+        self.assertEqual(result["status"], "stopped")
+        self.assertEqual(result["partial"], "Paris is the capital")
+        self.assertTrue(last.startswith("Paris is the capital"))
+        # The chat shows it too: an answer with the text, then the "Stopped" note.
+        chat = {"id": "t", "title": "t", "transcript": []}
+        req = type("Req", (), {"message": "capital of France?"})()
+        with patch.dict(shared.app_state, {"active_chat": chat, "turn_files": None, "turn_tools": ()}), \
+                patch.object(sessions.privacy, "is_temporary", return_value=True), \
+                patch.object(sessions.event_log, "events_since", return_value=[]):
+            sessions.record_turn(req, result, 0)
+        self.assertEqual([(e["r"], e["t"]) for e in chat["transcript"][1:]],
+                         [("a", "Paris is the capital"), ("s", result["message"])])
+
     def test_chunk_message_round_trip(self):
         msg = {"content": "Hi", "reasoning_content": "r", "finish_reason": "tool_calls",
                "tool_calls": [{"id": "x", "name": "list_dir", "arguments": "{\"directory\": \"C:\\\\\"}"}]}

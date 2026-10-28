@@ -13,7 +13,8 @@ Events
   delta    {call, channel: content|reasoning|tool, text, name?}
   restart  {call, reason}                           the same call is being re-asked (e.g. cut off)
   end      {call, finish, has_tools, aborted?}      the reply is complete
-Nothing here is persisted.
+Nothing here is persisted. The running call's answer text is also kept on its own (take_stopped()), so a reply
+the user stops halfway keeps what it had written (agent/loop._stopped_response, 1.4.2).
 """
 from __future__ import annotations
 
@@ -31,6 +32,8 @@ class StreamHub:
         self._cond = threading.Condition()
         self._events = deque(maxlen=MAX_EVENTS)
         self._seq = 0
+        self._live = {"call": None, "text": []}      # the running call's answer text so far
+        self._stopped = ""                           # what a stopped call had written (take_stopped)
 
     @property
     def seq(self) -> int:
@@ -41,7 +44,21 @@ class StreamHub:
         with self._cond:
             self._seq += 1
             self._events.append({"seq": self._seq, "kind": kind, "t": time.time(), **data, **({"temp": temp} if temp else {})})
+            if kind in ("start", "restart"):
+                self._live, self._stopped = {"call": data.get("call"), "text": []}, ""
+            elif kind == "delta" and data.get("channel") == "content" and data.get("call") == self._live["call"]:
+                self._live["text"].append(data.get("text") or "")
+            elif kind == "end" and data.get("call") == self._live["call"]:
+                if data.get("finish") == "stopped":
+                    self._stopped = "".join(self._live["text"])
+                self._live = {"call": None, "text": []}
             self._cond.notify_all()
+
+    def take_stopped(self) -> str:
+        """The answer text a call had streamed when the user stopped it ("" if none), once."""
+        with self._cond:
+            text, self._stopped = self._stopped, ""
+            return text
 
     def since(self, seq: int, timeout: float = 15.0) -> tuple[list, int]:
         """Events newer than `seq` (waits up to `timeout` for some), merged.

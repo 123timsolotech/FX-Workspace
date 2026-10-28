@@ -227,8 +227,9 @@ def record_turn(req, result: dict, start_seq: int) -> dict | None:
     had_work = bool(steps or thought or src or web)
     thought.update(extras)
     if status in ("stopped", "error"):
-        if had_work:
-            entries.append({"r": "a", "t": "", "s": steps, **thought})
+        partial = str(result.get("partial") or "")        # what a stopped reply had written (agent/loop)
+        if had_work or partial:
+            entries.append({"r": "a", "t": partial, "s": steps, **thought})
         entries.append({"r": "s" if status == "stopped" else "e", "t": message or "Something went wrong."})
     elif status == "clarification":
         entries.append({"r": "a", "t": str(result.get("question") or message), "s": steps, **thought})

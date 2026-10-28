@@ -41,7 +41,9 @@ New-Item -ItemType Directory -Force $Stage | Out-Null
 $tracked = @(& $Git -C $Root ls-files -c)
 $new = @(& $Git -C $Root ls-files -o --exclude-standard)
 # static/ ships whole: besides the page copy (rewritten at start) it holds scripts the page loads (system-messages.js)
-$skip = '^(installer/|desktop/node_modules/|desktop/dist/|data/|local/|\.venv/)'
+# The test suite stays in the source only (1.4.2): ~120 files the app never runs. An update removes the ones older
+# installs put there (.fx-manifest).
+$skip = '^(installer/|desktop/node_modules/|desktop/dist/|data/|local/|\.venv/|test_[\w]+\.py$|smoke_test\.py$)'
 $n = 0
 foreach ($f in ($tracked + $new | Sort-Object -Unique)) {
     if ($f -match $skip) { continue }

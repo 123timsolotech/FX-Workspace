@@ -327,6 +327,8 @@ function applyLogin(login) {
 async function pollShell() {
   const st = await getJSON('/api/shell');
   if (!st) return;
+  // The installer is about to update the app (POST /api/shell/quit): quit for good, as the tray's Quit does.
+  if (st.quit && !quitting) { quitting = true; app.quit(); return; }
   const before = JSON.stringify(shellState.mini);
   shellState = st;
   try {

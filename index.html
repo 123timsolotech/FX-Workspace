@@ -12387,7 +12387,8 @@ async function completeTurn(data) {
   if ((command === 'design' || turnTools.includes('canvas')) && data.status === 'success') DesignPanel.stream(data.message || '', true);   // the finished design / canvas
   const extra = { src: data.src, w: data.w, m: data.m, cr: data.critique, cmp: data.compare, rs: data.research,
                   au: data.au || data.auto_tools, ck: data.ck || data.careful };
-  if (data.status === 'stopped') { if (steps.length || thinking) addAssistant('', steps, true, thinking, extra); addStopped(data.message); }
+  // A stopped reply keeps what it had written (the server's copy, so it matches the saved chat).
+  if (data.status === 'stopped') { if (steps.length || thinking || data.partial) addAssistant(data.partial || '', steps, true, thinking, extra); addStopped(data.message); }
   else if (data.status === 'error') { if (steps.length || thinking) addAssistant('', steps, true, thinking, extra); addError(data.message || 'Something went wrong.'); markError(); Notify.done('Something went wrong', data.message || ''); }
   else if (data.status === 'clarification') { addClarification(data, steps, thinking); Notify.waiting('A question for you', data.message || data.question || ''); }
   else {
@@ -13970,18 +13971,37 @@ async function checkUpdates(btn) {
     const d = await api('/api/version/check', {});
     if (d.error) out.innerHTML = `<p class="set-note">${esc(d.error)}</p>`;
     else if (d.newer) out.innerHTML = `<div class="update-card"><b>Version ${esc(d.latest)} is out</b> - you have ${esc(d.current)}.
-        <p class="set-note">Download the installer and run it: it updates the app and keeps your chats, settings, keys and models as they are. Close FX Workspace first, or the installer closes it for you.</p>
-        <div class="cfg-actions">${d.installer ? `<a class="btn sm primary" href="${esc(d.installer)}" target="_blank" rel="noopener">Download the installer</a>` : ''}<a class="btn sm" href="${esc(d.url)}" target="_blank" rel="noopener">What's new</a></div></div>`;
+        <p class="set-note">${d.can_install ? `Update now downloads it${d.size ? ` (${Math.round(d.size / 1048576)} MB)` : ''}, checks it against GitHub's checksum, and installs it: the app closes, updates, removes what the old version left behind, and opens again. Your chats, settings, keys and models stay as they are.`
+          : 'Download the installer and run it: it updates the app and keeps your chats, settings, keys and models as they are.'}</p>
+        <div class="cfg-actions">${d.can_install ? `<button type="button" class="btn sm primary" onclick="installUpdate(this)">${icon('i-download', 'xs')}Update now</button>`
+          : d.installer ? `<a class="btn sm primary" href="${esc(d.installer)}" target="_blank" rel="noopener">Download the installer</a>` : ''}<a class="btn sm" href="${esc(d.url)}" target="_blank" rel="noopener">What's new</a></div>
+        <div class="update-progress" aria-live="polite"></div></div>`;
     else out.innerHTML = `<p class="set-note">You're up to date (${esc(d.current)}).</p>`;
   } catch (e) { out.innerHTML = `<p class="set-note">${esc(e.message)}</p>`; }
   btn.disabled = false; btn.textContent = 'Check for updates';
+}
+// Update now: the server downloads and checks the installer, then starts it; the installer closes this app.
+async function installUpdate(btn) {
+  const box = btn.closest('.update-card').querySelector('.update-progress');
+  const say = (html, err) => { box.innerHTML = `<p class="set-note"${err ? ' role="alert"' : ''}>${html}</p>`; };
+  btn.disabled = true;
+  let p;
+  try { p = await api('/api/version/install', {}); } catch (e) { btn.disabled = false; return say(esc(e.message), true); }
+  for (;;) {
+    if (p.state === 'error') { btn.disabled = false; return say(esc(p.error || "The update didn't start."), true); }
+    if (p.state === 'started') return say('Installing - FX Workspace closes in a moment and opens again when the update is done.');
+    say(p.state === 'downloading' ? `Downloading… ${(p.done_mb || 0).toFixed(0)}${p.total_mb ? ` of ${p.total_mb.toFixed(0)}` : ''} MB`
+      : p.state === 'verifying' ? 'Checking the download against GitHub\'s checksum…' : 'Starting the installer…');
+    await new Promise(r => setTimeout(r, 700));
+    try { p = await api('/api/version/install'); } catch (_) { return say('Installing - FX Workspace closes in a moment and opens again when the update is done.'); }
+  }
 }
 // The wordmark: the gold Fx mark, then "workspace" (also the welcome card's title and the About page's).
 const wordmark = (cls = '') => `<span class="fx-wordmark ${cls}"><svg aria-hidden="true"><use href="#mark"/></svg><span>workspace</span></span>`;
 // Settings > About: who made it, how to reach them, and the licenses (NOTICE, THIRD_PARTY.md).
 // People who helped (Settings > About). Add one per merged contribution.
 const CONTRIBUTORS = [
-  { name: '123timsolotech', url: 'https://github.com/123timsolotech', for: 'Pull request #1: getting the test suite to run off Windows, pointing out the tests that had gone stale, and making the open-folder button fail cleanly.' },
+  { name: '123timsolotech', url: 'https://github.com/123timsolotech', for: 'Pull request #1: getting the test suite to run off Windows, pointing out the tests that had gone stale, and making the open-folder button fail cleanly. Then the ideas behind 1.4.2\'s Update now, the tidier updates and setup, and Stop keeping the half-written reply.' },
 ];
 function renderAbout() {
   $('settings-body').innerHTML = `<h3>About</h3>

@@ -3,6 +3,21 @@ setlocal EnableExtensions EnableDelayedExpansion
 title FX Workspace Server
 cd /d "%~dp0"
 
+REM ---- The desktop app, when there is one -----------------------------------
+REM The setup wizard installs it (desktop-app\); a source checkout has it after
+REM "npm run pack:win" in desktop\. It starts the server itself and shows the app in
+REM its own window - never a browser. "run.bat console" / "run.bat browser" skip it.
+if /i not "%~1"=="console" if /i not "%~1"=="browser" (
+    if exist "%~dp0desktop-app\FX Workspace.exe" if exist "%~dp0.venv\Scripts\python.exe" (
+        start "" "%~dp0desktop-app\FX Workspace.exe"
+        exit /b 0
+    )
+    if exist "%~dp0desktop\dist\FX Workspace-win32-x64\FX Workspace.exe" if exist "%~dp0.venv\Scripts\python.exe" (
+        start "" "%~dp0desktop\dist\FX Workspace-win32-x64\FX Workspace.exe"
+        exit /b 0
+    )
+)
+
 REM ---- Windowless start (launcher.pyw) --------------------------------------
 REM Once the environment exists, the app starts with no console windows: just the
 REM app window, and closing it stops everything. "run.bat console" keeps the old
@@ -40,7 +55,7 @@ if not exist "%VENV_PY%" (
 )
 
 echo Syncing pinned dependencies...
-"%VENV_PY%" -m pip install --disable-pip-version-check -r requirements.txt
+"%VENV_PY%" -m pip install --disable-pip-version-check --no-cache-dir -r requirements.txt
 if errorlevel 1 (
     echo [ERROR] Dependency installation failed.
     pause

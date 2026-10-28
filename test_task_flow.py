@@ -20,7 +20,9 @@ from unittest.mock import Mock
 
 import context
 import intent_router
+import model_output
 import permissions
+import stream_hub
 from run_control import RunControl, RunStopped
 
 
@@ -90,6 +92,8 @@ class TaskFlowTests(unittest.TestCase):
             # Roblox's Studio MCP arguments (test_studio_tools covers studio_mcp); one-tool batches of a local model.
             "studio_mcp": SimpleNamespace(fill_args=lambda name, args: args),
             "_PLAN_TOOLS": {"set_plan", "update_plan", "ask_user"}, "MAX_SAME_TOOL_BATCH": 30,
+            # A stopped reply keeps what it had streamed (stream_hub.take_stopped; test_streaming covers it).
+            "stream_hub": stream_hub, "model_output": model_output,
         }
         for alias in ALIASES:
             self.g[alias] = _View(self.g)

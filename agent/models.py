@@ -1115,6 +1115,7 @@ def model_text(system: str, user: str, max_tokens: int = 1500, model: str | None
     prev_ev = shared.app_state.get("running_model_event")
     shared.app_state["running_model_event"] = ev
     load_watch = None
+    stopped = False
     # Only a streamed helper takes over the live draft's call id. A hidden one must not touch it: restoring it
     # afterwards could wipe the id a reply set while this helper held the model (2026-10-27).
     if stream and local:
@@ -1156,9 +1157,11 @@ def model_text(system: str, user: str, max_tokens: int = 1500, model: str | None
                                **model_metrics.generation_facts(res))
         return out
     except llm_stream.StreamCancelled:
+        stopped = True
         event_log.finish_event(ev, ok=False, detail="Stopped")
         raise RunStopped("user")
     except RunStopped:
+        stopped = True
         event_log.finish_event(ev, ok=False, detail="Stopped")
         raise
     except Exception as e:
@@ -1169,7 +1172,7 @@ def model_text(system: str, user: str, max_tokens: int = 1500, model: str | None
             load_watch.set()
         shared.app_state["running_model_event"] = prev_ev
         if stream and local:
-            stream_hub.hub.publish("end", call=ev["id"], finish="stop", has_tools=False)
+            stream_hub.hub.publish("end", call=ev["id"], finish="stopped" if stopped else "stop", has_tools=False)
             shared.app_state["_stream_call"] = prev_call
 
 

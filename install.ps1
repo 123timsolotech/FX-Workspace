@@ -8,14 +8,23 @@
 # 5. A starter chat model (Qwen3 4B, ~2.4 GB, from huggingface.co/Qwen), checked by SHA-256. Asks first.
 # 6. models.ini from models.example.ini, with every .gguf in local\models added.
 # 7. A desktop shortcut. Asks first.
+# 8. Tidy up (update_cleanup.py): packages an older version needed and this one doesn't, __pycache__, old
+#    models.ini backups. pip keeps no download cache (it grew by hundreds of MB with every update).
 # Run it again any time: what's already there is kept.
 #
 # Unattended: install.ps1 -Yes [-SkipLlama] [-SkipModel] [-SkipShortcut] [-Images]  (answers every question itself;
 #             the ~22 GB image models only with -Images)
-param([switch]$Yes, [switch]$SkipLlama, [switch]$SkipModel, [switch]$SkipShortcut, [switch]$Images)
+# -Update (the setup wizard, updating): also brings the app's own llama.cpp (local\llama.cpp) to the newest build -
+#             replaced in place, the old build's files removed; kept as it is if the new one doesn't start.
+# -Quiet:     plain line-by-line output, no download progress bars (the setup wizard shows each line).
+param([switch]$Yes, [switch]$SkipLlama, [switch]$SkipModel, [switch]$SkipShortcut, [switch]$Images,
+      [switch]$Update, [switch]$Quiet)
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
+$env:PIP_NO_CACHE_DIR = '1'          # pip's cache is never reused here - it only grew with each update
+$env:PIP_PROGRESS_BAR = if ($Quiet) { 'off' } else { 'on' }
+$env:PYTHONUNBUFFERED = '1'          # each line shows as it happens, also on the wizard's progress page
 Set-Location -LiteralPath $PSScriptRoot
 $App = $PSScriptRoot
 $HomeDir = if ($env:AGENTIC_HOME) { $env:AGENTIC_HOME } else { Join-Path $App 'local' }
@@ -34,7 +43,8 @@ function Ask($question, $default = 'Y', [switch]$Skip) {
 function Download($url, $dest, $sha256) {
     # curl.exe (in Windows 10 and 11) resumes a broken download and shows progress.
     Say "   $url"
-    & curl.exe -L --fail --retry 3 -C - -o $dest $url
+    $show = @(if ($Quiet) { '-sS' })                 # an array, even of one: splatting a string passes its letters
+    & curl.exe -L --fail --retry 3 @show -C - -o $dest $url
     if ($LASTEXITCODE -ne 0) { throw "Download failed: $url" }
     if ($sha256) {
         $got = (Get-FileHash -Algorithm SHA256 -LiteralPath $dest).Hash.ToLower()
@@ -44,6 +54,25 @@ function Download($url, $dest, $sha256) {
 }
 
 Say 'FX Workspace - setup' 'White'
+
+# ---- 0. A downloaded source folder: the setup wizard is the better way -------------------------
+# install.bat + run.bat are for working on the code. Someone who downloaded the source zip gets the real app from
+# the setup wizard: its own window (no browser), a Start-menu entry, uninstall, and Update now in Settings > About.
+if (-not $Yes -and -not (Test-Path (Join-Path $App '.git')) -and -not (Test-Path (Join-Path $App 'desktop-app'))) {
+    Say 'This is the source code. The setup wizard installs FX Workspace as a normal Windows app - its own window,' 'Yellow'
+    Say 'a Start-menu entry and updates from inside the app.' 'Yellow'
+    if (Ask 'Download the newest setup wizard from GitHub and run it instead (recommended)?') {
+        $rel = Invoke-RestMethod -Uri 'https://api.github.com/repos/fuxion64-ctrl/FX-Workspace/releases/latest' -Headers $Headers
+        $a = $rel.assets | Where-Object { $_.name -match '^FX-Workspace-Setup-[\d.]+\.exe$' } | Select-Object -First 1
+        if (-not $a -or $a.digest -notmatch '^sha256:(.+)$') { throw 'The newest release has no setup wizard with a checksum - get it from github.com/fuxion64-ctrl/FX-Workspace/releases.' }
+        $setup = Join-Path $env:TEMP $a.name
+        Download $a.browser_download_url $setup $Matches[1]
+        Start-Process -FilePath $setup
+        Say 'The setup wizard is open. You can delete this folder once it has finished.' 'Green'
+        exit 0
+    }
+}
+
 Say "App folder:   $App"
 Say "Models/tools: $HomeDir  (set AGENTIC_HOME to use another drive)"
 
@@ -84,6 +113,7 @@ if (-not (Test-Path $VenvPy)) {
 & $VenvPy -m pip install --disable-pip-version-check -r requirements.txt
 if ($LASTEXITCODE -ne 0) { throw 'Installing the packages failed (see above).' }
 Say 'Packages installed.' 'Green'
+& $VenvPy update_cleanup.py packages          # what an older version needed and this one doesn't
 
 # ---- 3. Folders --------------------------------------------------------------------------------
 $LlamaDir = Join-Path $HomeDir 'llama.cpp'
@@ -92,37 +122,84 @@ New-Item -ItemType Directory -Force -Path $LlamaDir, $ModelsDir | Out-Null
 
 # ---- 4. llama.cpp ------------------------------------------------------------------------------
 Step 'llama.cpp (runs the chat models)'
-if (Test-Path (Join-Path $LlamaDir 'llama-server.exe')) {
-    Say "Already installed in $LlamaDir." 'Green'
+# The newest Windows build of one kind (cuda-12.4 / vulkan): @{ release; zips; build = its b-number }.
+function Find-LlamaBuild($kind) {
+    $releases = Invoke-RestMethod -Uri 'https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=15' -Headers $Headers
+    foreach ($r in $releases) {
+        $main = $r.assets | Where-Object { $_.name -match "^llama-b(\d+)-bin-win-$([regex]::Escape($kind))-x64\.zip$" } | Select-Object -First 1
+        if (-not $main) { continue }
+        $build = [int]($main.name -replace '^llama-b(\d+)-.*$', '$1')
+        $zips = @($main)
+        if ($kind -like 'cuda*') {
+            $rt = $r.assets | Where-Object { $_.name -eq "cudart-llama-bin-win-$kind-x64.zip" } | Select-Object -First 1
+            if ($rt) { $zips += $rt }
+        }
+        return @{ release = $r; zips = $zips; build = $build }
+    }
+    throw "No Windows $kind build found in the recent llama.cpp releases."
+}
+# Downloads and unpacks a build into $dest (empty), with llama-server.exe and its DLLs at its top level.
+function Get-LlamaInto($pick, $dest) {
+    New-Item -ItemType Directory -Force -Path $dest | Out-Null
+    foreach ($a in $pick.zips) {
+        $zip = Join-Path $HomeDir $a.name
+        $sha = if ($a.digest -match '^sha256:(.+)$') { $Matches[1] } else { $null }
+        Download $a.browser_download_url $zip $sha
+        Expand-Archive -LiteralPath $zip -DestinationPath $dest -Force
+        Remove-Item -LiteralPath $zip -Force
+    }
+    # Some builds unpack into a subfolder: bring llama-server.exe and its DLLs up.
+    $exe = Get-ChildItem -LiteralPath $dest -Recurse -Filter 'llama-server.exe' | Select-Object -First 1
+    if ($exe -and $exe.DirectoryName -ne $dest) { Get-ChildItem -LiteralPath $exe.DirectoryName | Move-Item -Destination $dest -Force }
+    if (-not (Test-Path (Join-Path $dest 'llama-server.exe'))) { throw 'llama-server.exe was not in the download.' }
+}
+# The build number llama-server reports - "version: 0.6.0-dev (build 11541, commit ...)" now, "version: 6912
+# (abc123)" in older builds - or 0.
+function Get-LlamaVersion($exe) {
+    $ErrorActionPreference = 'Continue'            # it prints to stderr, which 'Stop' would turn into an error
+    try { $out = & $exe --version 2>&1 | ForEach-Object { "$_" } | Out-String } catch { return 0 }
+    if ($out -match '\bbuild\s+(\d+)') { return [int]$Matches[1] }
+    if ($out -match 'version:\s*(\d+)\s*\(') { return [int]$Matches[1] }
+    return 0
+}
+
+$Server = Join-Path $LlamaDir 'llama-server.exe'
+if (Test-Path $Server) {
+    if ($Update -and -not $SkipLlama) {
+        # Same kind as before (a CUDA build has ggml-cuda.dll beside it). Only the files at the top of
+        # local\llama.cpp are the build's - PrismML's build in local\llama.cpp\prism stays as it is.
+        $kind = if (Test-Path (Join-Path $LlamaDir 'ggml-cuda.dll')) { 'cuda-12.4' } else { 'vulkan' }
+        $have = Get-LlamaVersion $Server
+        try { $pick = Find-LlamaBuild $kind } catch { $pick = $null; Say "Couldn't check for a newer llama.cpp ($($_.Exception.Message)) - keeping build $have." 'Yellow' }
+        if ($pick -and $have -and $pick.build -le $have) {
+            Say "llama.cpp is up to date (build $have)." 'Green'
+        } elseif ($pick) {
+            Say "Updating llama.cpp: build $have -> $($pick.build)"
+            $new = Join-Path $HomeDir 'llama.cpp.new'
+            if (Test-Path $new) { Remove-Item -LiteralPath $new -Recurse -Force }
+            try {
+                Get-LlamaInto $pick $new
+                if (-not (Get-LlamaVersion (Join-Path $new 'llama-server.exe'))) { throw 'the new build did not start' }
+                Get-ChildItem -LiteralPath $LlamaDir -File | Remove-Item -Force
+                Get-ChildItem -LiteralPath $new | Move-Item -Destination $LlamaDir -Force
+                Say "llama.cpp updated to build $($pick.build); the old build's files were removed." 'Green'
+            } catch {
+                Say "llama.cpp wasn't updated ($($_.Exception.Message)) - build $have stays." 'Yellow'
+            } finally {
+                if (Test-Path $new) { Remove-Item -LiteralPath $new -Recurse -Force -ErrorAction SilentlyContinue }
+            }
+        }
+    } else {
+        Say "Already installed in $LlamaDir." 'Green'
+    }
 } elseif (Ask 'Download the newest llama.cpp for this PC?' -Skip:$SkipLlama) {
     $nvidia = [bool](Get-Command nvidia-smi -ErrorAction SilentlyContinue)
     if ($nvidia) { & nvidia-smi -L 2>$null | Out-Null; $nvidia = ($LASTEXITCODE -eq 0) }
     $kind = if ($nvidia) { 'cuda-12.4' } else { 'vulkan' }
     Say ("GPU: " + $(if ($nvidia) { 'NVIDIA - the CUDA 12.4 build' } else { 'not NVIDIA - the Vulkan build (AMD, Intel, or any GPU)' }))
-    $releases = Invoke-RestMethod -Uri 'https://api.github.com/repos/ggml-org/llama.cpp/releases?per_page=15' -Headers $Headers
-    $pick = $null
-    foreach ($r in $releases) {
-        $main = $r.assets | Where-Object { $_.name -match "^llama-b\d+-bin-win-$([regex]::Escape($kind))-x64\.zip$" } | Select-Object -First 1
-        if ($main) { $pick = @{ release = $r; main = $main }; break }
-    }
-    if (-not $pick) { throw "No Windows $kind build found in the recent llama.cpp releases." }
+    $pick = Find-LlamaBuild $kind
     Say "Release: $($pick.release.tag_name)"
-    $zips = @($pick.main)
-    if ($nvidia) {
-        $rt = $pick.release.assets | Where-Object { $_.name -eq 'cudart-llama-bin-win-cuda-12.4-x64.zip' } | Select-Object -First 1
-        if ($rt) { $zips += $rt }
-    }
-    foreach ($a in $zips) {
-        $zip = Join-Path $HomeDir $a.name
-        $sha = if ($a.digest -match '^sha256:(.+)$') { $Matches[1] } else { $null }
-        Download $a.browser_download_url $zip $sha
-        Expand-Archive -LiteralPath $zip -DestinationPath $LlamaDir -Force
-        Remove-Item -LiteralPath $zip -Force
-    }
-    # Some builds unpack into a subfolder: bring llama-server.exe and its DLLs up to local\llama.cpp.
-    $exe = Get-ChildItem -LiteralPath $LlamaDir -Recurse -Filter 'llama-server.exe' | Select-Object -First 1
-    if ($exe -and $exe.DirectoryName -ne $LlamaDir) { Get-ChildItem -LiteralPath $exe.DirectoryName | Move-Item -Destination $LlamaDir -Force }
-    if (-not (Test-Path (Join-Path $LlamaDir 'llama-server.exe'))) { throw 'llama-server.exe was not in the download.' }
+    Get-LlamaInto $pick $LlamaDir
     Say "llama.cpp installed in $LlamaDir." 'Green'
 } else {
     Say "Skipped. Put llama-server.exe (and its DLLs) in $LlamaDir later - or use Cloud mode with an API key."
@@ -173,7 +250,12 @@ if (-not (Test-Path $lnk) -and (Ask 'Put a shortcut on the desktop?' -Skip:$Skip
     Say 'Shortcut created.' 'Green'
 }
 
+# ---- 8. Tidy up --------------------------------------------------------------------------------
+Step 'Tidying up'
+& $VenvPy update_cleanup.py tidy
+
 Write-Host ''
 Say 'Done. Start the app with run.bat (or the desktop shortcut).' 'Green'
 Say 'Optional: Settings > Voice has a one-click setup; images: .venv\Scripts\python.exe image_setup.py (see README).'
 Say 'Cloud models: put API keys in keys.local.bat (created on the first start).'
+exit 0          # the setup wizard reads the exit code; a probe that failed on the way (py, nvidia-smi) isn't a failure
