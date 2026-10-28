@@ -5416,6 +5416,36 @@ html.voice-on .idle-screen { display: none !important; }
 :root[data-ui][data-skin="clay"] .pop-item { border-radius: 8px; }
 :root[data-ui][data-skin="clay"] .btn { border-radius: 8px; }
 :root[data-ui][data-skin="clay"] #settings .modal { border-radius: 16px; }
+/* ---- Claude's thinking mark, closer (1.4.3): a clay starburst of our own drawing (twelve tapered rays of uneven
+   length round a small core - not Claude's logo) that breathes the way claude.ai's working mark does: 0.86 -> 1
+   and a touch brighter, 3 s ease-in-out (its CSS: dframe-clay-breathe); waiting fades as well (dframe-clay-breathe-
+   fade). Each kind of work keeps the breath and adds one quiet change. The "Thinking" words shimmer with claude.ai's
+   own band: 120 deg, held for the first and last 15% of a 3 s loop, swept on its curve between. ---- */
+:root[data-ui][data-skin="clay"] { --clay-burst: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%3E%3Cpath%20d%3D'M13.50%2012.00L13.05%201.45A1.05%201.05%200%200%200%2010.95%201.45L10.50%2012.00ZM13.26%2012.81L17.47%205.46A1.05%201.05%200%200%200%2015.71%204.32L10.74%2011.19ZM12.79%2013.28L20.93%207.71A1.05%201.05%200%200%200%2019.83%205.93L11.21%2010.72ZM12.00%2013.50L19.88%2013.05A1.05%201.05%200%200%200%2019.88%2010.95L12.00%2010.50ZM11.19%2013.26L20.10%2018.48A1.05%201.05%200%200%200%2021.24%2016.72L12.81%2010.74ZM10.72%2012.79L15.43%2019.55A1.05%201.05%200%200%200%2017.22%2018.45L13.28%2011.21ZM10.50%2012.00L10.95%2021.51A1.05%201.05%200%200%200%2013.05%2021.51L13.50%2012.00ZM10.74%2011.19L6.97%2017.86A1.05%201.05%200%200%200%208.73%2019.00L13.26%2012.81ZM11.21%2010.72L2.47%2016.65A1.05%201.05%200%200%200%203.58%2018.44L12.79%2013.28ZM12.00%2010.50L3.31%2010.95A1.05%201.05%200%200%200%203.31%2013.05L12.00%2013.50ZM12.81%2010.74L4.68%206.02A1.05%201.05%200%200%200%203.54%207.79L11.19%2013.26ZM13.28%2011.21L8.63%204.55A1.05%201.05%200%200%200%206.84%205.65L10.72%2012.79Z'%2F%3E%3C%2Fsvg%3E"); }
+@keyframes clay-breathe { 0%, 100% { filter: brightness(.96); transform: scale(.86); } 50% { filter: brightness(1.06); transform: scale(1); } }
+@keyframes clay-breathe-fade { 0%, 100% { opacity: .4; filter: brightness(.96); transform: scale(.7); } 50% { opacity: 1; filter: brightness(1.06); transform: scale(1); } }
+@keyframes clay-breathe-turn { 0% { filter: brightness(.96); transform: rotate(0) scale(.86); } 50% { filter: brightness(1.06); transform: rotate(45deg) scale(1); } 100% { filter: brightness(.96); transform: rotate(90deg) scale(.86); } }
+@keyframes clay-burst-tick { 0%, 100% { transform: rotate(0) scale(.92); } 25% { transform: rotate(30deg) scale(1); } 50% { transform: rotate(30deg) scale(.92); } 75% { transform: rotate(60deg) scale(1); } }
+@keyframes clay-burst-hue { 0%, 100% { background-color: var(--accent); } 50% { background-color: color-mix(in srgb, var(--accent) 60%, #f0b08c); } }
+:root[data-ui][data-skin="clay"] .think:not(.orb-mark) { width: 20px; height: 20px; }
+:root[data-ui][data-skin="clay"] .think:not(.orb-mark) i:nth-child(1) { left: 1px; top: 1px; width: 18px; height: 18px; font-size: 0; background: var(--accent);
+  -webkit-mask: var(--clay-burst) center / contain no-repeat; mask: var(--clay-burst) center / contain no-repeat; transform-origin: 50% 50%;
+  animation: clay-breathe 3s ease-in-out infinite; }
+:root[data-ui][data-skin="clay"] .think:not(.orb-mark) i:nth-child(1)::before { content: none; }
+:root[data-ui][data-skin="clay"] .think:not(.orb-mark)[data-act="read"] i:nth-child(1) { animation-duration: 3.6s; }
+:root[data-ui][data-skin="clay"] .think:not(.orb-mark)[data-act="search"] i:nth-child(1) { animation: clay-breathe-turn 2.4s ease-in-out infinite; }
+:root[data-ui][data-skin="clay"] .think:not(.orb-mark)[data-act="tool"] i:nth-child(1) { animation: clay-burst-tick 1.6s cubic-bezier(.65, 0, .35, 1) infinite; }
+:root[data-ui][data-skin="clay"] .think:not(.orb-mark)[data-act="write"] i:nth-child(1) { animation-duration: 1.8s; }
+:root[data-ui][data-skin="clay"] .think:not(.orb-mark)[data-act="draw"] i:nth-child(1) { animation: clay-breathe 3s ease-in-out infinite, clay-burst-hue 3s ease-in-out infinite; }
+:root[data-ui][data-skin="clay"] .think:not(.orb-mark)[data-act="wait"] i:nth-child(1) { animation: clay-breathe-fade 2.4s ease-in-out infinite; }
+:root[data-ui][data-skin="clay"]:is([data-motion="reduced"], [data-motion="off"]) .think:not(.orb-mark) i:nth-child(1) { animation: none; transform: none; }
+/* The orbs in Claude: the core is the same starburst. */
+:root[data-ui][data-skin="clay"] .greeting::before { content: ""; width: .9em; height: .9em; flex: none; background: var(--accent); margin-right: 4px;
+  -webkit-mask: var(--clay-burst) center / contain no-repeat; mask: var(--clay-burst) center / contain no-repeat; }
+@keyframes clay-shimmer { 0%, 15% { background-position: 83.333% 0; animation-timing-function: cubic-bezier(.714, .121, .211, .888); } 85%, 100% { background-position: 16.667% 0; } }
+:root[data-ui][data-skin="clay"] .thinking-label > .tp { background-image: linear-gradient(120deg, var(--muted) 37.5%, color-mix(in srgb, var(--muted) 30%, #fff) 45%, color-mix(in srgb, var(--muted) 30%, #fff) 55%, var(--muted) 62.5%);
+  background-size: 400% 100%; animation: clay-shimmer 3s linear infinite; }
+:root[data-ui][data-skin="clay"][data-tone="light"] .thinking-label > .tp { background-image: linear-gradient(120deg, var(--muted) 37.5%, color-mix(in srgb, var(--text) 20%, #fff) 45%, color-mix(in srgb, var(--text) 20%, #fff) 55%, var(--muted) 62.5%); }
 </style>
 <link rel="stylesheet" href="/fonts/fonts.css">
 </head>
@@ -11819,6 +11849,9 @@ function orbRetarget(o, act, t, now, form) {
   o.act = act; o.t0 = now;
 }
 // orbs-math:end
+// The Claude look's starburst (our own drawing: twelve tapered rays round a core), also the CSS mark's --clay-burst.
+const CLAY_BURST = 'M13.50 12.00L13.05 1.45A1.05 1.05 0 0 0 10.95 1.45L10.50 12.00ZM13.26 12.81L17.47 5.46A1.05 1.05 0 0 0 15.71 4.32L10.74 11.19ZM12.79 13.28L20.93 7.71A1.05 1.05 0 0 0 19.83 5.93L11.21 10.72ZM12.00 13.50L19.88 13.05A1.05 1.05 0 0 0 19.88 10.95L12.00 10.50ZM11.19 13.26L20.10 18.48A1.05 1.05 0 0 0 21.24 16.72L12.81 10.74ZM10.72 12.79L15.43 19.55A1.05 1.05 0 0 0 17.22 18.45L13.28 11.21ZM10.50 12.00L10.95 21.51A1.05 1.05 0 0 0 13.05 21.51L13.50 12.00ZM10.74 11.19L6.97 17.86A1.05 1.05 0 0 0 8.73 19.00L13.26 12.81ZM11.21 10.72L2.47 16.65A1.05 1.05 0 0 0 3.58 18.44L12.79 13.28ZM12.00 10.50L3.31 10.95A1.05 1.05 0 0 0 3.31 13.05L12.00 13.50ZM12.81 10.74L4.68 6.02A1.05 1.05 0 0 0 3.54 7.79L11.19 13.26ZM13.28 11.21L8.63 4.55A1.05 1.05 0 0 0 6.84 5.65L10.72 12.79Z';
+let clayBurst = null;
 var Orbs = (() => {
   const TRAIL = 7;
   const marks = document.getElementsByClassName('think');        // live: new marks join by themselves
@@ -11925,9 +11958,10 @@ var Orbs = (() => {
         g.addColorStop(0, css(D.pal[0], 1)); g.addColorStop(1, css(D.pal[1], 1));
         ctx.shadowColor = css(D.pal[1], .8); ctx.shadowBlur = pr * 1.4 * (.8 + .4 * a);
         ctx.fillStyle = g; ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(px, py, pr, 0, ORB_TAU); ctx.fill();
-      } else if (D.style === 'clay' && !i) {                        // the core is a turning clay asterisk
-        ctx.translate(px, py); ctx.rotate(t * 1.6); ctx.strokeStyle = css(col, a); ctx.lineCap = 'round'; ctx.lineWidth = Math.max(1.4, pr * .42);
-        ctx.beginPath(); for (let n = 0; n < 4; n++) { const ang = n * Math.PI / 4; ctx.moveTo(Math.cos(ang) * pr * 1.25, Math.sin(ang) * pr * 1.25); ctx.lineTo(-Math.cos(ang) * pr * 1.25, -Math.sin(ang) * pr * 1.25); } ctx.stroke();
+      } else if (D.style === 'clay' && !i) {                        // the core is the clay starburst, breathing like claude.ai's mark
+        const breath = .86 + .14 * (.5 - .5 * Math.cos(ORB_TAU * t / 3)), k = pr * 1.45 / 12 * breath;
+        ctx.translate(px, py); ctx.rotate(t * .25); ctx.scale(k, k); ctx.translate(-12, -12);
+        ctx.fillStyle = css(col, a); ctx.fill(clayBurst || (clayBurst = new Path2D(CLAY_BURST)));
       } else if (D.style === 'gradient') {                          // Gemini: gradient orbs, the core a four-point sparkle
         const g = ctx.createLinearGradient(px - pr, py - pr, px + pr, py + pr);
         g.addColorStop(0, css(D.pal[0], a)); g.addColorStop(.5, css(D.pal[1], a)); g.addColorStop(1, css(D.pal[2], a));
