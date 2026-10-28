@@ -200,17 +200,22 @@ def shell_mode() -> bool:
 
 
 def _alive(pid: int) -> bool:
+    """False only when the process is really gone. A check that fails for another reason (access, a PC busy loading
+    a big model) says nothing about it - it used to read as "gone" and stopped the server under a running app."""
     try:
         import psutil
-        return psutil.pid_exists(pid) and psutil.Process(pid).status() != psutil.STATUS_ZOMBIE
     except ImportError:
         try:
             os.kill(pid, 0)
             return True
         except OSError:
             return False
-    except Exception:
+    try:
+        return psutil.pid_exists(pid) and psutil.Process(pid).status() != psutil.STATUS_ZOMBIE
+    except psutil.NoSuchProcess:
         return False
+    except Exception:
+        return True
 
 
 def watch_shell(server) -> None:
@@ -221,8 +226,10 @@ def watch_shell(server) -> None:
         pid = 0
     if not pid:
         return
+    gone = 0
     while not server.should_exit:
-        if not _alive(pid):
+        gone = 0 if _alive(pid) else gone + 1
+        if gone >= 3:                      # three seconds in a row: one odd answer never stops the server
             print("The desktop app closed - stopping.", flush=True)
             server.should_exit = True
             return

@@ -41,6 +41,20 @@ def current() -> str:
         return "0.0.0"
 
 
+def notes(version: str | None = None) -> dict:
+    """The release notes shipped with a version (docs/releases/<version>.md) - shown once after an update (1.4.3).
+    {"version", "markdown"} with the title line dropped, or "" when this version has none."""
+    v = version or current()
+    if not re.fullmatch(r"\d+(\.\d+){1,3}", v or ""):
+        return {"version": v, "markdown": ""}
+    try:
+        with open(os.path.join(ROOT, "docs", "releases", f"{v}.md"), encoding="utf-8") as f:
+            text = f.read()
+    except OSError:
+        return {"version": v, "markdown": ""}
+    return {"version": v, "markdown": re.sub(r"\A#\s[^\n]*\n+", "", text).strip()}
+
+
 def _parts(v: str) -> tuple:
     """'v1.4.0-beta' -> (1, 4, 0). Missing parts count as 0."""
     nums = [int(n) for n in re.findall(r"\d+", str(v or ""))[:3]]

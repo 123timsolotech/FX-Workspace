@@ -39,6 +39,7 @@ import system_messages
 import model_caps
 import routines
 import app_window
+import focus_assist
 import finance
 import netlayer
 import voice
@@ -422,6 +423,7 @@ class SettingsUpdate(BaseModel):
     idle_unload: str | None = None           # minutes hidden and unused before the model is unloaded (idle_unload.py)
     memory_overview: bool | None = None      # a one-line-per-topic memory overview in every chat (memory_graph.py)
     chat_font: str = None
+    think_mark: str | None = None            # auto | orbs | legacy (the thinking mark, index.html Orbs)
     user_name: str = None
     cloud_allow_screenshots: bool = None
     proactive_enabled: bool = None
@@ -994,7 +996,8 @@ def moe_test_start(body: MoeTestBody):
 @app.get("/api/model-monitor")
 def get_model_monitor():
     """Local model calls outside your replies since the app started (model_monitor) - Settings > This PC."""
-    return {"recent": model_monitor.recent(), "totals": model_monitor.totals(),
+    return {"recent": model_monitor.recent(), "groups": model_monitor.grouped(), "skipped": model_monitor.skipped(),
+            "totals": model_monitor.totals(),
             "replies_only": bool(shared.app_state["settings"].get("model_replies_only")),
             "automatic": sorted(model_monitor.AUTOMATIC)}
 
@@ -1960,6 +1963,12 @@ def app_version_now():
     return {"version": app_version.current(), "releases": app_version.RELEASES_URL}
 
 
+@app.get("/api/version/notes")
+def app_version_notes():
+    """This version's release notes (docs/releases) - the app shows them once after an update."""
+    return app_version.notes()
+
+
 @app.post("/api/version/check")
 def app_version_check():
     """Settings > About > Check for updates (only when pressed): the newest GitHub release and its installer."""
@@ -1976,6 +1985,17 @@ def app_version_install():
 @app.get("/api/version/install")
 def app_version_progress():
     return app_version.progress()
+
+
+@app.get("/api/notify/quiet")
+def notify_quiet():
+    """Settings > Appearance > Notifications: is Windows holding pop-ups back (Focus assist, a full-screen game)?"""
+    return focus_assist.state()
+
+
+@app.post("/api/notify/quiet/open")
+def notify_quiet_open():
+    return {"opened": focus_assist.open_settings()}
 
 
 @app.get("/api/app-window")

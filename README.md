@@ -8,17 +8,14 @@ Everything runs on this PC by default. Nothing is sent anywhere unless you use a
 
 **[Download the latest installer](https://github.com/fuxion64-ctrl/FX-Workspace/releases/latest)** · [What's new in each version](CHANGELOG.md) · [All releases](https://github.com/fuxion64-ctrl/FX-Workspace/releases)
 
-## What's new in 1.4.2
+## What's new in 1.4.3
 
-- See what each chat costs the model, and turn tools off per chat.
-- It keeps working with the window closed, in the tray.
-- A built-in mini window that stays on top.
-- Use it from your phone, or from Discord, Slack (Beta) and a webhook.
-- A Soul file and memory that updates instead of piling up.
-- Sandboxed chats for risky tasks.
-- Update now from inside the app, with old files cleaned up.
+- Orbs: a thinking mark that moves with each kind of work, dressed for every appearance.
+- Every appearance checked screen by screen; the Claude, ChatGPT, Grok and Gemini looks are out of Beta.
+- A short welcome for new installs, with a chat model that suits your PC in one click.
+- What's new after an update, Settings search that goes to the setting, and a calmer Settings.
 
-See the [changelog](CHANGELOG.md) for every version, or the [full 1.4.2 notes](docs/releases/1.4.2.md).
+See the [changelog](CHANGELOG.md) for every version, or the [full 1.4.3 notes](docs/releases/1.4.3.md).
 
 ## Features
 

@@ -233,7 +233,7 @@ def run_turn(kind: str, message: str, on_approval) -> tuple:
 def hook_check(secret: str, ip: str) -> str | None:
     """None when the secret is right; else why not (wrong, off, or too many tries from this address)."""
     if not (_load().get("webhook") or {}).get("enabled"):
-        return "The webhook is off - turn it on in Settings > Channels."
+        return "The webhook is off - turn it on in Settings > Connections > Channels."
     now = time.time()
     recent = [t for t in _hook_fails.get(ip, []) if now - t < 600]
     _hook_fails[ip] = recent

@@ -105,6 +105,45 @@ class BrokerTests(unittest.TestCase):
         t.join(5)
         self.assertFalse(result["v"])
 
+    def test_no_popup_window_until_one_is_needed(self):
+        # 1.4.3: the Tk root is made for the first popup, not at startup, where it could take the keyboard focus
+        # from the app's window for a moment.
+        made = []
+
+        class FakeRoot:
+            def __init__(self):
+                made.append(self)
+                self.tk = self
+
+            def withdraw(self): pass
+            def call(self, *a): pass
+            def after(self, *a): pass
+            def mainloop(self): pass
+
+        fake_tk = type("tk", (), {"Tk": FakeRoot})
+        with patch.object(approval, "_gui_queue", queue.Queue()) as q, patch.object(approval, "tk", fake_tk):
+            approval._gui_available.clear()
+            t = threading.Thread(target=approval._gui_thread_main, daemon=True)
+            t.start()
+            time.sleep(0.3)
+            self.assertEqual(made, [])                                   # started, and still no window
+            q.put(([{"tool_name": "x"}], [False], threading.Event(), ""))
+            t.join(3)
+            self.assertEqual(len(made), 1)
+            self.assertTrue(approval._gui_available.is_set())
+
+    def test_a_popup_that_cannot_open_refuses_its_request(self):
+        def broken():
+            raise RuntimeError("no display")
+        holder, event = [None], threading.Event()
+        with patch.object(approval, "_gui_queue", queue.Queue()) as q, patch.object(approval, "tk", type("tk", (), {"Tk": broken})):
+            q.put(([{"tool_name": "x"}], holder, event, ""))
+            approval._gui_thread_main()
+        self.assertTrue(event.is_set())
+        self.assertFalse(holder[0])
+        self.assertTrue(approval._gui_failed.is_set())
+        approval._gui_failed.clear()
+
     def test_stop_closes_the_desktop_popup_request(self):
         stopped = threading.Event()
         with patch.object(approval, "_gui_queue", queue.Queue()) as q, patch.object(approval, "_gui_thread", None):

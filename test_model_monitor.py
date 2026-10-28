@@ -37,6 +37,27 @@ class MonitorTests(unittest.TestCase):
         self.assertFalse(model_monitor.blocked("Your reply", on))
         self.assertFalse(model_monitor.blocked("Proactive help", {}))
 
+    def test_repeats_in_a_row_are_one_line(self):
+        # 1.4.3: twelve chat titles in a row are one "×12" line, with their tokens and time added up.
+        for i in range(12):
+            model_monitor.record("m", 100, 10, 0.5, label="Chat title", source="Other (titles)")
+        model_monitor.record("m", 300, 50, 2.0, label="Compare", source="Compare")
+        model_monitor.record("m", 100, 10, 0.5, label="Chat title", source="Other (titles)")
+        g = model_monitor.grouped()
+        self.assertEqual([(r["source"], r["count"]) for r in g], [("Other (titles)", 1), ("Compare", 1), ("Other (titles)", 12)])
+        self.assertEqual((g[2]["tokens_in"], g[2]["tokens_out"], g[2]["seconds"]), (1200, 120, 6.0))
+        self.assertEqual(len(model_monitor.grouped(limit=2)), 2)
+
+    def test_what_the_switch_stopped_is_counted(self):
+        model_monitor._skipped.clear()
+        on = {"model_replies_only": True}
+        model_monitor.blocked("Proactive help", on)
+        model_monitor.blocked("Proactive help", on)
+        model_monitor.blocked("Compare", on)                              # not stopped: not counted
+        model_monitor.blocked("Loading ahead while you type", {})          # switch off: not counted
+        self.assertEqual(model_monitor.skipped(), {"Proactive help": 2})
+        model_monitor._skipped.clear()
+
     def test_a_blocked_call_never_reaches_the_model(self):
         import agent.models as llm
         import core.state as shared

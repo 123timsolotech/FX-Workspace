@@ -264,7 +264,7 @@ marked "repeats Reuters - not independent" (`corroboration.timelines`).
   else works inside it; **Save this chat** keeps it only when you click.
   Actions it takes outside the chat (a file written, an app changed) still
   happen - the banner says so.
-* **Settings > Network** - one route for everything this app sends: Direct,
+* **Settings > Web search and network › Network** - one route for everything this app sends: Direct,
   the system proxy, your SOCKS5/HTTP proxy (names resolved by the proxy), or Tor
   (9050 Expert Bundle / 9150 Tor Browser), with per-component overrides for
   search, cloud models and the rest. **Kill switch:** if the route goes down,
@@ -275,7 +275,7 @@ marked "repeats Reuters - not independent" (`corroboration.timelines`).
   servers answer, WebRTC, what listens beyond 127.0.0.1) and a speed test.
   The connection log (host, route, size - never the page or query) stays in
   memory unless you choose to save it.
-* **Settings > Web Search** - modes, each saying what it protects and what
+* **Settings > Web search and network › Web search** - modes, each saying what it protects and what
   still leaves this PC: **Standard**, **Private** (no cookies, Referer, tracking
   parameters or personal details in the query; a generic browser signature),
   **Maximum Privacy** (your SearXNG instance through a proxy or Tor; asks before

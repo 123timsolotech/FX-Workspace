@@ -100,6 +100,7 @@ DEFAULT_SETTINGS = {
     "layout": "comfortable",
     "accent": "",                  # "" = the default gold (follows light/dark); a hex = a chosen accent
     "chat_font": "serif",         # serif | sans  (assistant replies)
+    "think_mark": "auto",         # auto | orbs | legacy  (the thinking mark; auto = orbs, the AI-inspired looks keep theirs)
     "user_name": "",
     # Privacy: cloud models never see screenshots unless this is on.
     "cloud_allow_screenshots": False,
@@ -392,6 +393,8 @@ def load_settings() -> dict:
         data["accent"] = ""
     if data.get("chat_font") not in ("serif", "sans"):
         data["chat_font"] = "serif"
+    if data.get("think_mark") not in ("auto", "orbs", "legacy"):
+        data["think_mark"] = "auto"
     data["look"] = clean_look(data.get("look"))
     data.update(clean_agent_settings(data))
     return data

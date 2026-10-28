@@ -519,16 +519,30 @@ _gui_available = threading.Event()
 _gui_failed = threading.Event()
 
 
+def _refuse(item) -> None:
+    """A request the popup can't show: an approval is refused, a choice gets no answer."""
+    payload, holder, event, _ = item
+    if payload != "close" and not (isinstance(payload, dict) and payload.get("kind") == "choice"):
+        holder[0] = False
+    event.set()
+
+
 def _gui_thread_main():
     if tk is None:
         print("[WARN] tkinter is unavailable; desktop popups disabled (the web UI still asks).")
         _gui_failed.set()
         return
+    # No window until the first popup is needed. A Tk root made at startup - even withdrawn at once - could take
+    # the keyboard focus from the app's own window for a moment right after it opened (1.4.2's known issue).
+    first = _gui_queue.get()
+    while first[0] == "close":                 # a request stopped before any popup existed: nothing to close
+        first = _gui_queue.get()
     try:
         root = tk.Tk()
     except Exception as e:
         print(f"[WARN] Approval GUI unavailable ({e}); actions will auto-reject.")
         _gui_failed.set()
+        _refuse(first)
         return
     root.withdraw()
     try:
@@ -538,11 +552,12 @@ def _gui_thread_main():
     _gui_available.set()
 
     windows = {}                      # id(event) -> open approval window
+    waiting = [first]                 # the request that made the root, shown on the first poll
 
     def poll():
         try:
             while True:
-                payload, holder, event, context_line = _gui_queue.get_nowait()
+                payload, holder, event, context_line = waiting.pop() if waiting else _gui_queue.get_nowait()
                 try:
                     if payload == "close":                  # Stop pressed while the popup was open
                         win = windows.pop(id(event), None)

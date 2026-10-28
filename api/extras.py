@@ -173,6 +173,15 @@ async def finder_download(body: FinderDownload):
         return _err(e)
 
 
+@router.get("/api/model-finder/starter")
+async def finder_starter():
+    """The first-run welcome: the starter model that suits this PC (no network)."""
+    try:
+        return {"ok": True, **await asyncio.to_thread(model_finder.starter)}
+    except Exception as e:
+        return _err(e)
+
+
 @router.get("/api/model-finder/status")
 def finder_status():
     return model_finder.status()

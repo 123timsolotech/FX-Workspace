@@ -31,6 +31,11 @@
   --accent: #c99016; --accent-ink: #1d1606; --accent-soft: rgba(201, 144, 22, 0.13);
   /* Accent-coloured TEXT (links, small buttons): the accent itself where it reads at 4.5:1 */
   --accent-text: var(--accent); --warn-text: var(--warn); --danger-text: var(--danger); --ok-text: var(--ok);   /* fitted at runtime: fitTextColors */
+  /* The same colours as text on their own tint (a pill, a chip, a warning strip): a third of the way to the text
+     colour, so they keep 4.5:1 on the tint too (1.4.3's appearance audit). */
+  --tint-text-accent: color-mix(in srgb, var(--accent-text) 66%, var(--text)); --tint-text-ok: color-mix(in srgb, var(--ok-text) 66%, var(--text));
+  --tint-text-warn: color-mix(in srgb, var(--warn-text) 66%, var(--text)); --tint-text-danger: color-mix(in srgb, var(--danger-text) 66%, var(--text));
+  --info-text: color-mix(in srgb, var(--info) 62%, var(--text));
   --user-bubble: #efece3; --code-bg: #f3f1ea;
   --ok: #4f8a5b; --warn: #b7862a; --danger: #c2493d; --info: #4a7fa8;
   --shadow: 0 1px 2px rgba(20, 20, 19, 0.04), 0 4px 16px rgba(20, 20, 19, 0.05);
@@ -195,7 +200,7 @@ a { color: var(--accent-text); }
 :root { --font-wordmark: 'Space Grotesk', 'Bahnschrift', 'Segoe UI Variable Display', 'Segoe UI', sans-serif; }
 .brand { position: relative; display: flex; align-items: center; gap: 4px; min-width: 0; padding: 2px 6px 2px 0; border: 0; border-radius: 8px; background: none; color: inherit; cursor: pointer; text-align: left; }
 .brand-mark { width: 30px; height: 28px; flex-shrink: 0; color: var(--accent); overflow: visible; }
-.beta-tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; line-height: 1.5; vertical-align: 2px; color: var(--accent-text, var(--accent)); background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); font-family: var(--sans, inherit); }
+.beta-tag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; line-height: 1.5; vertical-align: 2px; color: var(--tint-text-accent); background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent); font-family: var(--sans, inherit); }
 .brand-beta { margin-left: 4px; align-self: center; }
 :root:not([data-app="labs"]) .brand-beta, .app.sidebar-collapsed .brand-beta { display: none; }
 .brand-name { font-family: var(--font-wordmark); font-weight: 300; font-size: 19px; letter-spacing: .04em; white-space: nowrap; }
@@ -206,10 +211,11 @@ a { color: var(--accent-text); }
 .fx-wordmark svg { width: 1.6em; height: 1.48em; overflow: visible; }
 .fx-wordmark.lg { font-size: 26px; margin-bottom: 6px; }
 .fx-wordmark.xl { font-size: 34px; }
-.fx-sign { font-family: var(--serif); font-style: italic; font-size: 1.15em; color: color-mix(in srgb, #e9a52c 70%, var(--text)); }
-.home-credit { display: inline-flex; align-items: center; gap: 4px; margin-top: auto; padding: 4px 8px; border: 0; border-radius: 8px; background: none; color: var(--muted); opacity: .7; font-family: var(--font-wordmark); font-weight: 300; font-size: 11.5px; letter-spacing: .03em; cursor: pointer; transition: opacity .16s ease; }
-.home-credit svg { width: 17px; height: 15px; }
-.home-credit:hover { opacity: 1; }
+.fx-sign { font-family: var(--serif); font-style: italic; font-size: 1.15em; color: color-mix(in srgb, #e9a52c 50%, var(--text)); }
+/* Quiet but readable: --faint is fitted to 4.5:1 (fitTextColors) - no opacity on top of it. */
+.home-credit { display: inline-flex; align-items: center; gap: 4px; margin-top: auto; padding: 4px 8px; border: 0; border-radius: 8px; background: none; color: var(--faint); font-family: var(--font-wordmark); font-weight: 300; font-size: 11.5px; letter-spacing: .03em; cursor: pointer; transition: color .16s ease; }
+.home-credit svg { width: 17px; height: 15px; opacity: .8; }
+.home-credit:hover { color: var(--text-2); }
 /* First start */
 .first-run { position: fixed; inset: 0; z-index: 400; display: flex; align-items: center; justify-content: center; padding: 20px; background: var(--scrim, rgba(0,0,0,.5)); backdrop-filter: blur(6px); transition: opacity .2s ease; }
 .first-run.closing { opacity: 0; }
@@ -221,7 +227,40 @@ a { color: var(--accent-text); }
 .fr-list b { color: var(--text); font-weight: 600; }
 .fr-credit { padding-top: 14px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12px; line-height: 1.7; }
 .fr-credit a { color: inherit; }
-.fr-go { margin-top: 16px; min-width: 140px; }
+/* The three steps (1.4.3): a model, a look, what stays on this PC. */
+.fr-card { width: min(480px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; }
+.fr-step { text-align: left; font-size: 13.5px; color: var(--text-2); }
+.fr-step h2 { margin: 2px 0 10px; font-size: 18px; font-weight: 600; color: var(--text); }
+.fr-step > p { margin: 0 0 10px; line-height: 1.55; }
+.fr-n { font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+.fr-note { color: var(--muted); font-size: 12.5px; }
+.fr-pc { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12.5px; }
+.fr-pick { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 10px; border: 1px solid var(--border-strong); border-radius: 12px; background: var(--surface-2); }
+.fr-pick > div { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.fr-pick b { color: var(--text); font-size: 14.5px; }
+.fr-pick small { color: var(--muted); font-size: 12.5px; }
+.fr-dl { display: grid; gap: 6px; padding: 12px 14px; margin-bottom: 10px; border-radius: 12px; background: var(--surface-2); }
+.fr-dl small { color: var(--muted); }
+.fr-bar { display: block; height: 5px; border-radius: 999px; background: var(--surface-3); overflow: hidden; }
+.fr-bar i { display: block; height: 100%; background: var(--accent); border-radius: inherit; transition: width .5s var(--ease-out); }
+.fr-looks { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+.fr-look { display: grid; gap: 6px; padding: 6px 6px 8px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-2); font-size: 12.5px; text-align: center; }
+.fr-look .th-pair { height: 34px; margin: 0; border-radius: 6px; }
+.fr-look .th-pair .th { padding: 4px; gap: 3px; }
+.fr-look:hover { border-color: var(--border-strong); }
+.fr-look.on { border-color: var(--accent); color: var(--text); box-shadow: 0 0 0 1px var(--accent); }
+.fr-foot { display: flex; align-items: center; gap: 10px; margin-top: 18px; }
+.fr-foot .fr-next { margin-left: auto; min-width: 110px; }
+.fr-dots { display: flex; gap: 6px; margin: 0 auto; }
+.fr-dots i { width: 6px; height: 6px; border-radius: 50%; background: var(--border-strong); transition: background .2s, width .2s; }
+.fr-dots i.on { width: 16px; border-radius: 3px; background: var(--accent); }
+@media (max-width: 420px) { .fr-looks { grid-template-columns: repeat(2, 1fr); } .fr-card { padding: 20px 16px 16px; } }
+/* What's new after an update: the release notes, scrolling inside the card. */
+.wn-card { width: min(640px, 100%); display: flex; flex-direction: column; text-align: left; }
+.wn-head h2 { margin: 2px 0 8px; font-size: 19px; font-weight: 600; }
+.wn-body { flex: 1; min-height: 0; overflow-y: auto; max-height: min(60vh, 560px); padding-right: 6px; font-family: var(--sans); font-size: 14px; line-height: 1.6; color: var(--text-2); }
+.wn-body h2 { font-size: 15.5px; margin: 16px 0 6px; color: var(--text); }
+.wn-body ul { padding-left: 18px; }
 .sb-nav { padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; }
 .sb-item {
   display: flex; align-items: center; gap: 11px; padding: 7px 9px; border-radius: 9px; color: var(--text-2);
@@ -238,7 +277,7 @@ a { color: var(--accent-text); }
 .sb-temp[aria-pressed="true"] { color: var(--accent); background: var(--accent-soft); }
 /* Incognito chat, v2 (2026-10-14): a quiet tinted room. An empty chat opens on a small ghost whose eyes glance
    around and follow the pointer; once you write, it folds into a slim bar above the thread. */
-html.temp-chat { --incog: color-mix(in srgb, var(--accent) 50%, var(--text) 50%); }
+html.temp-chat { --incog: color-mix(in srgb, var(--accent-text) 70%, var(--text) 30%); }   /* accent-text: 4.5:1 on any theme */
 .temp-banner { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; max-width: 470px; margin: 7vh auto 26px;
   color: var(--text-2); font-size: 13px; line-height: 1.55; }
 .temp-banner .incog-face { width: 76px; height: 76px; margin-bottom: 8px; color: var(--incog); overflow: visible; }
@@ -449,7 +488,7 @@ body:has(.mode-pop) .brand-chev { transform: rotate(180deg); }
 .lab-row small { display: block; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .lab-chip { flex: none; display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; background: var(--surface-3); color: var(--text-2); }
 .lab-chip.s-running { background: var(--accent-soft); color: var(--accent-text, var(--accent)); }
-.lab-chip.s-done { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--ok-text, var(--ok)); }
+.lab-chip.s-done { background: color-mix(in srgb, var(--ok) 16%, transparent); color: var(--tint-text-ok); }
 .lab-chip.s-failed { background: color-mix(in srgb, var(--danger) 14%, transparent); color: var(--danger-text, var(--danger)); }
 .lab-chip.s-draft { background: color-mix(in srgb, var(--info) 14%, transparent); color: var(--text-2); }
 .lab-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
@@ -1361,7 +1400,7 @@ html.chat-locked .composer { opacity: .6; }
 .iv-seed select option { background: var(--surface); color: var(--text); }
 .iv-go { margin-left: auto; display: inline-flex; align-items: center; gap: 10px; }
 .iv-est { font-size: 12.5px; color: var(--muted); }
-.kbd-hint { font-family: var(--mono); font-size: 10.5px; opacity: .6; margin-left: 4px; }
+.kbd-hint { font-family: var(--mono); font-size: 10.5px; margin-left: 4px; }   /* the button's own text colour - a fainter one failed 4.5:1 on coloured buttons */
 @media (hover: none) { .kbd-hint { display: none; } }
 .place.drop-pic { outline: 2px dashed var(--accent); outline-offset: -10px; border-radius: 16px; }
 .place.drop-pic::after { content: "Drop a picture to edit it"; position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 20; pointer-events: none;
@@ -2110,6 +2149,23 @@ body { font-size: calc(var(--base-size) * var(--text-scale, 1)); }
 :root[data-skin="aurora"] .think[data-act="draw"] i { animation: curtain 1.6s ease-in-out infinite, curtain-hue 3s linear infinite; }
 :root[data-skin="aurora"] .think[data-act="wait"] i { animation-duration: 3s; animation-delay: 0s; }
 
+/* ORBS (Settings › Appearance › Thinking mark; drawn by Orbs on a canvas) - the five <i> step aside. */
+/* !important: the appearances size and turn .think itself, by data-act, with stronger selectors. */
+.think.orb-mark { width: 26px !important; height: 24px !important; transition: none !important; animation: none !important; transform: none !important; filter: none !important; opacity: 1 !important; }
+.think.orb-mark > i { display: none !important; }
+.think.orb-mark > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+:root:is([data-motion="reduced"], [data-motion="off"]) .act-line .think.orb-mark { display: inline-block; }   /* still, but it shows the work */
+
+/* A part made of sections (Connections; Web search and network): each section keeps its own heading. */
+.set-sec { scroll-margin-top: 12px; }
+.set-sec + .set-sec { margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--border); }
+/* Settings search: the setting it found, lit for a moment. */
+.set-hit { animation: set-hit 2.2s var(--ease-out); border-radius: 10px; }
+@keyframes set-hit { 0%, 55% { background: var(--accent-soft); box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 45%, transparent); } 100% { background: transparent; box-shadow: 0 0 0 2px transparent; } }
+:root[data-motion="off"] .set-hit { animation: none; background: var(--accent-soft); }
+.tm-preview { display: flex; align-items: center; gap: 10px; margin-top: 10px; color: var(--muted); font-size: 13px; }
+.tm-preview .tm-act { min-width: 9em; }
+
 /* The hand-off between kinds of work (setThinkAct): out, then in on a small spring - every theme. */
 .think { transition: opacity .14s ease, transform .14s ease, filter .14s ease; }
 .think.act-out { opacity: 0; transform: scale(.55); filter: blur(1.5px); }
@@ -2503,6 +2559,7 @@ mark.find-hit.current { background: var(--warn); color: var(--bg); box-shadow: 0
 .pal-item > .icon { color: var(--muted); flex-shrink: 0; }
 .pal-item.active { background: var(--hover); }
 .pal-item.active > .icon { color: var(--accent-text, var(--accent)); }
+.pal-item.active .pal-main small { color: var(--text-2); }   /* the highlight under it is darker than any page ground */
 .pal-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .pal-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pal-main small { color: var(--muted); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -2528,7 +2585,7 @@ mark.find-hit.current { background: var(--warn); color: var(--bg); box-shadow: 0
 .sb-resizer { position: absolute; top: 0; right: 0; width: 7px; height: 100%; cursor: col-resize; z-index: 5; }
 .sb-resizer::after { content: ""; position: absolute; top: 0; bottom: 0; left: 3px; width: 1px; background: var(--accent); opacity: 0; transition: opacity .15s; }
 .sb-resizer:hover::after, .sb-resizer:focus-visible::after, body.resizing .sb-resizer::after { opacity: .7; }
-.sb-resizer:focus-visible { outline: none; }
+.sb-resizer:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; border-radius: 3px; }
 body.resizing { cursor: col-resize; user-select: none; }
 body.resizing .sidebar { transition: none; }
 .app.sidebar-collapsed .sb-resizer, .app.drawer .sb-resizer, :root[data-look="operator"] .sb-resizer { display: none; }
@@ -2717,7 +2774,8 @@ body.resizing .sidebar { transition: none; }
 .btn.ghost:hover { background: var(--hover); color: var(--text); }
 .btn.danger { color: var(--danger); }
 .btn.sm { height: 28px; padding: 0 10px; font-size: 12.5px; border-radius: 7px; }
-.kbd { font-family: var(--mono); font-size: 11px; padding: 0 5px; border-radius: 4px; border: 1px solid currentColor; opacity: .55; margin-left: 2px; }
+/* A key hint reads like its label (no opacity: it fell to 2:1); the faint border sets it apart. */
+.kbd { font-family: var(--mono); font-size: 10.5px; padding: 0 5px; border-radius: 4px; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); margin-left: 2px; }
 .action-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; max-height: 40vh; overflow: auto; }
 .action-row { display: flex; gap: 11px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg); }
 .tier { width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; flex-shrink: 0; display: inline-block; }
@@ -2725,9 +2783,10 @@ body.resizing .sidebar { transition: none; }
 /* .tier.input also matches the text-field class .input: keep it a dot */
 span.tier.input { padding: 0; border: 0; width: 8px; height: 8px; min-height: 0; box-shadow: none; flex: none; }
 /* The tier in words - the dot alone said nothing to a screen reader or at a glance */
-.tier-pill { display: inline-block; font-size: 11.5px; font-weight: 550; line-height: 18px; padding: 0 8px; border-radius: 999px; margin-left: 8px; vertical-align: 1px; color: var(--text-2); background: color-mix(in srgb, var(--info) 16%, transparent); }
-.tier-pill.input { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--warn-text); }
-.tier-pill.destructive { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--danger-text); }
+/* height/border/flex: the "input" tier's class is also the text box's (.input) - the pill takes none of it. */
+.tier-pill { display: inline-block; font-size: 11.5px; font-weight: 550; line-height: 18px; height: auto; padding: 0 8px; border: 0; flex: none; border-radius: 999px; margin-left: 8px; vertical-align: 1px; color: var(--text-2); background: color-mix(in srgb, var(--info) 16%, transparent); }
+.tier-pill.input { background: color-mix(in srgb, var(--warn) 20%, transparent); color: var(--tint-text-warn); height: auto; padding: 0 8px; border: 0; border-radius: 999px; font-size: 11.5px; min-width: 0; flex: none; box-shadow: none; }
+.tier-pill.destructive { background: color-mix(in srgb, var(--danger) 16%, transparent); color: var(--tint-text-danger); }
 .approval-card[data-open="1"][data-risk="destructive"] { border-color: color-mix(in srgb, var(--danger) 50%, var(--border)); }
 .approval-card[data-open="1"][data-risk="destructive"] .card-title .icon { color: var(--danger-text); }
 .approval-card[data-open="1"][data-risk="benign"] { border-color: color-mix(in srgb, var(--info) 45%, var(--border)); }
@@ -2744,11 +2803,11 @@ span.tier.input { padding: 0; border: 0; width: 8px; height: 8px; min-height: 0;
 .action-why { font-size: 13px; color: var(--text-2); margin-top: 2px; }
 .action-args, .action-preview { font-family: var(--mono); font-size: 12px; color: var(--text-2); margin: 6px 0 0; white-space: pre-wrap; word-break: break-word; max-height: 220px; overflow: auto; background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 9px; }
 .action-args:focus-visible, .action-preview:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.action-preview.diff .d-add { color: var(--ok); } .action-preview.diff .d-del { color: var(--danger); } .action-preview.diff .d-hunk { color: var(--info); }
+.action-preview.diff .d-add { color: var(--ok-text); } .action-preview.diff .d-del { color: var(--danger-text); } .action-preview.diff .d-hunk { color: var(--info-text); }
 .action-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
 .undo-mark { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; margin-left: 8px; font-weight: 500; }
-.undo-mark.yes { color: var(--ok); } .undo-mark.no { color: var(--warn); }
-.action-warn { display: flex; gap: 6px; align-items: flex-start; margin: 6px 0 2px; padding: 6px 8px; border-radius: 6px; font-size: 12.5px; color: var(--warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
+.undo-mark.yes { color: var(--ok-text); } .undo-mark.no { color: var(--warn-text); }
+.action-warn { display: flex; gap: 6px; align-items: flex-start; margin: 6px 0 2px; padding: 6px 8px; border-radius: 6px; font-size: 12.5px; color: var(--tint-text-warn); background: color-mix(in srgb, var(--warn) 10%, transparent); }
 .action-warn .icon { flex: none; margin-top: 2px; }
 .tier-label { font-size: 12px; color: var(--muted); margin-left: 6px; font-weight: 400; }
 /* The plan card (/plan, and Prompt Prep's "Plan first"): numbered steps to
@@ -3193,7 +3252,8 @@ span.tier.input { padding: 0; border: 0; width: 8px; height: 8px; min-height: 0;
 .switch.on { background: var(--accent); }
 .switch.on::after { transform: translateX(15px); }
 .seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; gap: 2px; flex-shrink: 0; }
-.seg button { padding: 5px 12px; border-radius: 7px; font-size: 13px; color: var(--text-2); }
+/* inline-flex + gap: an icon, a shape or a "~13 s" beside the label gets its own space (it was glued on: "☆Favourites"). */
+.seg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 5px 12px; border-radius: 7px; font-size: 13px; color: var(--text-2); }
 .seg button.on { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
 .opt-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
 .opt-card { border: 1.5px solid var(--border); border-radius: 12px; padding: 12px; text-align: left; background: var(--surface); }
@@ -4689,7 +4749,7 @@ html.voice-on .voice-btn { color: var(--accent); }
 :root[data-skin="terminal"] .vs-ask { border-radius: 0; }
 .vc-langs { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; max-width: 380px; }
 .vc-langs .chip { padding: 4px 11px; font-size: 12.5px; }
-.vc-langs .chip.on { border-color: var(--accent); color: var(--accent-text); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+.vc-langs .chip.on { border-color: var(--accent); color: var(--tint-text-accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
 .vs-top { position: absolute; left: 20px; top: 15px; right: 60px; display: flex; align-items: center; gap: 10px; }
 .vs-top .vs-temp { position: static; font-size: 11px; }
 .vs-voice-menu { position: relative; }
@@ -4736,6 +4796,7 @@ html.voice-on .idle-screen { display: none !important; }
 .hud-chat { display: grid; gap: 6px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); font-size: 12.5px; }
 .hud-chat .hud-a { max-height: 150px; overflow-y: auto; white-space: pre-wrap; color: var(--text); line-height: 1.45; }
 .hud-chat .hud-a:empty { display: none; }
+.hud-chat .hud-a .think { vertical-align: middle; margin: -5px 6px -4px 0; }
 .hud-send { display: flex; gap: 4px; }
 .hud-send input { flex: 1; min-width: 0; height: 28px; padding: 0 8px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; }
 .hud-send button { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 7px; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
@@ -4974,6 +5035,8 @@ html.voice-on .idle-screen { display: none !important; }
 .mm-list li { align-items: baseline; }
 .mm-list li > small { color: var(--muted); white-space: nowrap; }
 .mm-list li > span small { color: var(--muted); }
+.mm-count { font-size: 11.5px; font-weight: 600; padding: 0 6px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); font-variant-numeric: tabular-nums; }
+.mm-effect { display: flex; align-items: center; gap: 6px; color: var(--ok-text); margin-top: -2px; }
 .ctx-sub small { color: var(--muted); font-weight: 400; }
 .ctx-bar i, .ctx-bar b { position: absolute; top: 0; bottom: 0; }
 .ctx-bar i { left: 0; background: var(--muted); opacity: .7; }
@@ -5364,7 +5427,7 @@ html.voice-on .idle-screen { display: none !important; }
       <span class="topbar-brand" aria-hidden="true"><svg><use href="#mark"/></svg></span>
       <div class="chat-title" id="chat-title"></div>
       <div class="topbar-right">
-        <button class="net-ind" id="net-ind" hidden onclick="openSettings('network')" title="Network: speed, route and privacy (Settings > Network)" aria-label="Network speed and route">
+        <button class="net-ind" id="net-ind" hidden onclick="openSettings('network')" title="Network: speed, route and privacy (Settings > Web search and network)" aria-label="Network speed and route">
           <span class="ni-speed"><span class="ni-down" id="ni-down">–</span><span class="ni-up" id="ni-up">–</span></span>
           <span class="ni-badge" id="ni-badge">Direct</span><span class="ni-lat" id="ni-lat"></span>
         </button>
@@ -5546,7 +5609,7 @@ html.voice-on .idle-screen { display: none !important; }
       <button class="nav-item" data-tab="models" onclick="settingsTab('models')"><svg class="icon sm"><use href="#i-cpu"/></svg><span>Models</span><i class="nav-dot" id="diag-dot" hidden></i></button>
       <button class="nav-item" data-tab="permissions" onclick="settingsTab('permissions')"><svg class="icon sm"><use href="#i-shield"/></svg><span>Permissions</span></button>
       <button class="nav-item" data-tab="voice" onclick="settingsTab('voice')"><svg class="icon sm"><use href="#i-mic"/></svg><span>Voice and images</span></button>
-      <button class="nav-item" data-tab="websearch" onclick="settingsTab('websearch')"><svg class="icon sm"><use href="#i-globe"/></svg><span>Connections</span><i class="nav-dot" id="net-dot" hidden></i></button>
+      <button class="nav-item" data-tab="websearch" onclick="settingsTab('connections')"><svg class="icon sm"><use href="#i-globe"/></svg><span>Connections</span><i class="nav-dot" id="net-dot" hidden></i></button>
       <button class="nav-item nav-about" data-tab="about" onclick="settingsTab('about')"><svg class="icon sm"><use href="#i-help"/></svg><span>About</span></button>
       <div class="nav-empty" id="set-q-empty" hidden>No setting matches.</div>
     </nav>
@@ -5664,7 +5727,7 @@ const THEMES = ['system', 'light', 'dark', 'dawn', 'dusk', 'terminal', 'termdark
 // (color_mode: light | dark | system - follow Windows). Terminal's dark side is Lite Dark, or the original
 // phosphor green with terminal_phosphor.
 const APPEARANCES = ['classic', 'sunrise', 'terminal', 'eclipse', 'aurora', 'clay', 'mono', 'void', 'prism'];
-const AI_APPEARANCES = ['clay', 'mono', 'void', 'prism'];   // the AI-inspired ones: their own group in Appearance, marked Beta
+const AI_APPEARANCES = ['clay', 'mono', 'void', 'prism'];   // the AI-inspired ones: their own group in Appearance (out of Beta in 1.4.3)
 const FAMILY_THEMES = { classic: ['light', 'dark'], sunrise: ['dawn', 'dusk'], terminal: ['termlight', 'termdark'], eclipse: ['eclipselight', 'eclipse'], aurora: ['auroralight', 'aurora'], clay: ['claylight', 'claydark'], mono: ['monolight', 'monodark'], void: ['voidlight', 'voiddark'], prism: ['prismlight', 'prismdark'] };
 const LIGHT_SKINS = ['dawn', 'termlight', 'eclipselight', 'auroralight', 'claylight', 'monolight', 'voidlight', 'prismlight'];   // themed skins built on a light palette
 // data-tone: a skin's second palette. Terminal Lite is the Terminal skin (every data-skin="terminal"
@@ -6045,7 +6108,7 @@ function syncTitleBar() {
 }
 window.addEventListener('resize', () => { clearTimeout(syncTitleBar.t); syncTitleBar.t = setTimeout(syncTitleBar, 150); });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => syncTitleBar());
-/* The sidebar in the AI-inspired appearances (beta): their apps' names and order for the same places, search moved up
+/* The sidebar in the AI-inspired appearances: their apps' names and order for the same places, search moved up
    under New chat, and a heading over the chat list - the places themselves and Settings stay ours. Gemini's order and
    names are from its 2025 side panel (New chat, Gems, Recent, My Stuff); the rest follow the apps as described. */
 const SKIN_NAV = {
@@ -6129,6 +6192,7 @@ function applyAppearance() {
   SecretFx.sync();                          // Judaism Mode's effects (off unless it's on)
   renderPersonaBtn();                       // Judaism Mode brings its own persona
   renderModeBtn();
+  if (window.Orbs) Orbs.sync();             // the thinking mark's dressing follows the appearance
 }
 /* Colored TEXT must read at 4.5:1 on every surface it sits on, whatever the
    theme or the chosen accent (a custom accent can be very light or very dark).
@@ -6142,6 +6206,9 @@ function fitTextColors() {
   const root = document.documentElement, d = root.dataset;
   const key = [d.skin, d.theme, d.look, d.tone, d.secret, d.contrast, root.style.getPropertyValue('--accent')].join('|');
   let out = fittedColors.get(key);
+  // The secondary text colours (--muted, --faint) are fitted the same way, in place: the theme's own value first
+  // (a fitted one from the theme before would be read back otherwise).
+  if (!out) for (const name of ['--muted', '--faint']) root.style.removeProperty(name);
   if (!out) {
     const probe = document.createElement('i');
     probe.style.display = 'none'; document.body.appendChild(probe);
@@ -6149,8 +6216,9 @@ function fitTextColors() {
     const rgb = v => { probe.style.color = `var(${v})`; const m = cs.color.match(/[\d.]+/g) || [0, 0, 0]; return m.slice(0, 3).map(Number); };
     const lum = c => { const [r, g, b] = c.map(x => { x /= 255; return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
     const ratio = (a, b) => { const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p); return (x + 0.05) / (y + 0.05); };
-    const grounds = ['--bg', '--surface', '--surface-2'].map(rgb), ink = rgb('--text');
-    out = [['--accent', '--accent-text'], ['--warn', '--warn-text'], ['--danger', '--danger-text'], ['--ok', '--ok-text']].map(([src, name]) => {
+    const solid = v => { probe.style.color = `var(${v})`; const m = (cs.color.match(/[\d.]+/g) || []).map(Number); return m.length > 3 && m[3] < 1 ? null : m.slice(0, 3); };
+    const grounds = ['--bg', '--surface', '--surface-2', '--surface-3', '--bg-sidebar'].map(solid).filter(Boolean), ink = rgb('--text');   // see-through grounds (glass) aren't one colour
+    out = [['--accent', '--accent-text'], ['--warn', '--warn-text'], ['--danger', '--danger-text'], ['--ok', '--ok-text'], ['--muted', '--muted'], ['--faint', '--faint']].map(([src, name]) => {
       const base = rgb(src);
       let t = 0, c = base;
       while (t < 1 && Math.min(...grounds.map(g => ratio(c, g))) < 4.55) { t = Math.min(1, t + 0.04); c = base.map((x, i) => Math.round(x + (ink[i] - x) * t)); }
@@ -11454,6 +11522,7 @@ function setRootAct(act) {
 // never a jump from one animation into the middle of the next. Changes that come quicker land on the last one.
 function setThinkAct(el, act) {
   if (!el) return;
+  if (window.Orbs && Orbs.on()) { if (el.dataset.act !== act) { el.dataset.act = act; Orbs.wake(); } return; }   // the orbs blend by themselves
   const target = el._next || el.dataset.act;
   if (target === act) return;
   const still = !el.dataset.act || !el.isConnected || document.documentElement.dataset.motion === 'off' || matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -11467,6 +11536,260 @@ function setThinkAct(el, act) {
     setTimeout(() => el.classList.remove('act-in'), 320);
   }, 140);
 }
+/* ---- Orbs: the thinking mark (Settings › Appearance › Thinking mark) ------------------------------------
+   Every .think on screen draws three orbs - a core and two satellites - on its own small canvas, all from one
+   requestAnimationFrame loop. Each kind of work (data-act) is a formation: where each orb is, how big and how
+   bright, as a function of time. A change of work blends the old formation into the new one over BLEND ms, so
+   the orbs fly into the new pattern mid-motion instead of one animation cutting into the next; a change that
+   comes mid-blend starts from wherever the orbs are. Time is one clock for every mark, so a new mark doing the
+   same work is in step with the one it replaces, and it takes over the last one's blend when the Thinking row
+   hands over to the action line. Each appearance only dresses the orbs (dress): colours, shape, glow, timing.
+   The loop sleeps when no mark is showing or the window is hidden; Motion reduced/off draw each formation once,
+   still. "Legacy" keeps each appearance's own CSS mark (the five <i>). */
+// orbs-math:start - plain functions, also run by test_orbs.py under node
+const ORB_TAU = Math.PI * 2;
+const orbEase = k => k <= 0 ? 0 : k >= 1 ? 1 : k < .5 ? 4 * k * k * k : 1 - (-2 * k + 2) ** 3 / 2;
+function orbTilt(x, y, deg) { const r = deg * Math.PI / 180, c = Math.cos(r), s = Math.sin(r); return [x * c - y * s, x * s + y * c]; }
+// A formation: (t seconds, i orb: 0 the core, 1-2 satellites) -> [x, y, r, alpha, z, colour] in a unit box
+// (-1..1 both ways), r as a share of it, z the drawing order (higher in front), colour 0..2 along the palette.
+const ORB_FORMS = {
+  think(t, i) {             // satellites orbit the core lazily on tilted orbits of different sizes; the core breathes
+    if (i === 0) return [0, 0, .3 * (1 + .08 * Math.sin(ORB_TAU * t / 1.8)), 1, 0, 0];
+    const [rx, ry, deg, per, ph, r] = i === 1 ? [.82, .34, -28, 2.2, 0, .17] : [.6, .46, 24, 3.1, 2, .11];
+    const a = ORB_TAU * t / per * (i === 1 ? 1 : -1) + ph, [x, y] = orbTilt(rx * Math.cos(a), ry * Math.sin(a), deg);
+    return [x, y, r, Math.sin(a) < 0 ? .55 : 1, Math.sin(a), 1];
+  },
+  read(t, i) {              // in a row, a focus sweeping along it like eyes along a line
+    const x = [0, -.62, .62][i], s = .85 * Math.sin(ORB_TAU * t / 1.7), f = Math.exp(-(((x - s) / .38) ** 2));
+    return [x, .06 * Math.sin(ORB_TAU * t / 3.4 + i), .12 + .09 * f, .35 + .65 * f, 0, i ? 1 : 0];
+  },
+  search(t, i) {            // one satellite sweeps wide like radar, its echo behind it; the core pulses
+    const p = Math.sin(ORB_TAU * t / .9);
+    if (i === 0) return [0, 0, .2 + .03 * p, .8 + .2 * p, 0, 0];
+    const a = ORB_TAU * t / 1.15 - (i === 2 ? .55 : 0);
+    return [.76 * Math.cos(a), .76 * Math.sin(a), i === 1 ? .16 : .1, i === 1 ? 1 : .45, 1, 1];
+  },
+  tool(t, i) {              // a triangle turning in crisp 120° steps, like gears clicking
+    const n = t / .5, k = Math.min(1, (n - Math.floor(n)) / .35), step = Math.floor(n) + orbEase(k);
+    const a = (step + i) * ORB_TAU / 3 - Math.PI / 2;
+    return [.56 * Math.cos(a), .56 * Math.sin(a), .19 * (1 - .14 * Math.sin(Math.PI * k)), 1, 0, i ? 1 : 0];
+  },
+  write(t, i) {             // one after another along a flowing figure eight, like a pen's tip
+    const th = ORB_TAU * t / 1.5 - i * .38;
+    return [.74 * Math.sin(th), .36 * Math.sin(2 * th), [.2, .14, .09][i], [1, .75, .5][i], -i, i ? 1 : 0];
+  },
+  draw(t, i) {              // a swirl that blends the palette's colours
+    const a = ORB_TAU * t / 2.2 + i * ORB_TAU / 3, rr = .42 + .16 * Math.sin(ORB_TAU * t / 1.3 + i);
+    return [rr * Math.cos(a), rr * Math.sin(a), .2 + .04 * Math.sin(ORB_TAU * t / .9 + 2 * i), 1, 0, (i + t / 1.2) % 3];
+  },
+  wait(t, i) {              // nothing orbits: the satellites rest at the core's feet and everything bobs, slow and dim
+    return [[0, -.34, .34][i], [-.1, .3, .3][i] + .07 * Math.sin(ORB_TAU * t / 2.8 + 1.3 * i), i ? .12 : .24, .55, 0, i ? 1 : 0];
+  },
+};
+const ORB_ACTS = Object.keys(ORB_FORMS);
+// One formation blended into another: k 0 is all `from`, 1 all `to`. Colour wraps (0..3 is a circle).
+function orbMix(a, b, k) {
+  const out = a.map((v, j) => v + (b[j] - v) * k);
+  let dc = b[5] - a[5]; if (dc > 1.5) dc -= 3; else if (dc < -1.5) dc += 3;
+  out[5] = (a[5] + dc * k + 3) % 3;
+  return out;
+}
+const ORB_BLEND = 450;
+// A mark's orbs now (o: { act, from, t0, depth }): its formation, or a blend from where they were (from) into it.
+function orbState(o, t, now, form) {
+  const to = i => form(o.act, t, i);
+  if (!o.from) return [0, 1, 2].map(to);
+  const k = orbEase((now - o.t0) / ORB_BLEND);
+  if (k >= 1) { o.from = null; return [0, 1, 2].map(to); }
+  const from = o.from(t);
+  return [0, 1, 2].map(i => orbMix(from[i], to(i), k));
+}
+// Another kind of work: the blend starts from where the orbs are, still moving - the old formation (or the old
+// blend, frozen at its share). Many quick changes in a row start from a still snapshot, so the chain stays short.
+function orbRetarget(o, act, t, now, form) {
+  if (o.act === act) return;
+  const prev = o.from, prevAct = o.act, k = prev ? orbEase((now - o.t0) / ORB_BLEND) : 1, depth = (o.depth || 0) + 1;
+  if (prev && k < 1 && depth > 3) { const snap = orbState(o, t, now, form); o.from = () => snap; o.depth = 0; }
+  else if (prev && k < 1) { o.from = tt => { const a = prev(tt); return [0, 1, 2].map(i => orbMix(a[i], form(prevAct, tt, i), k)); }; o.depth = depth; }
+  else { o.from = tt => [0, 1, 2].map(i => form(prevAct, tt, i)); o.depth = 0; }
+  o.act = act; o.t0 = now;
+}
+// orbs-math:end
+var Orbs = (() => {
+  const TRAIL = 7;
+  const marks = document.getElementsByClassName('think');        // live: new marks join by themselves
+  const root = document.documentElement;
+  let raf = 0, clock = 0, last = 0, dress = null, dressKey = '', handoff = null, wakeT = 0, sizeCheck = 0;
+  const probe = document.createElement('i');
+  const rgba = v => {                                              // any computed colour -> [r, g, b, a] (0-255, 0-1)
+    probe.style.color = ''; probe.style.color = v;
+    const c = getComputedStyle(probe).color, n = (c.match(/[\d.]+/g) || []).map(Number);
+    if (/^color\(srgb/.test(c)) return [n[0] * 255, n[1] * 255, n[2] * 255, n.length > 3 ? n[3] : 1];
+    return [n[0] || 0, n[1] || 0, n[2] || 0, n.length > 3 ? n[3] : 1];
+  };
+  const css = (c, a = 1) => `rgba(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])},${(c[3] ?? 1) * a})`;
+  const along = (pal, c) => { const i = Math.floor(c) % 3, j = (i + 1) % 3, k = c - Math.floor(c); return pal[i].map((v, n) => v + (pal[j][n] - v) * k); };
+  function mode() {
+    const d = root.dataset, m = (S.settings && S.settings.think_mark) || 'auto';
+    if (d.secret || d.tone === 'mossad') return 'legacy';                 // a secret theme keeps its own mark
+    if (m === 'auto') return AI_APPEARANCES.includes(d.skin) ? 'legacy' : 'orbs';
+    return m === 'legacy' ? 'legacy' : 'orbs';
+  }
+  // The appearance's dressing: colours from its own tokens, a drawing style, and timing.
+  function getDress() {
+    const d = root.dataset, key = [d.skin, d.scheme, d.tone, d.contrast, root.style.getPropertyValue('--accent')].join('|');
+    if (dress && key === dressKey) return dress;
+    probe.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden'; if (!probe.isConnected) document.body.appendChild(probe);
+    const v = name => rgba(`var(${name})`), has = name => getComputedStyle(root).getPropertyValue(name).trim();
+    const accent = v('--accent'), text = v('--text'), bg = v('--bg');
+    const glow = has('--glow') ? v('--glow') : accent, glow2 = has('--glow-2') ? v('--glow-2') : glow, glow3 = has('--glow-3') ? v('--glow-3') : glow2;
+    const warn = v('--warn'), info = v('--info'), dark = d.scheme === 'dark';
+    const base = { style: 'fill', pal: [accent, accent, info], speed: 1, bg };
+    dress = ({
+      classic: dark ? { ...base, ring: true } : base,
+      dawn: { ...base, style: 'glow', pal: [accent, glow2, glow] }, dusk: { ...base, style: 'glow', pal: [glow2, glow, accent] },
+      terminal: { ...base, style: 'pixel', pal: [accent, accent, text], steps: 10 },
+      eclipse: { ...base, style: 'eclipse', pal: [glow2, glow, glow2] },
+      aurora: { ...base, style: 'glow', trail: true, pal: [glow, glow2, glow3] },
+      clay: { ...base, style: 'clay', pal: [accent, accent, warn] },
+      mono: { ...base, pal: [text, text, text], fold: true },
+      void: { ...base, style: 'ring', pal: [text, text, text], speed: 1.25 },
+      prism: { ...base, style: 'gradient', pal: [glow, glow3, glow2] },
+    })[d.skin] || base;
+    dressKey = key;
+    for (const el of marks) if (el._orb) { el._orb.from = null; el._orb.trail = []; el._orb.drawn = ''; }
+    return dress;
+  }
+  // ChatGPT's mark is one dot: the satellites fold into it while it only thinks.
+  const form = (act, t, i) => dress && dress.fold && act === 'think'
+    ? (i ? [0, 0, 0, 0, -1, 0] : [0, 0, .38 * (.84 + .16 * Math.sin(ORB_TAU * t / 1.4)), 1, 0, 0])
+    : (ORB_FORMS[act] || ORB_FORMS.think)(t, i);
+  const state = (o, t, now) => orbState(o, t, now, form);
+  const retarget = (o, act, t, now) => orbRetarget(o, act, t, now, form);
+  function prepare(el) {
+    const cv = document.createElement('canvas');
+    cv.setAttribute('aria-hidden', 'true');
+    el.classList.add('orb-mark'); el.appendChild(cv);
+    const o = el._orb = { cv, ctx: cv.getContext('2d'), act: el.dataset.act || 'think', from: null, t0: 0, trail: [], w: 0, h: 0, drawn: '' };
+    // A mark that has just taken over from one that went away (the Thinking row -> the action line) carries on its blend.
+    if (handoff && performance.now() - handoff.at < 400) { o.act = handoff.act; o.from = handoff.from; o.t0 = handoff.t0; o.depth = handoff.depth; }
+    handoff = null;
+    return o;
+  }
+  function release(el) {
+    el.classList.remove('orb-mark'); if (el._orb) el._orb.cv.remove(); el._orb = null;
+  }
+  function paint(el, o, t, now, still) {
+    if (!o.w || !sizeCheck || still) { o.mw = el.clientWidth; o.mh = el.clientHeight; }   // layout reads are the costly part
+    const w = o.mw, h = o.mh, dpr = Math.min(3, window.devicePixelRatio || 1);
+    if (!w || !h) return;
+    if (o.w !== w || o.h !== h || o.dpr !== dpr) { o.cv.width = Math.round(w * dpr); o.cv.height = Math.round(h * dpr); o.w = w; o.h = h; o.dpr = dpr; o.drawn = ''; }
+    const act = el.dataset.act || 'think';
+    if (act !== o.act) retarget(o, act, t, now);
+    if (still) { const sig = act + dressKey + w + h; if (o.drawn === sig && !o.from) return; o.drawn = sig; }
+    const D = dress, ctx = o.ctx, s = Math.min(w, h) / 2 * .86, cx = w / 2, cy = h / 2;
+    let orbs = state(o, t, now);
+    if (D.steps) orbs = orbs.map(q => [Math.round(q[0] * s / 3) * 3 / s, Math.round(q[1] * s / 3) * 3 / s, ...q.slice(2)]);   // Terminal: on a 3 px grid
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    if (D.trail && !still) {                                       // Aurora: a short light trail behind each orb
+      o.trail.push(orbs); if (o.trail.length > TRAIL) o.trail.shift();
+      o.trail.slice(0, -1).forEach((past, n) => past.forEach(q => {
+        if (q[2] <= 0) return;
+        ctx.fillStyle = css(along(D.pal, q[5]), q[3] * .22 * (n + 1) / TRAIL);
+        ctx.beginPath(); ctx.arc(cx + q[0] * s, cy + q[1] * s, Math.max(.3, q[2] * s * .8), 0, ORB_TAU); ctx.fill();
+      }));
+    }
+    const order = orbs.map((q, i) => [q, i]).sort((a, b) => a[0][4] - b[0][4]);
+    for (const [q, i] of order) {
+      const [x, y, r, a, , c] = q, px = cx + x * s, py = cy + y * s;
+      if (r * s <= .2 || a <= .01) continue;
+      const pr = Math.max(r * s, Math.min(1.5, r * s * 4));          // the smallest satellite still reads at 26 px
+      const col = along(D.pal, c);
+      ctx.save();
+      if (D.style === 'glow') { ctx.shadowColor = css(col, .9); ctx.shadowBlur = pr * 1.6; }
+      if (D.style === 'ring') {
+        ctx.strokeStyle = css(col, a); ctx.lineWidth = i ? 1.1 : 1.4;
+        ctx.beginPath(); ctx.arc(px, py, Math.max(.8, pr - .6), 0, ORB_TAU); ctx.stroke();
+      } else if (D.style === 'pixel') {
+        const side = Math.max(2, Math.round(pr * 1.7));
+        ctx.fillStyle = css(col, a); ctx.fillRect(Math.round(px - side / 2), Math.round(py - side / 2), side, side);
+      } else if (D.style === 'eclipse' && i) {                      // the satellites are dark moons with a lit rim
+        ctx.fillStyle = css(D.bg, 1); ctx.strokeStyle = css(col, a * .9); ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(px, py, pr * 1.15, 0, ORB_TAU); ctx.fill(); ctx.stroke();
+      } else if (D.style === 'eclipse') {                           // the core is a sun with a corona
+        const g = ctx.createRadialGradient(px - pr * .25, py - pr * .25, pr * .1, px, py, pr);
+        g.addColorStop(0, css(D.pal[0], 1)); g.addColorStop(1, css(D.pal[1], 1));
+        ctx.shadowColor = css(D.pal[1], .8); ctx.shadowBlur = pr * 1.4 * (.8 + .4 * a);
+        ctx.fillStyle = g; ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(px, py, pr, 0, ORB_TAU); ctx.fill();
+      } else if (D.style === 'clay' && !i) {                        // the core is a turning clay asterisk
+        ctx.translate(px, py); ctx.rotate(t * 1.6); ctx.strokeStyle = css(col, a); ctx.lineCap = 'round'; ctx.lineWidth = Math.max(1.4, pr * .42);
+        ctx.beginPath(); for (let n = 0; n < 4; n++) { const ang = n * Math.PI / 4; ctx.moveTo(Math.cos(ang) * pr * 1.25, Math.sin(ang) * pr * 1.25); ctx.lineTo(-Math.cos(ang) * pr * 1.25, -Math.sin(ang) * pr * 1.25); } ctx.stroke();
+      } else if (D.style === 'gradient') {                          // Gemini: gradient orbs, the core a four-point sparkle
+        const g = ctx.createLinearGradient(px - pr, py - pr, px + pr, py + pr);
+        g.addColorStop(0, css(D.pal[0], a)); g.addColorStop(.5, css(D.pal[1], a)); g.addColorStop(1, css(D.pal[2], a));
+        ctx.fillStyle = g;
+        if (!i) {
+          const R = pr * 1.35, w4 = R * .3; ctx.translate(px, py); ctx.rotate(t * .9);
+          ctx.beginPath(); ctx.moveTo(0, -R); ctx.quadraticCurveTo(w4 * .4, -w4 * .4, R, 0); ctx.quadraticCurveTo(w4 * .4, w4 * .4, 0, R);
+          ctx.quadraticCurveTo(-w4 * .4, w4 * .4, -R, 0); ctx.quadraticCurveTo(-w4 * .4, -w4 * .4, 0, -R); ctx.fill();
+        } else { ctx.beginPath(); ctx.arc(px, py, pr, 0, ORB_TAU); ctx.fill(); }
+      } else {
+        ctx.fillStyle = css(col, a); ctx.beginPath(); ctx.arc(px, py, pr, 0, ORB_TAU); ctx.fill();
+        const ringA = .45 * a * Math.max(0, 1 - Math.hypot(x, y) / .35);
+        if (D.ring && !i && ringA > .01) {                          // Classic Dark: a faint ring round the core (the Saturn mark's echo), while it's central
+          ctx.strokeStyle = css(col, ringA); ctx.lineWidth = 1.2;
+          ctx.beginPath(); ctx.ellipse(px, py, pr * 2.3, pr * .9, -28 * Math.PI / 180, 0, ORB_TAU); ctx.stroke();
+        }
+      }
+      ctx.restore();
+    }
+  }
+  const shown = el => el.getClientRects().length > 0;
+  const stillMotion = () => root.dataset.motion === 'off' || root.dataset.motion === 'reduced';
+  function frame(now) {
+    raf = 0;
+    if (document.hidden) return;
+    const orbsMode = mode() === 'orbs', still = stillMotion();
+    // 30 frames a second: at 26 px it reads as smooth, for half the drawing (a 60 Hz loop cost ~4% of a core).
+    if (last && !still && now - last < 30) { raf = requestAnimationFrame(frame); return; }
+    const dt = last ? Math.min(100, now - last) : 0; last = now;
+    sizeCheck = (sizeCheck + 1) % 15;                               // a mark's size is read twice a second, not every frame
+    if (root.dataset.state !== 'paused') clock += dt / 1000 * (dress ? dress.speed : 1);
+    let t = still ? .4 : clock, live = false;
+    if (dress && dress.steps && !still) t = Math.floor(t * dress.steps) / dress.steps;   // Terminal moves in steps
+    if (orbsMode) getDress();
+    for (const el of marks) {
+      if (!orbsMode) { if (el._orb) release(el); continue; }
+      if (!shown(el)) {                                            // just went away: the next new mark carries on from it
+        if (el._orb && el._orb.seen) { const p = el._orb; p.seen = false; handoff = { act: p.act, from: p.from, t0: p.t0, depth: p.depth, at: now }; }
+        continue;
+      }
+      const o = el._orb || prepare(el);
+      o.seen = true;
+      paint(el, o, t, now, still);
+      live = live || !still || !!o.from;
+    }
+    if (live) raf = requestAnimationFrame(frame); else last = 0;
+  }
+  function wake() { if (!raf && !document.hidden) raf = requestAnimationFrame(frame); }
+  // A cheap check a few times a second while asleep: a mark that has just appeared starts the loop.
+  function idleCheck() {
+    if (raf || document.hidden) return;
+    for (const el of marks) if ((el._orb ? true : mode() === 'orbs') && shown(el)) { wake(); return; }
+    if (mode() === 'legacy') for (const el of marks) if (el._orb) release(el);
+  }
+  wakeT = setInterval(idleCheck, 300);
+  document.addEventListener('visibilitychange', () => { last = 0; if (!document.hidden) wake(); });
+  document.addEventListener('appmotionchange', () => { dressKey = ''; wake(); });
+  return {
+    on: () => mode() === 'orbs',
+    wake,
+    sync() { dressKey = ''; for (const el of marks) if (el._orb) el._orb.drawn = ''; wake(); idleCheck(); },   // the theme or the setting changed
+    mode,
+    stats: () => ({ running: !!raf, marks: marks.length, drawn: [...marks].filter(el => el._orb).length, clock }),
+    where: el => el._orb ? state(el._orb, clock, performance.now()) : null,     // the orbs' positions now (checks)
+  };
+})();
 function paintAct(turn, thinkLive) {
   const a = turn && (S.busy || S.live.serverBusy) ? currentAct(turn) : null;
   setRootAct(a && a.act);
@@ -12259,7 +12582,9 @@ function paintResearch(el, r) {
   el.dataset.stage = stage; el.classList.toggle('live', live);
   const stageText = stage === 'writing' && r.sections ? (r.overview ? 'Writing the summary' : `Writing section ${r.section} of ${r.sections}`) : RESEARCH_STAGES[stage] || 'Researching';
   const depth = r.depth && r.depth !== 'auto' && RESEARCH_DEPTHS[r.depth] ? ` · ${RESEARCH_DEPTHS[r.depth][0]}` : '';
-  const html = `<div class="rp-top">${icon('i-book', 'xs')}<span class="rp-stage">${esc(stageText)}${live ? '…' : ''}</span>
+  // While it runs, the thinking mark shows the stage's kind of work (the orbs carry on from one stage to the next).
+  const mark = live ? `<span class="think" data-act="${(RESEARCH_ACT[stage] || ['think'])[0]}" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>` : icon('i-book', 'xs');
+  const html = `<div class="rp-top">${mark}<span class="rp-stage">${esc(stageText)}${live ? '…' : ''}</span>
     <span class="rp-count">${got} of ~${target} sources${depth}${r.total ? ` · question ${r.index || 1} of ${r.total}` : ''}</span></div>
     <div class="rp-bar" role="progressbar" aria-label="Research progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${Math.round(frac * 100)}"><i style="width:${(frac * 100).toFixed(1)}%"></i></div>
     ${r.question && live ? `<div class="rp-q">${esc(r.question)}</div>` : ''}`;
@@ -13686,7 +14011,10 @@ function openSettings(tab) {
   if ($('app').classList.contains('drawer')) toggleSidebar(false);
   $('settings').classList.remove('hidden'); settingsTab(tab || S.settingsTab || 'appearance');
 }
-function closeSettings() { $('settings').classList.add('hidden'); }
+function closeSettings() {
+  $('settings').classList.add('hidden');
+  if (S.setQuery) { $('set-q').value = ''; settingsSearch(''); }   // a search is for this visit: the next opens unfiltered
+}
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSettings(); closeHelp(); closePopover(); if ($('app').classList.contains('sidebar-open')) toggleSidebar(false); } });
 /* ---- Ctrl+K: the command palette ------------------------------------------------
    Everything you can jump to or do in one list: chats, projects, routines,
@@ -13694,11 +14022,10 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSetti
    must match; arrows and Enter pick, Esc closes. */
 const SETTINGS_TABS = [['appearance', 'Appearance', 'i-brush'], ['models', 'Models', 'i-cpu'], ['proactive', 'Proactive help', 'i-bulb'],
   ['agent', 'Agent and web search', 'i-bolt'], ['memory', 'Memory and your profile', 'i-bookmark'], ['skills', 'Skills', 'i-sparkle'],
-  ['knowledge', 'Knowledge - your files', 'i-book'], ['connectors', 'Connectors', 'i-plug'], ['mcp', 'MCP servers', 'i-plug'],
-  ['permissions', 'Permissions', 'i-shield'], ['privacy', 'Privacy', 'i-lock'], ['network', 'Network - proxy, Tor, VPN, leak test', 'i-globe'],
-  ['websearch', 'Web Search - privacy modes', 'i-search'], ['voice', 'Voice - talk to it', 'i-mic'], ['images', 'Images - made on this PC', 'i-image'],
-  ['diagnostics', 'Diagnostics - speed and problems', 'i-activity'], ['remote', 'Phone access - use it from your phone', 'i-globe'],
-  ['channels', 'Channels - Discord, Slack, webhook', 'i-plug']];
+  ['knowledge', 'Knowledge - your files', 'i-book'], ['connections', 'Connections - connectors, MCP servers, Discord, Slack, webhook', 'i-plug'],
+  ['permissions', 'Permissions', 'i-shield'], ['privacy', 'Privacy', 'i-lock'],
+  ['webnet', 'Web search and network - privacy modes, proxy, Tor, VPN, leak test', 'i-globe'], ['voice', 'Voice - talk to it', 'i-mic'], ['images', 'Images - made on this PC', 'i-image'],
+  ['diagnostics', 'Diagnostics - speed and problems', 'i-activity'], ['remote', 'Phone access - use it from your phone', 'i-globe']];
 const Palette = (() => {
   let el = null, items = [], shown = [], active = 0;
   function collect() {
@@ -13734,7 +14061,7 @@ const Palette = (() => {
     for (const r of (d.routines || [])) add('Routine', `Run ${r.name}`, r.kind === 'prompt' ? r.prompt : `${r.steps.length} steps`, 'i-play', () => runRoutine(r.id, r.name));
     for (const [tab, name, ic] of SETTINGS_TABS) add('Setting', `Settings: ${name}`, '', ic, () => openSettings(tab));
     const fam = currentAppearance();
-    for (const a of APPEARANCES) add('Appearance', `Appearance: ${APPEARANCE_INFO[a].name}${AI_APPEARANCES.includes(a) ? ' (Beta)' : ''}`, !activeSecretTheme() && fam === a ? 'In use' : APPEARANCE_INFO[a].pair, 'i-brush', () => changeAppearance({ appearance: a }));
+    for (const a of APPEARANCES) add('Appearance', `Appearance: ${APPEARANCE_INFO[a].name}`, !activeSecretTheme() && fam === a ? 'In use' : APPEARANCE_INFO[a].pair, 'i-brush', () => changeAppearance({ appearance: a }));
     add('Appearance', colorScheme() === 'dark' ? 'Switch to light' : 'Switch to dark', 'The other half of the same appearance', colorScheme() === 'dark' ? 'i-sun' : 'i-moon', toggleColorMode, 'Ctrl+Alt+L');
     if (S.settings.color_mode !== 'system') add('Appearance', 'Follow Windows light/dark', 'Switch with the system', 'i-brush', () => changeAppearance({ color_mode: 'system', appearance: fam }));
     return out;
@@ -13897,10 +14224,26 @@ const SETTINGS_PAGES = [
   ['models', [['models', 'Models'], ['diagnostics', 'Diagnostics']]],
   ['permissions', [['permissions', 'Permissions'], ['privacy', 'Privacy']]],
   ['voice', [['voice', 'Voice'], ['images', 'Images']]],
-  ['websearch', [['connectors', 'Connectors'], ['remote', 'Phone access'], ['channels', 'Channels'], ['websearch', 'Web search'], ['network', 'Network'], ['mcp', 'MCP servers']]],
+  // 1.4.3: Connectors, MCP servers and Channels are one Connections part (everything that links the app to the
+  // outside, a section each); Web search and Network one part (how traffic leaves this PC).
+  ['websearch', [['connections', 'Connections'], ['remote', 'Phone access'], ['webnet', 'Web search and network']]],
   ['about', [['about', 'About']]],
 ];
 const pageOf = tab => (SETTINGS_PAGES.find(([, parts]) => parts.some(([id]) => id === tab)) || SETTINGS_PAGES[0]);
+// The parts made of sections: each section is drawn by its own renderer into <section id="sec-<name>"> (setBody),
+// and the old names open the part at their section (TAB_ALIAS, settingsTabNow).
+const SETTINGS_STACKS = { connections: ['connectors', 'mcp', 'channels'], webnet: ['websearch', 'network'] };
+const STACK_OF = Object.fromEntries(Object.entries(SETTINGS_STACKS).flatMap(([part, secs]) => secs.map(s => [s, part])));
+// Where a section draws: its own <section> inside a stacked part, else the whole page.
+const setBody = name => document.getElementById('sec-' + name) || $('settings-body');
+// Is this section on screen (alone, or in the part that stacks it)?
+const setShowing = name => S.settingsTab === name || (SETTINGS_STACKS[S.settingsTab] || []).includes(name);
+async function renderStack(part) {
+  const secs = SETTINGS_STACKS[part], body = $('settings-body');
+  body.innerHTML = secs.map(s => `<section class="set-sec" id="sec-${s}"></section>`).join('');
+  const R = { connectors: renderConnectors, mcp: renderMCP, channels: renderChannels, websearch: renderWebSearch, network: renderNetwork };
+  await Promise.all(secs.map(s => R[s]().catch(e => { const el = setBody(s); if (el.id) el.innerHTML = `<p class="lead" role="alert">${esc(e.message || String(e))}</p>`; })));
+}
 function settingsTab(tab) {
   try { return settingsTabNow(tab); }
   catch (e) { settingsFailed(TAB_ALIAS[tab] || tab, e); }
@@ -13915,6 +14258,14 @@ function settingsFailed(tab, e) {
 }
 function settingsTabNow(tab) {
   tab = TAB_ALIAS[tab] || tab;
+  // A section's old name ("network", "mcp"...) opens its part, scrolled to that section once drawn.
+  const section = STACK_OF[tab] ? tab : null;
+  if (section) tab = STACK_OF[tab];
+  if (section && S.settingsTab === tab && $('sec-' + section) && !$('settings').classList.contains('hidden')) {   // already open: just go there
+    $('sec-' + section).scrollIntoView({ block: 'start', behavior: motionStill() ? 'auto' : 'smooth' }); return;
+  }
+  // From a search: the first page opened goes to the part of it the words match best (searchJump).
+  if (S.setQuery && !S.setJumped) { S.setJumped = true; tab = searchPart(tab, S.setQuery); }
   checkSettingsShown(tab);
   S.settingsTab = tab;
   const [page, parts] = pageOf(tab);
@@ -13926,9 +14277,9 @@ function settingsTabNow(tab) {
     `<button type="button" role="tab" aria-selected="${id === tab}" class="${id === tab ? 'on' : ''}" onclick="settingsTab('${id}')">${esc(label)}</button>`).join('');
   const r = { appearance: renderAppearance, models: renderModelsTab, agent: renderAgent, systemmessage: renderSystemMessage,
               proactive: renderProactive, memory: renderMemory, permissions: renderPermissions, privacy: renderPrivacy,
-              mcp: renderMCP, diagnostics: renderDiagnostics, network: renderNetwork, websearch: renderWebSearch, voice: renderVoice,
-              images: renderImages, about: renderAbout, skills: renderSkills, knowledge: renderKnowledge, connectors: renderConnectors,
-              remote: renderRemote, channels: renderChannels }[tab];
+              diagnostics: renderDiagnostics, voice: renderVoice, images: renderImages, about: renderAbout, skills: renderSkills,
+              knowledge: renderKnowledge, remote: renderRemote,
+              connections: () => renderStack('connections'), webnet: () => renderStack('webnet') }[tab];
   const body = $('settings-body');
   if (body.dataset.tab !== tab) { body.dataset.tab = tab; body.classList.remove('tab-in'); void body.offsetWidth; body.classList.add('tab-in'); body.scrollTop = 0; }
   if (!r) return;
@@ -13937,11 +14288,36 @@ function settingsTabNow(tab) {
   (async () => {
     if (!S.settings || !Object.keys(S.settings).length) { body.innerHTML = SKELETON_TEXT; await loadSettings(); }
     if (S.settingsTab === tab) await r();
+    if (S.setQuery && S.settingsTab === tab) searchHighlight(S.setQuery);
+    else if (section && S.settingsTab === tab && section !== SETTINGS_STACKS[tab][0]) $('sec-' + section)?.scrollIntoView({ block: 'start' });
   })().catch(e => settingsFailed(tab, e));
+}
+// Settings search, past the page (1.4.3): which part of a page the words point to, then the setting itself - scrolled
+// into view and lit for a moment.
+function searchPart(tab, q) {
+  const words = q.split(/\s+/).filter(Boolean), [, parts] = pageOf(tab);
+  const score = ([id, label]) => words.filter(w => `${label} ${SETTINGS_WORDS[id] || ''}`.toLowerCase().includes(w)).length;
+  const best = parts.reduce((a, p) => score(p) > score(a) ? p : a, parts.find(([id]) => id === tab) || parts[0]);
+  return best[0];
+}
+function searchHighlight(q, tries = 8) {
+  const words = q.split(/\s+/).filter(Boolean), body = $('settings-body'), tab = S.settingsTab;
+  let best = null, top = 0;
+  for (const el of body.querySelectorAll('.row, .set-row, .gt, .conn-card, .opt-card, .state-card, details > summary')) {
+    if (!el.getClientRects().length) continue;
+    const text = el.textContent.toLowerCase();
+    const s = words.filter(w => text.includes(w)).length + (el.matches('.row, .set-row') ? .5 : 0);   // a setting beats its heading
+    if (words.some(w => text.includes(w)) && s > top) { top = s; best = el; }
+  }
+  // Some sections draw their rows after their data arrives: look again for a moment before giving up.
+  if (!best) { if (tries > 0) setTimeout(() => { if (S.settingsTab === tab && S.setQuery === q) searchHighlight(q, tries - 1); }, 250); return; }
+  best.scrollIntoView({ block: 'center', behavior: motionStill() ? 'auto' : 'smooth' });
+  best.classList.remove('set-hit'); void best.offsetWidth; best.classList.add('set-hit');
+  setTimeout(() => best.classList.remove('set-hit'), 2200);
 }
 // What is on each page, so searching "dark", "seed" or "proxy" finds the right one.
 const SETTINGS_WORDS = {
-  appearance: 'appearance theme dark light look studio focus operator command classic sunrise terminal eclipse aurora accent color font serif sans density compact idle motion animation reduced text size larger contrast notifications sound name window',
+  appearance: 'appearance theme dark light look studio focus operator command classic sunrise terminal eclipse aurora claude chatgpt grok gemini accent color font serif sans density compact idle motion animation reduced text size larger contrast notifications sound focus assist do not disturb name window thinking mark orbs legacy tray start with windows mini window',
   voice: 'voice talk speak microphone mic listen hands-free speed language hebrew russian whisper piper',
   systemmessage: 'system message instructions prompt variant presets compact detailed original custom assistant name',
   memory: 'memory remember forget facts about me profile about you topics sensitive import export',
@@ -13959,7 +14335,12 @@ const SETTINGS_WORDS = {
   privacy: 'privacy temporary chat screenshots cloud data delete history limits refuse refused refusal outside app limits censor censored uncensored abliterated relaxed restrictions filter safety guard',
   diagnostics: 'diagnostics speed problems slow health logs checks storage disk space drive size folder background model use monitor tokens unasked replies only this pc',
   about: 'about credits author contact email support suggestions license apache version',
+  remote: 'phone access remote tailscale home network qr code password devices sign out mobile',
+  channels: 'channels discord slack webhook bot token home assistant n8n shortcuts',
 };
+// The stacked parts know what their sections hold.
+SETTINGS_WORDS.connections = ['connectors', 'mcp', 'channels'].map(id => `${id} ${SETTINGS_WORDS[id]}`).join(' ') + ' connections';
+SETTINGS_WORDS.webnet = ['websearch', 'network'].map(id => SETTINGS_WORDS[id]).join(' ');
 let APP_VERSION = '';                        // the VERSION file, from /api/version (shared with the installer)
 api('/api/version').then(d => { APP_VERSION = d.version || ''; const el = $('about-version'); if (el) el.textContent = APP_VERSION; }).catch(() => {});
 // Settings > About > Check for updates: asks GitHub only when pressed. Updating = run the new installer over this
@@ -14021,6 +14402,7 @@ function renderAbout() {
 }
 function settingsSearch(q) {
   q = q.trim().toLowerCase();
+  S.setQuery = q; S.setJumped = false;            // the next page opened goes to what matched (settingsTabNow)
   const words = q.split(/\s+/).filter(Boolean);
   let any = false;
   document.querySelectorAll('.modal-nav .nav-item').forEach(b => {
@@ -14084,8 +14466,7 @@ function renderAppearance() {
   const famCard = id => {
     const on = !secret && fam === id, [light, d] = FAMILY_THEMES[id], dark = id === 'terminal' && s.terminal_phosphor ? 'terminal' : d;
     const half = (t, sch) => `<div class="th th-${t}${on && scheme === sch ? ' now' : ''}"><i class="a"></i><i class="b"></i><i class="c"></i></div>`;
-    const beta = AI_APPEARANCES.includes(id) ? ' <span class="beta-tag">Beta</span>' : '';
-    return `<button class="opt-card theme-card ${on ? 'on' : ''}" onclick="changeAppearance({appearance:'${id}'}).then(renderAppearance)" aria-pressed="${on}"><div class="th-pair" aria-hidden="true">${half(light, 'light')}${half(dark, 'dark')}</div><b>${APPEARANCE_INFO[id].name}${beta}</b><small>${APPEARANCE_INFO[id].desc}</small><div class="motion">${APPEARANCE_INFO[id].pair} · ${APPEARANCE_INFO[id].motion}</div></button>`;
+    return `<button class="opt-card theme-card ${on ? 'on' : ''}" onclick="changeAppearance({appearance:'${id}'}).then(renderAppearance)" aria-pressed="${on}"><div class="th-pair" aria-hidden="true">${half(light, 'light')}${half(dark, 'dark')}</div><b>${APPEARANCE_INFO[id].name}</b><small>${APPEARANCE_INFO[id].desc}</small><div class="motion">${APPEARANCE_INFO[id].pair} · ${APPEARANCE_INFO[id].motion}</div></button>`;
   };
   const layout = s.studio_layout === 'overlay' ? 'overlay' : 'classic', panels = s.overlay_panels || {};
   const panelRow = name => rowHtml(OVERLAY_PANELS[name].title, {
@@ -14122,7 +14503,7 @@ function renderAppearance() {
       ${rowHtml('Interface', 'New: the calmer 2026 design - one Customize menu, waiting items on Home, new type. Legacy: everything as it was.', seg([['new', 'New'], ['legacy', 'Legacy']], s.ui_style === 'legacy' ? 'legacy' : 'new', "(v=>changeAppearance({ui_style:v}).then(()=>{buildNewNav();renderAppearance()}))"))}
     </div>
     <div class="set-group"><div class="gt">Regular <small>· hover a card to preview its motion${cur === 'operator' && fam === 'classic' ? ' · in Classic, Operator has its own console colors: graphite at night, cool grey by day' : ''}</small></div><div class="theme-cards families">${APPEARANCES.filter(id => !AI_APPEARANCES.includes(id)).map(famCard).join('')}</div>
-      <div class="gt gt-sub">AI-inspired <span class="beta-tag">Beta</span> <small>· looks like the assistants people already use - still being finished, so some details are off. Not made by or tied to them.</small></div>
+      <div class="gt gt-sub">AI-inspired <small>· looks like the assistants people already use. Not made by or tied to them.</small></div>
       <div class="theme-cards families">${AI_APPEARANCES.map(famCard).join('')}</div>
       ${rowHtml('Light or dark', 'Follow Windows switches with the system.', seg([['light', 'Light'], ['dark', 'Dark'], ['system', 'Follow Windows']], ['light', 'dark'].includes(s.color_mode) ? s.color_mode : 'system', "(v=>setColorMode(v).then(renderAppearance))"))}
       ${fam === 'terminal' ? rowHtml('Phosphor at night', 'Bright green on black, with scanlines.', sw(!!s.terminal_phosphor, `saveSettings({terminal_phosphor:${!s.terminal_phosphor}, appearance:'terminal'}).then(renderAppearance)`)) : ''}
@@ -14139,6 +14520,9 @@ function renderAppearance() {
       <div class="row${dis(op)}"><div class="row-text"><b>Density</b><small>${op ? `${opName} is already compact.` : 'Compact fits more on smaller screens.'}</small></div>${seg([['comfortable', 'Comfortable'], ['compact', 'Compact']], s.layout || 'comfortable', "(v=>saveSettings({layout:v}).then(renderAppearance))")}</div>
       ${rowHtml('Idle screen', 'A calm screen with the time when nothing happens. Any key brings it back.', seg([['off', 'Off'], ['5', '5 min'], ['10', '10 min'], ['30', '30 min']], String(s.ambient_idle ?? '10'), "(v=>saveSettings({ambient_idle:v}).then(renderAppearance))"))}
       ${rowHtml('Write replies in', 'Each new word fades in with the theme.', sw(store.get('animateReplies', true) !== false, `store.set('animateReplies', ${store.get('animateReplies', true) === false});renderAppearance()`))}
+      <div class="row tm-row"><div class="row-text"><b>Thinking mark</b><small>What moves while it works. Orbs fly into a new pattern for each kind of work. Auto: orbs, while Claude, ChatGPT, Grok and Gemini keep their own mark. Legacy: each appearance's mark from before.</small>
+        <span class="tm-preview" aria-hidden="true"><span class="think" data-act="think"><i></i><i></i><i></i><i></i><i></i></span><span class="tm-act">Thinking</span></span></div>
+        ${seg([['auto', 'Auto'], ['orbs', 'Orbs'], ['legacy', 'Legacy']], ['orbs', 'legacy'].includes(s.think_mark) ? s.think_mark : 'auto', "(v=>saveSettings({think_mark:v}).then(()=>{Orbs.sync();renderAppearance()}))")}</div>
     </div>
     <div class="set-group"><div class="gt">Motion and reading <small>· this window only</small></div>
       ${rowHtml('Motion', `Reduced keeps only what shows progress; Off stops it all.${matchMedia('(prefers-reduced-motion: reduce)').matches ? ' Windows asks for reduced motion, so Full acts as Reduced.' : ''}`, seg([['full', 'Full'], ['reduced', 'Reduced'], ['off', 'Off']], store.get('motion', 'full'), "(v=>{store.set('motion',v);applyAppearance();renderAppearance()})"))}
@@ -14149,11 +14533,40 @@ function renderAppearance() {
       ${rowHtml('Tell me when', 'An answer, a picture or a step waiting for your OK - while you\'re in another window.', `<span class="key-row">${typeof Notification !== 'undefined' && Notification.permission === 'granted' ? '' : '<span class="pill missing">not allowed yet</span>'}${sw(store.get('notify', true) !== false && typeof Notification !== 'undefined' && Notification.permission === 'granted', "notifySwitch()")}</span>`)}
       ${rowHtml('With a sound', 'Windows\' notification sound.', sw(!!store.get('notifySound', false), `store.set('notifySound', ${!store.get('notifySound', false)});renderAppearance()`))}
       ${rowHtml('Try it', 'Sends one now.', `<button class="btn sm" onclick="notifyTest()">Send a test</button>`)}
+      <div id="notify-quiet"></div>
     </div>
     <div class="set-group"${classic && !secret ? '' : ' style="opacity:.45;pointer-events:none"'}><div class="gt">Accent <small>· ${classic && !secret ? 'the assistant\'s color: the mark, Send, selections, and the "working" glow' : `${secret ? 'This theme' : APPEARANCE_INFO[fam].name} uses its own colors; accent applies to Classic`}</small></div><div class="swatches">
       ${accents.map(([c, n, show]) => `<button class="swatch ${(s.accent || '') === c ? 'on' : ''}" style="background:${show || c}" title="${n}" aria-label="${n}" onclick="saveSettings({accent:'${c}'}).then(renderAppearance)"></button>`).join('')}
       <input type="color" value="${esc(s.accent || '#e5a830')}" onchange="saveSettings({accent:this.value}).then(renderAppearance)" style="width:32px;height:32px;border:0;background:none;padding:0;cursor:pointer" title="Custom color" aria-label="Custom accent color">
     </div></div>`;
+  thinkMarkPreview();
+  notifyQuietHint();
+}
+// Windows holding notifications back (focus_assist.py): say so where they're set up, with the way to change it.
+const QUIET_WHY = { priority: 'Focus assist is on (Priority only)', alarms: 'Focus assist is on (Alarms only)', fullscreen: 'A full-screen app is running',
+  presentation: 'Windows is in presentation mode', busy: 'Windows says you are busy', quiet: 'Windows is in its quiet time after setup' };
+async function notifyQuietHint() {
+  const box = $('notify-quiet'); if (!box) return;
+  const q = await api('/api/notify/quiet').catch(() => null);
+  if (!q || !q.quiet || !$('notify-quiet')) { box.innerHTML = ''; return; }
+  const fixable = ['priority', 'alarms'].includes(q.why);
+  box.innerHTML = rowHtml(`<span class="key-row">${icon('i-alert', 'xs')}${QUIET_WHY[q.why] || 'Windows is holding notifications back'}</span>`,
+    'So these go straight to the Action Center without a pop-up.' + (fixable ? ' Add FX Workspace to the priority list, or turn Focus assist off.' : ' They pop up again when it ends.'),
+    fixable ? `<button class="btn sm" onclick="api('/api/notify/quiet/open', {}).catch(e => toast(e.message))">Open Focus assist</button>` : '');
+}
+// Settings › Appearance › Thinking mark: the preview walks through the seven kinds of work while it's on screen.
+const TM_WORDS = { think: 'Thinking', read: 'Reading', search: 'Searching', tool: 'Using a tool', write: 'Writing', draw: 'Drawing', wait: 'Waiting for you' };
+let tmTimer = 0;
+function thinkMarkPreview() {
+  clearInterval(tmTimer);
+  let n = 0;
+  tmTimer = setInterval(() => {
+    const box = document.querySelector('.tm-preview');
+    if (!box) { clearInterval(tmTimer); return; }
+    const act = ORB_ACTS[++n % ORB_ACTS.length];
+    setThinkAct(box.querySelector('.think'), act);
+    box.querySelector('.tm-act').textContent = TM_WORDS[act];
+  }, 1700);
 }
 // Models: one row per local model - favorite it, load it now, or open its
 // load settings (models.ini). Choosing Local/Auto/Cloud and pinning a model
@@ -15072,13 +15485,13 @@ const SEARCH_MODE_ICON = { standard: 'i-search', private: 'i-shield', max: 'i-lo
 const SEARCH_MODE_SHORT = { standard: 'The best results. Your network route applies.', private: 'No cookies or sign-ins; personal details taken out.',
   max: 'Only your own SearXNG, through Tor or your proxy.', local: 'Queries never leave this PC.', disabled: 'No web search at all.' };
 async function renderWebSearch() {
-  const s = S.settings, body = $('settings-body');
+  const s = S.settings, body = setBody('websearch');
   let d = S.searchModes;
   if (!d) {
     body.innerHTML = `<h3>Web Search</h3>${SKELETON_TEXT}`;
     try { d = S.searchModes = await api('/api/search/modes'); }
     catch (e) { body.innerHTML = `<h3>Web Search</h3><p class="lead" role="alert">Couldn't load the search settings: ${esc(e.message)} <button class="af-link" onclick="S.searchModes=null;renderWebSearch()">Retry</button></p>`; return; }
-    if (S.settingsTab !== 'websearch') return;
+    if (!setShowing('websearch')) return;
   }
   const mode = s.search_mode || 'standard';
   // A card says the mode in a few words; "What each mode sends" below has it in full (D49 - the first sentence was cut mid-word).
@@ -15340,11 +15753,11 @@ async function clearSearchData(btn) {
    and the connection log. Honest about what it can't cover. */
 const NET_ROUTES = [['direct', 'Direct'], ['system', 'System proxy'], ['proxy', 'Custom proxy'], ['tor', 'Tor']];
 async function renderNetwork() {
-  const s = S.settings, body = $('settings-body');
+  const s = S.settings, body = setBody('network');
   let d;
   try { d = await api('/api/network'); }
   catch (e) { body.innerHTML = `<h3>Network</h3><p class="lead" role="alert">Couldn't load the network settings: ${esc(e.message)} <button class="af-link" onclick="renderNetwork()">Retry</button></p>`; return; }
-  if (S.settingsTab !== 'network') return;
+  if (!setShowing('network')) return;
   const n = d.settings, r = d.routes.other;
   const comp = c => `<div class="row"><div class="row-text"><b>${esc(d.components[c])}</b><small>now: ${esc(d.routes[c].label)}</small></div>${seg([['app', 'App route'], ['direct', 'Direct'], ['proxy', 'Proxy'], ['tor', 'Tor']], n.net_components[c] || 'app', `(v=>saveNet({net_components:{${c}:v}}))`)}</div>`;
   const v = d.vpn || {};
@@ -15392,13 +15805,13 @@ async function renderNetwork() {
 async function saveNet(changes) {
   await saveSettings(changes);
   NetIndicator.poll();
-  if (S.settingsTab === 'network') renderNetwork();
+  if (setShowing('network')) renderNetwork();
 }
 async function goDirectSession(on) {
   try { await api('/api/network/session-direct', { on }); toast(on ? 'Going direct for this session.' : 'Back to your route.'); }
   catch (e) { toast(e.message); }
   NetIndicator.poll();
-  if (S.settingsTab === 'network' && !$('settings').classList.contains('hidden')) renderNetwork();
+  if (setShowing('network') && !$('settings').classList.contains('hidden')) renderNetwork();
 }
 async function refreshVpn(btn) {
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Checking…';
@@ -15700,7 +16113,7 @@ const Overlay = (() => {
     const reply = t && t.result && (t.result.message || t.result.response) || '';
     setHtmlIfChanged(box.querySelector('.hud-q'), t && t.message ? `<span class="ov-sub">You:</span> ${esc(String(t.message).slice(0, 160))}` : '<span class="ov-sub">No message yet in this chat.</span>');
     setHtmlIfChanged(box.querySelector('.hud-a'), S.approvalWaiting ? `<b class="ov-bad">Waiting for your approval</b> - open the app to answer.`
-      : running ? `<span class="ov-dot busy"></span> ${S.runInfo === 'stopping' ? 'Stopping…' : 'Writing…'}`
+      : running ? `<span class="think" data-act="${S.runInfo === 'stopping' ? 'wait' : reply ? 'write' : 'think'}" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>${S.runInfo === 'stopping' ? 'Stopping…' : 'Writing…'}`
       : reply ? esc(String(reply).slice(-600)) : '');
     box.querySelector('.hud-stop').hidden = !running;
     box.querySelector('.hud-go').hidden = running;
@@ -17981,11 +18394,16 @@ async function renderModelMonitor() {
   let d;
   try { d = await api('/api/model-monitor'); } catch (e) { box.innerHTML = ''; return; }
   if (!$('mm-set')) return;
-  const rows = (d.recent || []).slice(0, 12).map(r => `<li><span><b>${esc(r.source)}</b> <small>${esc(r.label || '')}${r.model ? ` · ${esc(r.model)}` : ''}${r.ok ? '' : ' · failed'}</small></span>`
+  // Repeats in a row are one line ("×12"), with their tokens and time added up.
+  const rows = (d.groups || d.recent || []).slice(0, 12).map(r => `<li><span><b>${esc(r.source)}</b>${(r.count || 1) > 1 ? ` <span class="mm-count">×${r.count}</span>` : ''} <small>${esc(r.label || '')}${r.model ? ` · ${esc(r.model)}` : ''}${r.ok ? '' : ' · failed'}</small></span>`
     + `<small>${(r.tokens_in + r.tokens_out).toLocaleString()} tokens · ${r.seconds}s · ${esc(MM_AGO(r.at))}</small></li>`).join('');
+  // The switch's effect: what it has stopped so far.
+  const stopped = Object.entries(d.skipped || {}).map(([src, n]) => `${esc(src.toLowerCase())} ×${n}`).join(', ');
+  const effect = d.replies_only ? `<p class="set-note mm-effect">${icon('i-check', 'xs')}${stopped ? `Stopped so far: ${stopped}.` : 'On. Nothing automatic has tried to use the model since the app started.'}</p>` : '';
   box.innerHTML = `<div class="gt">Model use outside your replies <small>· since the app started</small></div>
     ${rowHtml('Only use the model for my replies', `Stops what the app starts by itself: ${esc((d.automatic || []).join(' and ').toLowerCase())}. Things you start - Compare, a benchmark, Labs - always run.`,
       sw(!!d.replies_only, `saveSettings({model_replies_only:${!d.replies_only}}).then(renderModelMonitor)`))}
+    ${effect}
     ${rows ? `<ul class="ctx-parts mm-list">${rows}</ul>` : '<p class="set-note">Nothing yet - the model has only worked on your replies.</p>'}`;
 }
 // Storage: data\ folder by folder, biggest first, and how full the drives are. Read-only - nothing is deleted here.
@@ -18314,10 +18732,10 @@ async function kbSearch(q) {
 /* ---- Settings > Connectors (connectors.py) --------------------------------------------------------------------- */
 S.connOpen = null;
 async function renderConnectors() {
-  const body = $('settings-body');
+  const body = setBody('connectors');
   let d;
   try { d = await api('/api/connectors'); } catch (e) { body.innerHTML = `<h3>Connectors</h3><p class="lead">${esc(e.message)}</p>`; return; }
-  if (S.settingsTab !== 'connectors') return;
+  if (!setShowing('connectors')) return;
   const card = c => {
     const busy = c.job === 'running', open = S.connOpen === c.id && !c.installed;
     const state = busy ? `<span class="place-pill"><span class="spinner"></span>${esc(c.job_message || 'Setting up…')}</span>`
@@ -18338,7 +18756,7 @@ async function renderConnectors() {
   body.innerHTML = `<h3>Connectors</h3><p class="lead">Give the assistant your other apps in one click. Each is an official MCP server; its actions ask you first, like everything else. Keys stay on this PC.</p>
     <div class="conn-grid">${d.connectors.map(card).join('')}</div>
     <p class="set-note">Something else? Any MCP server can be added by hand under <button class="af-link" onclick="settingsTab('mcp')">MCP servers</button>.</p>`;
-  if (d.connectors.some(c => c.job === 'running')) setTimeout(() => { if (S.settingsTab === 'connectors' && !$('settings').classList.contains('hidden')) renderConnectors(); }, 1500);
+  if (d.connectors.some(c => c.job === 'running')) setTimeout(() => { if (setShowing('connectors') && !$('settings').classList.contains('hidden')) renderConnectors(); }, 1500);
 }
 async function connInstall(id, form) {
   const values = {};
@@ -18373,7 +18791,7 @@ async function renderRemote() {
       ${st.problem ? `<div class="state-card warn"><span class="sc-ico">${icon('i-alert', 'sm')}</span><div class="grow">${esc(st.problem)}</div></div>` : ''}
       ${st.running ? `<div class="remote-ready"><img src="/api/remote/qr.svg?t=${Date.now()}" alt="QR code for ${esc(st.url)}" width="168" height="168">
         <div><b>Scan with the phone's camera</b><p class="muted">or open <span class="mono">${esc(st.url)}</span></p>
-        <p class="muted">Then "Add to Home screen" in the browser's menu - it opens like an app.</p></div></div>` : ''}
+        <p class="muted">For an icon on the phone: the browser's menu › Add to Home screen. It's a shortcut that opens this page; a full app install would need HTTPS.</p></div></div>` : ''}
     </div>
     <div class="set-group"><div class="gt">Password</div>
       <p class="muted">${st.has_password ? 'A password is set. Setting a new one signs every device out.' : 'Required - phone access never starts without one.'}</p>
@@ -18395,11 +18813,11 @@ async function renderRemote() {
 
 /* ---- Channels (channels.py): Discord, Slack and a webhook --------------------------------------------------- */
 async function renderChannels() {
-  const body = $('settings-body');
+  const body = setBody('channels');
   body.innerHTML = `<h3>Channels</h3><p class="lead">Message the assistant from Discord, Slack or an automation. Only accounts you list get answers.</p><div class="empty">Loading…</div>`;
   let st;
   try { st = await api('/api/channels'); } catch (e) { body.querySelector('.empty').textContent = e.message; return; }
-  if (S.settingsTab !== 'channels') return;
+  if (!setShowing('channels')) return;
   window._chanSet = (kind, change) => api('/api/channels', { kind, ...change }).then(r => { if (r && r.ok === false) toast(r.message); renderChannels(); }).catch(e => toast(e.message));
   const state = c => c.enabled ? (c.connected ? '<span class="pill ok">Connected</span>' : `<span class="pill warn">${esc(c.problem || 'Connecting…')}</span>`) : '<span class="pill">Off</span>';
   const allowForm = (kind, c, hint) => `<form class="chan-form" onsubmit="event.preventDefault();_chanSet('${kind}',{allow:this.ids.value})">
@@ -18509,7 +18927,7 @@ async function guardSaveLimits() {
    =========================================================================== */
 const MCP_STATUS = { connected: ['on', 'Connected'], connecting: ['warn', 'Connecting…'], error: ['err', 'Error'], disconnected: ['', 'Not connected'] };
 async function renderMCP() {
-  const body = $('settings-body');
+  const body = setBody('mcp');
   if (!body.querySelector('#mcp-list')) {
     body.innerHTML = `<h3>MCP servers</h3><p class="lead">Extra tools from a program on this PC or a web address. Each one asks before it runs, and what it returns is data, never instructions.</p>
       <div id="mcp-list" aria-live="polite">${SKELETON_TEXT}</div>
@@ -18519,7 +18937,7 @@ async function renderMCP() {
   let d;
   try { d = await api('/api/mcp'); }
   catch (e) { $('mcp-list').innerHTML = `<p class="lead" role="alert">Couldn't load MCP servers: ${esc(e.message)} <button class="btn" onclick="renderMCP()">Retry</button></p>`; return; }
-  if (S.settingsTab !== 'mcp') return;
+  if (!setShowing('mcp')) return;
   S.mcp = d.servers || [];
   const list = $('mcp-list');
   if (!S.mcp.length) { list.innerHTML = `<p class="lead">None yet. Add one below from its install instructions.</p>`; return; }
@@ -19277,10 +19695,10 @@ setTimeout(loadWaiting, 3000); setInterval(() => { if (S.view === 'home' && !doc
 /* ---- New UI: Settings as one "Customize" list, grouped - no tabs inside pages ------------------------------------- */
 const NEW_NAV = [
   ['Assistant', [['agent', 'How it answers', 'i-bolt'], ['systemmessage', 'System message', 'i-message'], ['memory', 'Memory', 'i-bookmark'], ['skills', 'Skills', 'i-sparkle'],
-                 ['knowledge', 'Knowledge', 'i-book'], ['connectors', 'Connectors', 'i-plug'], ['proactive', 'Proactive help', 'i-bulb']]],
+                 ['knowledge', 'Knowledge', 'i-book'], ['connections', 'Connections', 'i-plug'], ['proactive', 'Proactive help', 'i-bulb']]],
   ['App', [['appearance', 'Appearance', 'i-brush'], ['models', 'Models', 'i-cpu'], ['voice', 'Voice', 'i-mic'], ['images', 'Images', 'i-image'],
            ['permissions', 'Permissions', 'i-shield'], ['privacy', 'Privacy', 'i-lock']]],
-  ['Network', [['websearch', 'Web search', 'i-search'], ['network', 'Network', 'i-globe'], ['mcp', 'MCP servers', 'i-plug'], ['diagnostics', 'Diagnostics', 'i-activity']]],
+  ['Network', [['webnet', 'Web search and network', 'i-globe'], ['remote', 'Phone access', 'i-message'], ['diagnostics', 'Diagnostics', 'i-activity']]],
   ['', [['about', 'About', 'i-help']]],
 ];
 function buildNewNav() {
@@ -19293,31 +19711,128 @@ function buildNewNav() {
   const h = nav.querySelector('h2'); if (h) h.textContent = document.documentElement.dataset.ui === 'legacy' ? 'Settings' : 'Customize';
 }
 function markNewNav(tab) { document.querySelectorAll('.nav-new .nav-item').forEach(b => b.classList.toggle('active', b.dataset.part === tab)); }
-// The first start: a welcome card with the wordmark, what the app is, and who made it. Shown once (this browser
-// remembers); Settings > About shows it again.
+// The first start (1.4.3: three short steps): a chat model that suits this PC (one click), a look, and what stays on
+// this PC. Skippable at every step, shown once (this browser remembers); Settings > About shows it again. Nothing
+// goes to the network until the model's download is clicked (model_finder.starter needs none).
 const FirstRun = (() => {
-  let el = null;
+  let el = null, step = 0, starter = null, poll = 0;
+  const STEPS = ['A chat model', 'A look', 'What stays here'];
+  const gb = n => `${(+n).toFixed(1)} GB`;
+  function modelStep() {
+    const have = (S.localModels || []).length || (starter && starter.have);
+    const fin = S.frDownload;
+    if (have && !fin) return `<p>You already have ${S.localModels.length ? `${S.localModels.length} local model${S.localModels.length === 1 ? '' : 's'}` : 'a model in the models folder'} - you're ready to chat.</p>
+      <p class="fr-note">More in Settings › Models › Find models.</p>`;
+    if (!starter) return `<p class="fr-note">Checking this PC…</p>`;
+    const hw = starter.hardware || {}, pick = starter.pick;
+    const pc = hw.gpu ? `${esc(hw.gpu)} · ${gb(hw.free_vram_gb)} free of ${gb(hw.vram_gb)}` : `No graphics card found · ${gb(hw.free_ram_gb)} of memory free`;
+    if (fin) {
+      const pct = fin.total ? Math.round(fin.done / fin.total * 100) : 0;
+      return `<p class="fr-pc">${icon('i-cpu', 'xs')}${pc}</p>
+        <div class="fr-dl" role="status">${fin.state === 'done' ? `${icon('i-check', 'xs')}<b>${esc(fin.file)}</b> is ready - pick it under the message box.`
+          : ['failed', 'cancelled'].includes(fin.state) ? `${icon('i-alert', 'xs')}${esc(fin.error || 'The download stopped.')} Try again in Settings › Models › Find models.`
+          : `<b>Downloading ${esc(fin.file)}</b> · ${pct}%<span class="fr-bar"><i style="width:${pct}%"></i></span><small>It carries on in the background - go ahead.</small>`}</div>`;
+    }
+    if (!pick) return `<p class="fr-pc">${icon('i-cpu', 'xs')}${pc}</p><p>None of the starter models fits in this PC's free memory. A cloud model works instead: add a key in keys.local.bat, or try a smaller model in Settings › Models › Find models.</p>`;
+    return `<p class="fr-pc">${icon('i-cpu', 'xs')}${pc}</p>
+      <div class="fr-pick"><div><b>${esc(pick.name)}</b><small>${gb(pick.gb)} download · ${pick.fit === 'gpu' ? 'runs fully on your graphics card' : 'runs partly from system memory - slower'}</small></div>
+        <button type="button" class="btn primary fr-dl-go">${icon('i-download', 'xs')}Download</button></div>
+      <p class="fr-note">From Qwen's page on Hugging Face, checked against its published SHA-256. Or skip this and add any .gguf later in Settings › Models.</p>`;
+  }
+  function lookStep() {
+    const fam = currentAppearance();
+    return `<p>Pick how it looks - Settings › Appearance has these and more.</p>
+      <div class="fr-looks">${APPEARANCES.map(id => `<button type="button" class="fr-look${fam === id ? ' on' : ''}" data-look="${id}" aria-pressed="${fam === id}">
+        <span class="th-pair" aria-hidden="true">${FAMILY_THEMES[id].map(t => `<span class="th th-${t}"><i class="a"></i><i class="b"></i><i class="c"></i></span>`).join('')}</span>${esc(APPEARANCE_INFO[id].name)}</button>`).join('')}</div>
+      <div class="fr-mode">${seg([['light', 'Light'], ['dark', 'Dark'], ['system', 'Follow Windows']], ['light', 'dark'].includes(S.settings.color_mode) ? S.settings.color_mode : 'system', "(v=>setColorMode(v).then(FirstRun.paint))")}</div>`;
+  }
+  function privacyStep() {
+    return `<ul class="fr-list">
+        <li>${icon('i-lock', 'sm')}<span><b>Your chats stay on this PC</b> - with memory, settings and everything you make, in its data folder.</span></li>
+        <li>${icon('i-globe', 'sm')}<span><b>Out only when you use it</b> - web search and cloud models; Settings › Web search and network shows what went where.</span></li>
+        <li>${icon('i-shield', 'sm')}<span><b>It asks first</b> - nothing on your PC changes without your OK.</span></li>
+      </ul>
+      <div class="fr-credit">Created by <span class="fx-sign">Fuxion</span> · <a href="mailto:fuxion64@gmail.com">fuxion64@gmail.com</a><br>Want to support it or have a suggestion? Email me.</div>`;
+  }
+  function paint() {
+    if (!el) return;
+    const body = [modelStep, lookStep, privacyStep][step]();
+    el.querySelector('.fr-card').innerHTML = `${step === 0 ? `${wordmark('xl')}<p class="fr-lead">A private AI assistant that runs on your PC.</p>` : ''}
+      <div class="fr-step"><span class="fr-n">${step + 1} of ${STEPS.length}</span><h2>${STEPS[step]}</h2>${body}</div>
+      <div class="fr-foot"><button type="button" class="btn ghost fr-skip">${step === STEPS.length - 1 ? 'Back' : 'Skip'}</button>
+        <span class="fr-dots" aria-hidden="true">${STEPS.map((_, i) => `<i class="${i === step ? 'on' : ''}"></i>`).join('')}</span>
+        <button type="button" class="btn primary fr-next">${step === STEPS.length - 1 ? 'Get started' : 'Next'}</button></div>`;
+    const card = el.querySelector('.fr-card');
+    card.querySelector('.fr-next').onclick = () => step < STEPS.length - 1 ? go(step + 1) : done();
+    card.querySelector('.fr-skip').onclick = () => step === STEPS.length - 1 ? go(step - 1) : done();
+    card.querySelector('.fr-dl-go')?.addEventListener('click', download);
+    card.querySelectorAll('.fr-look').forEach(b => b.onclick = () => changeAppearance({ appearance: b.dataset.look }).then(paint));
+  }
+  function go(n) { step = n; paint(); el.querySelector('.fr-next').focus(); }
+  async function download(e) {
+    const p = starter && starter.pick; if (!p) return;
+    e.target.disabled = true;
+    const r = await api('/api/model-finder/download', { repo: p.repo, path: p.path, mmproj: false }).catch(err => ({ ok: false, message: err.message }));
+    if (!r.ok) { toast(r.message || 'The download did not start.'); e.target.disabled = false; return; }
+    S.frDownload = r; paint(); watch();
+  }
+  function watch() {
+    clearTimeout(poll);
+    poll = setTimeout(async () => {
+      const s = await api('/api/model-finder/status').catch(() => null);
+      if (s) {
+        S.frDownload = { ...s, file: s.file || S.frDownload.file };
+        if (s.state === 'done') fetchLocalModels();
+        if (el && step === 0) paint();
+        if (s.state !== 'running') return;
+      }
+      watch();
+    }, 1000);
+  }
+  function done() { store.set('welcomed', true); const e = el; el = null; e.classList.add('closing'); setTimeout(() => e.remove(), 200); promptEl.focus(); }
   function show(again = false) {
     if (el || (!again && store.get('welcomed', false)) || Overlay.hud) return;
+    step = 0;
     el = document.createElement('div');
     el.className = 'first-run'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'Welcome to FX Workspace');
-    el.innerHTML = `<div class="fr-card rise">${wordmark('xl')}
-      <p class="fr-lead">A private AI assistant that runs on your PC.</p>
-      <ul class="fr-list">
-        <li>${icon('i-cpu', 'sm')}<span><b>Local models</b> - add any .gguf in Settings › Models</span></li>
-        <li>${icon('i-mic', 'sm')}<span><b>Voice, images and video</b> - made on this PC</span></li>
-        <li>${icon('i-shield', 'sm')}<span><b>It asks first</b> - nothing changes without your OK</span></li>
-      </ul>
-      <div class="fr-credit">Created by <span class="fx-sign">Fuxion</span> · <a href="mailto:fuxion64@gmail.com">fuxion64@gmail.com</a><br>Want to support it or have a suggestion? Email me.</div>
-      <button type="button" class="btn primary fr-go">Get started</button></div>`;
+    el.innerHTML = '<div class="fr-card rise"></div>';
     document.body.appendChild(el);
-    const done = () => { store.set('welcomed', true); const e = el; el = null; e.classList.add('closing'); setTimeout(() => e.remove(), 200); promptEl.focus(); };
-    el.querySelector('.fr-go').onclick = done;
-    el.addEventListener('keydown', e => { if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); done(); } });
-    el.addEventListener('mousedown', e => { if (e.target === el) done(); });
-    el.querySelector('.fr-go').focus();
+    paint();
+    el.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); done(); } });
+    el.querySelector('.fr-next').focus();
+    api('/api/model-finder/starter').then(r => { starter = r && r.ok ? r : { pick: null, hardware: {} }; if (el && step === 0) paint(); }).catch(() => {});
   }
-  return { show };
+  return { show, paint };
+})();
+// After an update (1.4.3): the new version's release notes, once, from the notes it ships (app_version.notes). A
+// first install has nothing to compare - the welcome shows instead. This browser remembers the version it last saw;
+// before 1.4.3 it didn't, so an install that was welcomed already counts as updated once.
+const WhatsNew = (() => {
+  let el = null;
+  async function check() {
+    if (Overlay.hud) return;
+    const d = await api('/api/version').catch(() => null); if (!d || !d.version) return;
+    const seen = store.get('seenVersion', null), welcomed = store.get('welcomed', false);
+    store.set('seenVersion', d.version);
+    if (seen === d.version || !welcomed) return;
+    const n = await api('/api/version/notes').catch(() => null);
+    if (n && n.markdown) show(n);
+  }
+  function show(n) {
+    if (el) return;
+    el = document.createElement('div');
+    el.className = 'first-run whats-new'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', `What's new in ${n.version}`);
+    el.innerHTML = `<div class="fr-card wn-card rise"><div class="wn-head"><span class="fr-n">Updated</span><h2>What's new in ${esc(n.version)}</h2></div>
+      <div class="wn-body assistant-body">${renderMarkdown(n.markdown)}</div>
+      <div class="fr-foot"><a class="btn ghost" href="https://github.com/fuxion64-ctrl/FX-Workspace/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Every version</a><button type="button" class="btn primary fr-next">Got it</button></div></div>`;
+    document.body.appendChild(el);
+    const close = () => { const e = el; el = null; e.classList.add('closing'); setTimeout(() => e.remove(), 200); promptEl.focus(); };
+    el.querySelector('.fr-next').onclick = close;
+    el.addEventListener('keydown', e => { if (e.key === 'Escape') { e.preventDefault(); close(); } });
+    el.addEventListener('mousedown', e => { if (e.target === el) close(); });
+    el.querySelector('.fr-next').focus();
+  }
+  return { check, show };
 })();
 function homeStart(prefix, tool) {
   if (tool) toggleTool(tool, true);
@@ -20134,6 +20649,7 @@ function finderCancel() { api('/api/model-finder/cancel', {}).catch(() => {}); }
   promptEl.focus();
   buildNewNav();                                                    // the new interface's Customize list
   FirstRun.show();
+  WhatsNew.check();                                                 // after an update: its notes, once
 })();
 </script>
 </body>

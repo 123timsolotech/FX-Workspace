@@ -114,6 +114,26 @@ def fit(size_bytes: int, params: float | None, hw: dict) -> dict:
     return {"need_gb": round(need, 1), "fit": level}
 
 
+# The first-run welcome's one-click starter (1.4.3): Qwen's own GGUF builds, biggest first. The sizes are the files'
+# real sizes, so the pick needs no network - nothing goes to Hugging Face until the download is clicked.
+STARTERS = (
+    {"name": "Qwen3 8B", "repo": "Qwen/Qwen3-8B-GGUF", "path": "Qwen3-8B-Q4_K_M.gguf", "size": 5_027_783_488, "params_b": 8.2},
+    {"name": "Qwen3 4B", "repo": "Qwen/Qwen3-4B-GGUF", "path": "Qwen3-4B-Q4_K_M.gguf", "size": 2_497_280_256, "params_b": 4.0},
+    {"name": "Qwen3 1.7B", "repo": "Qwen/Qwen3-1.7B-GGUF", "path": "Qwen3-1.7B-Q8_0.gguf", "size": 1_834_426_016, "params_b": 1.7},
+)
+
+
+def starter(hw: dict | None = None) -> dict:
+    """The starter that suits this PC: the biggest that fits on the GPU, else the smallest that runs partly from
+    RAM, else none. {"hardware", "pick": {name, repo, path, gb, need_gb, fit} | None}."""
+    hw = hw if hw is not None else hardware()
+    rows = [{**s, "gb": round(s["size"] / GB, 1), **fit(s["size"], s["params_b"], hw)} for s in STARTERS]
+    on_gpu = [r for r in rows if r["fit"] == "gpu"]
+    partial = [r for r in rows if r["fit"] == "partial"]
+    pick = on_gpu[0] if on_gpu else partial[-1] if partial else None
+    return {"hardware": hw, "pick": pick, "have": bool(_on_disk_names())}
+
+
 def search(query: str = "", limit: int = 30) -> list[dict]:
     q = (query or "").strip()[:80]
     url = (f"{HF}/api/models?filter=gguf&sort=downloads&direction=-1&limit={int(limit)}"
