@@ -1,4 +1,4 @@
-﻿"""The Orbs thinking mark (index.html, 1.4.3): formations, blends between kinds of work, the setting, and the
+"""The Orbs thinking mark (index.html, 1.4.3): formations, blends between kinds of work, the setting, and the
 loop's sleeping rules. The maths runs under node; the rest is checked in the page source."""
 import json
 import re
@@ -54,10 +54,10 @@ class BlendTests(unittest.TestCase):
         # 60 frames a second for 60 s, the work changing every 50-500 ms at random (and every one of the 42 pairs
         # in turn): per frame, no orb moves much more than the fastest formation moves on its own.
         r = run_js("""
-          const form = (act, t, i) => ORB_FORMS[act](t, i);
-          const step = 1000 / 60, dist = (p, q) => Math.max(...[0, 1, 2].map(i => Math.hypot(p[i][0] - q[i][0], p[i][1] - q[i][1])));
+          const form = orbForm;
+          const step = 1000 / 60, dist = (p, q) => Math.max(...ORB_IDX.map(i => Math.hypot(p[i][0] - q[i][0], p[i][1] - q[i][1])));
           let natural = 0;
-          for (const act of ORB_ACTS) { let prev = null; for (let f = 0; f < 600; f++) { const t = f * step / 1000, p = [0, 1, 2].map(i => form(act, t, i)); if (prev) natural = Math.max(natural, dist(p, prev)); prev = p; } }
+          for (const act of ORB_ACTS) { let prev = null; for (let f = 0; f < 600; f++) { const t = f * step / 1000, p = ORB_IDX.map(i => form(act, t, i)); if (prev) natural = Math.max(natural, dist(p, prev)); prev = p; } }
           let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
           const run = changes => { const o = { act: 'think', from: null, t0: 0 }; let prev = null, worst = 0, n = 0, at = 0;
             for (let f = 0; f < 3600; f++) { const now = f * step, t = now / 1000;
@@ -75,15 +75,15 @@ class BlendTests(unittest.TestCase):
 
     def test_a_blend_lands_on_the_new_formation(self):
         r = run_js("""
-          const form = (act, t, i) => ORB_FORMS[act](t, i), o = { act: 'think', from: null, t0: 0 };
+          const form = orbForm, o = { act: 'think', from: null, t0: 0 };
           orbRetarget(o, 'tool', 1, 1000, form);
-          const mid = orbState(o, 1.2, 1200, form), end = orbState(o, 1.5, 1500, form), want = [0, 1, 2].map(i => form('tool', 1.5, i));
+          const mid = orbState(o, 1.2, 1200, form), end = orbState(o, 1.5, 1500, form), want = ORB_IDX.map(i => form('tool', 1.5, i));
           console.log(JSON.stringify({ blending: mid !== null, done: o.from === null, same: JSON.stringify(end) === JSON.stringify(want) }));""")
         self.assertEqual(r, {"blending": True, "done": True, "same": True})
 
     def test_the_same_work_again_is_not_a_change(self):
         r = run_js("""
-          const form = (act, t, i) => ORB_FORMS[act](t, i), o = { act: 'read', from: null, t0: 0 };
+          const form = orbForm, o = { act: 'read', from: null, t0: 0 };
           orbRetarget(o, 'read', 1, 1000, form); console.log(JSON.stringify(o.from === null && o.t0 === 0));""")
         self.assertTrue(r)
 
@@ -107,7 +107,7 @@ class EngineTests(unittest.TestCase):
         self.assertIn("think_mark: str | None = None", (ROOT / "api" / "server.py").read_text(encoding="utf-8"))
         self.assertIn("seg([['auto', 'Auto'], ['orbs', 'Orbs'], ['legacy', 'Legacy']]", HTML)
         # Auto: orbs, but the AI-inspired appearances and the secret theme keep their own marks.
-        self.assertIn("if (m === 'auto') return AI_APPEARANCES.includes(d.skin) ? 'legacy' : 'orbs';", ORBS)
+        self.assertIn("if (m === 'auto') return ['mono', 'void', 'prism'].includes(d.skin) ? 'legacy' : 'orbs';", ORBS)
         self.assertIn("if (d.secret || d.tone === 'mossad') return 'legacy';", ORBS)
 
     def test_legacy_keeps_the_old_marks(self):
@@ -120,6 +120,36 @@ class EngineTests(unittest.TestCase):
     def test_every_appearance_dresses_them(self):
         for skin in ("classic", "dawn", "dusk", "terminal", "eclipse", "aurora", "clay", "mono", "void", "prism"):
             self.assertRegex(ORBS, rf"\b{skin}: ", skin)
+
+
+class ClaudeNodesTests(unittest.TestCase):
+    """The Claude look's mark: a turning graph of three nodes - four while a tool runs, three in a row for a search."""
+
+    def test_nodes_stay_in_the_box_and_count_right(self):
+        r = run_js("""
+          const bad = [], count = (act, t) => ORB_IDX.map(i => orbClayForm(act, t, i)).filter(q => q[2] > .02).length;
+          for (const act of ORB_ACTS) for (let t = 0; t < 12; t += 1 / 30) for (const i of ORB_IDX) {
+            const q = orbClayForm(act, t, i);
+            if (!q.every(Number.isFinite) || Math.abs(q[0]) + q[2] > 1.02 || Math.abs(q[1]) + q[2] > 1.02) bad.push([act, i]);
+          }
+          console.log(JSON.stringify({ bad: bad.slice(0, 3), tool: count('tool', 1), search: count('search', 1), wait: count('wait', 1), think0: count('think', 0), think5: count('think', 5) }));""")
+        self.assertEqual(r, {"bad": [], "tool": 4, "search": 3, "wait": 1, "think0": 3, "think5": 4})
+
+    def test_claude_blends_without_jumps(self):
+        r = run_js("""
+          const step = 1000 / 60, o = { act: 'think', from: null, t0: 0 }; let prev = null, worst = 0, n = 0;
+          for (let f = 0; f < 2400; f++) { const now = f * step, t = now / 1000;
+            if (f % 37 === 0) orbRetarget(o, ORB_ACTS[n++ % ORB_ACTS.length], t, now, orbClayForm);
+            const p = orbState(o, t, now, orbClayForm);
+            if (prev) worst = Math.max(worst, ...ORB_IDX.map(i => Math.hypot(p[i][0] - prev[i][0], p[i][1] - prev[i][1]))); prev = p; }
+          console.log(JSON.stringify(worst));""")
+        self.assertLess(r, .12)
+
+    def test_the_page_draws_it(self):
+        self.assertIn("clay: { ...base, nodes: true,", ORBS)
+        self.assertIn("const form = (act, t, i) => dress && dress.nodes ? orbClayForm(act, t, i)", ORBS)
+        self.assertIn("function claySay(el)", HTML)                      # the label: what it's thinking about
+        self.assertIn(".think-secs", HTML)                               # and the seconds so far
 
 
 if __name__ == "__main__":

@@ -2161,7 +2161,13 @@ body { font-size: calc(var(--base-size) * var(--text-scale, 1)); }
 .immersive-btn .imm-label { white-space: nowrap; }
 .immersive-btn.on { color: var(--accent-text); background: var(--accent-soft); }
 .immersive-btn.on .icon { color: var(--accent); }
-@media (max-width: 760px) { .immersive-btn .imm-label { display: none; } .immersive-btn { padding: 0; width: 34px; justify-content: center; } }/* A part made of sections (Connections; Web search and network): each section keeps its own heading. */
+@media (max-width: 760px) { .immersive-btn .imm-label { display: none; } .immersive-btn { padding: 0; width: 34px; justify-content: center; } }/* Claude's Thinking row, as on claude.ai: what it's thinking about, the seconds so far, and a ▸ that turns down when open. */
+.think-secs { display: none; }
+:root[data-ui][data-skin="clay"] .think-block[data-phase="live"] .think-secs:not(:empty) { display: inline; margin-left: 8px; color: var(--muted); font-size: 13px; font-variant-numeric: tabular-nums; }
+:root[data-ui][data-skin="clay"] .thinking .chev { transform: rotate(-90deg); }
+:root[data-ui][data-skin="clay"] .think-block.open .thinking .chev { transform: rotate(0deg); }
+:root[data-ui][data-skin="clay"] .thinking { gap: 8px; font-size: 14px; }
+/* A part made of sections (Connections; Web search and network): each section keeps its own heading. */
 .set-sec { scroll-margin-top: 12px; }
 .set-sec + .set-sec { margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--border); }
 /* Settings search: the setting it found, lit for a moment. */
@@ -5427,23 +5433,6 @@ html.voice-on .idle-screen { display: none !important; }
    fade). Each kind of work keeps the breath and adds one quiet change. The "Thinking" words shimmer with claude.ai's
    own band: 120 deg, held for the first and last 15% of a 3 s loop, swept on its curve between. ---- */
 :root[data-ui][data-skin="clay"] { --clay-burst: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20viewBox%3D'0%200%2024%2024'%3E%3Cpath%20d%3D'M13.50%2012.00L13.05%201.45A1.05%201.05%200%200%200%2010.95%201.45L10.50%2012.00ZM13.26%2012.81L17.47%205.46A1.05%201.05%200%200%200%2015.71%204.32L10.74%2011.19ZM12.79%2013.28L20.93%207.71A1.05%201.05%200%200%200%2019.83%205.93L11.21%2010.72ZM12.00%2013.50L19.88%2013.05A1.05%201.05%200%200%200%2019.88%2010.95L12.00%2010.50ZM11.19%2013.26L20.10%2018.48A1.05%201.05%200%200%200%2021.24%2016.72L12.81%2010.74ZM10.72%2012.79L15.43%2019.55A1.05%201.05%200%200%200%2017.22%2018.45L13.28%2011.21ZM10.50%2012.00L10.95%2021.51A1.05%201.05%200%200%200%2013.05%2021.51L13.50%2012.00ZM10.74%2011.19L6.97%2017.86A1.05%201.05%200%200%200%208.73%2019.00L13.26%2012.81ZM11.21%2010.72L2.47%2016.65A1.05%201.05%200%200%200%203.58%2018.44L12.79%2013.28ZM12.00%2010.50L3.31%2010.95A1.05%201.05%200%200%200%203.31%2013.05L12.00%2013.50ZM12.81%2010.74L4.68%206.02A1.05%201.05%200%200%200%203.54%207.79L11.19%2013.26ZM13.28%2011.21L8.63%204.55A1.05%201.05%200%200%200%206.84%205.65L10.72%2012.79Z'%2F%3E%3C%2Fsvg%3E"); }
-@keyframes clay-breathe { 0%, 100% { filter: brightness(.96); transform: scale(.86); } 50% { filter: brightness(1.06); transform: scale(1); } }
-@keyframes clay-breathe-fade { 0%, 100% { opacity: .4; filter: brightness(.96); transform: scale(.7); } 50% { opacity: 1; filter: brightness(1.06); transform: scale(1); } }
-@keyframes clay-breathe-turn { 0% { filter: brightness(.96); transform: rotate(0) scale(.86); } 50% { filter: brightness(1.06); transform: rotate(45deg) scale(1); } 100% { filter: brightness(.96); transform: rotate(90deg) scale(.86); } }
-@keyframes clay-burst-tick { 0%, 100% { transform: rotate(0) scale(.92); } 25% { transform: rotate(30deg) scale(1); } 50% { transform: rotate(30deg) scale(.92); } 75% { transform: rotate(60deg) scale(1); } }
-@keyframes clay-burst-hue { 0%, 100% { background-color: var(--accent); } 50% { background-color: color-mix(in srgb, var(--accent) 60%, #f0b08c); } }
-:root[data-ui][data-skin="clay"] .think:not(.orb-mark) { width: 20px; height: 20px; }
-:root[data-ui][data-skin="clay"] .think:not(.orb-mark) i:nth-child(1) { left: 1px; top: 1px; width: 18px; height: 18px; font-size: 0; background: var(--accent);
-  -webkit-mask: var(--clay-burst) center / contain no-repeat; mask: var(--clay-burst) center / contain no-repeat; transform-origin: 50% 50%;
-  animation: clay-breathe 3s ease-in-out infinite; }
-:root[data-ui][data-skin="clay"] .think:not(.orb-mark) i:nth-child(1)::before { content: none; }
-:root[data-ui][data-skin="clay"] .think:not(.orb-mark)[data-act="read"] i:nth-child(1) { animation-duration: 3.6s; }
-:root[data-ui][data-skin="clay"] .think:not(.orb-mark)[data-act="search"] i:nth-child(1) { animation: clay-breathe-turn 2.4s ease-in-out infinite; }
-:root[data-ui][data-skin="clay"] .think:not(.orb-mark)[data-act="tool"] i:nth-child(1) { animation: clay-burst-tick 1.6s cubic-bezier(.65, 0, .35, 1) infinite; }
-:root[data-ui][data-skin="clay"] .think:not(.orb-mark)[data-act="write"] i:nth-child(1) { animation-duration: 1.8s; }
-:root[data-ui][data-skin="clay"] .think:not(.orb-mark)[data-act="draw"] i:nth-child(1) { animation: clay-breathe 3s ease-in-out infinite, clay-burst-hue 3s ease-in-out infinite; }
-:root[data-ui][data-skin="clay"] .think:not(.orb-mark)[data-act="wait"] i:nth-child(1) { animation: clay-breathe-fade 2.4s ease-in-out infinite; }
-:root[data-ui][data-skin="clay"]:is([data-motion="reduced"], [data-motion="off"]) .think:not(.orb-mark) i:nth-child(1) { animation: none; transform: none; }
 /* The orbs in Claude: the core is the same starburst. */
 :root[data-ui][data-skin="clay"] .greeting::before { content: ""; width: .9em; height: .9em; flex: none; background: var(--accent); margin-right: 4px;
   -webkit-mask: var(--clay-burst) center / contain no-repeat; mask: var(--clay-burst) center / contain no-repeat; }
@@ -11647,6 +11636,23 @@ const Thinking = (() => {
     const list = set().filter(p => p !== prev);
     return list[Math.floor(Math.random() * list.length)] || prev;
   }
+  // The Claude look says what it is thinking about, as claude.ai does: the newest sentence of the reasoning, short.
+  function claySay(el) {
+    if (document.documentElement.dataset.skin !== 'clay' || still()) return '';
+    const line = (el._text || '').split('\n').map(x => x.trim()).filter(Boolean).pop() || '';
+    let s = line.replace(/[*_`#>|]/g, '').split(/(?<=[.!?])\s+/).filter(x => x.length > 6).pop() || '';
+    s = s.replace(/[.:;,!?]+$/, '').trim();
+    if (s.length < 8) return '';
+    if (s.length > 64) s = s.slice(0, 62).replace(/\s+\S*$/, '') + '…';
+    return s[0].toUpperCase() + s.slice(1);
+  }
+  // The seconds so far, after the words (the Claude look; CSS shows it only there).
+  function seconds(el, live, n) {
+    let span = el.querySelector('.think-secs');
+    if (!span) { span = document.createElement('span'); span.className = 'think-secs'; el.querySelector('.thinking-label').after(span); }
+    const v = live ? `${Math.max(1, Math.round(n))}s` : '';
+    if (span.textContent !== v) span.textContent = v;
+  }
   // The phrase shown; `animate` cross-fades it in (the old one lifts away, the new one rises).
   function label(el, text, animate) {
     const lab = el.querySelector('.thinking-label'), cur = lab.querySelector('.tp.on'), next = lab.querySelector('.tp:not(.on)');
@@ -11698,11 +11704,13 @@ const Thinking = (() => {
     paintModelLive(turn);
     clearTimeout(paint._t);
     if (stage && stage.key === 'loading') paint._t = setTimeout(paint, 1000);       // the seconds keep counting
+    else if (document.documentElement.dataset.skin === 'clay' && (st.thinking || hold)) paint._t = setTimeout(paint, 1000);   // Claude's seconds counter
     el._text = st.text; el._seconds = st.seconds;
     const phase = hold || st.thinking ? 'live' : st.text ? 'done' : 'hidden';
     el.dataset.stage = stage ? stage.key : '';
     el.hidden = phase === 'hidden';
     el.dataset.phase = phase === 'done' ? 'done' : 'live';
+    seconds(el, phase === 'live' && !hold, st.seconds);
     if (phase === 'done') label(el, thoughtFor(st.seconds), false);
     else if (hold) label(el, hold, false);
     else if (!el._phrase || el._held) {           // thinking again: a fresh phrase, shown for a full turn
@@ -11723,7 +11731,7 @@ const Thinking = (() => {
     timer = 0;
     const el = S.turn && S.turn.think;
     if (!el || el.hidden || el._held || el.dataset.phase !== 'live') return;
-    if (!still() && document.visibilityState === 'visible') { el._phrase = pick(el._phrase); label(el, el._phrase, true); }
+    if (!still() && document.visibilityState === 'visible') { el._phrase = claySay(el) || pick(el._phrase); label(el, el._phrase, true); }
     timer = setTimeout(tick, 2200 + Math.random() * 700);
   }
   // What the live turn thought, for its reply if the server's copy is missing.
@@ -11849,6 +11857,37 @@ const ORB_FORMS = {
   },
 };
 const ORB_ACTS = Object.keys(ORB_FORMS);
+// Four orbs. The shared formations use three; the fourth sits hidden at the centre (Claude's square uses it).
+const ORB_IDX = [0, 1, 2, 3], ORB_HIDDEN = [0, 0, 0, 0, -9, 0];
+const orbForm = (act, t, i) => i > 2 ? ORB_HIDDEN : (ORB_FORMS[act] || ORB_FORMS.think)(t, i);
+// The Claude look (1.4.3), as the Claude apps show work today: the spark gives way to a small graph of nodes that
+// turns in depth - three nodes, or four while a tool runs, three in a row for a search (anthropics/claude-code#98254:
+// "nodes3" / "nodes4", about 5 s each). At this size the lines between them almost vanish and the nodes read as
+// clay dots that pass in front of each other, as on claude.ai. Nodes nearer the eye are larger and brighter.
+function orbRing(t, i, n, per, R = .54, tilt = .42, rr = .13, spin = 0) {
+  const th = ORB_TAU * t / per + i * ORB_TAU / n + spin, z = Math.sin(th);
+  return [R * Math.cos(th), R * tilt * z, rr * (1 + .28 * z), .62 + .38 * (z + 1) / 2, z, i === 3 ? 1 : i ? 1 : 0];
+}
+const ORB_CLAY_FORMS = {
+  think(t, i) {             // three nodes turning; every ~5 s a fourth grows in and the three make room, then it goes
+    const f = .5 - .5 * Math.cos(ORB_TAU * t / 10), n = 3 + f;
+    if (i === 3) { const q = orbRing(t, 3, n, 2.6); return [q[0] * f, q[1] * f, q[2] * f, q[3] * f, q[4], 1]; }
+    return orbRing(t, i, n, 2.6);
+  },
+  read(t, i) { return i === 3 ? ORB_HIDDEN : orbRing(t, i, 3, 3.6); },
+  write(t, i) { return i === 3 ? ORB_HIDDEN : orbRing(t, i, 3, 1.6); },
+  search(t, i) {            // three in a row, a pulse running along them
+    if (i === 3) return ORB_HIDDEN;
+    const p = Math.max(0, Math.sin(ORB_TAU * t / 1.2 - i * .9));
+    return [[-.5, 0, .5][i], 0, .12 + .05 * p, .55 + .45 * p, 0, i ? 1 : 0];
+  },
+  tool(t, i) { return orbRing(t, i, 4, 2.2, .52, .5); },
+  draw(t, i) { const q = orbRing(t, i, 4, 3); q[5] = (i + t / 1.2) % 3; return q; },
+  wait(t, i) {              // back to one dot, breathing
+    return i ? [0, 0, 0, 0, -1, 1] : [0, 0, .17 * (.82 + .18 * Math.sin(ORB_TAU * t / 2.4)), 1, 0, 0];
+  },
+};
+const orbClayForm = (act, t, i) => (ORB_CLAY_FORMS[act] || ORB_CLAY_FORMS.think)(t, i);
 // One formation blended into another: k 0 is all `from`, 1 all `to`. Colour wraps (0..3 is a circle).
 function orbMix(a, b, k) {
   const out = a.map((v, j) => v + (b[j] - v) * k);
@@ -11860,11 +11899,11 @@ const ORB_BLEND = 450;
 // A mark's orbs now (o: { act, from, t0, depth }): its formation, or a blend from where they were (from) into it.
 function orbState(o, t, now, form) {
   const to = i => form(o.act, t, i);
-  if (!o.from) return [0, 1, 2].map(to);
+  if (!o.from) return ORB_IDX.map(to);
   const k = orbEase((now - o.t0) / ORB_BLEND);
-  if (k >= 1) { o.from = null; return [0, 1, 2].map(to); }
+  if (k >= 1) { o.from = null; return ORB_IDX.map(to); }
   const from = o.from(t);
-  return [0, 1, 2].map(i => orbMix(from[i], to(i), k));
+  return ORB_IDX.map(i => orbMix(from[i], to(i), k));
 }
 // Another kind of work: the blend starts from where the orbs are, still moving - the old formation (or the old
 // blend, frozen at its share). Many quick changes in a row start from a still snapshot, so the chain stays short.
@@ -11872,8 +11911,8 @@ function orbRetarget(o, act, t, now, form) {
   if (o.act === act) return;
   const prev = o.from, prevAct = o.act, k = prev ? orbEase((now - o.t0) / ORB_BLEND) : 1, depth = (o.depth || 0) + 1;
   if (prev && k < 1 && depth > 3) { const snap = orbState(o, t, now, form); o.from = () => snap; o.depth = 0; }
-  else if (prev && k < 1) { o.from = tt => { const a = prev(tt); return [0, 1, 2].map(i => orbMix(a[i], form(prevAct, tt, i), k)); }; o.depth = depth; }
-  else { o.from = tt => [0, 1, 2].map(i => form(prevAct, tt, i)); o.depth = 0; }
+  else if (prev && k < 1) { o.from = tt => { const a = prev(tt); return ORB_IDX.map(i => orbMix(a[i], form(prevAct, tt, i), k)); }; o.depth = depth; }
+  else { o.from = tt => ORB_IDX.map(i => form(prevAct, tt, i)); o.depth = 0; }
   o.act = act; o.t0 = now;
 }
 // orbs-math:end
@@ -11897,7 +11936,7 @@ var Orbs = (() => {
   function mode() {
     const d = root.dataset, m = (S.settings && S.settings.think_mark) || 'auto';
     if (d.secret || d.tone === 'mossad') return 'legacy';                 // a secret theme keeps its own mark
-    if (m === 'auto') return AI_APPEARANCES.includes(d.skin) ? 'legacy' : 'orbs';
+    if (m === 'auto') return ['mono', 'void', 'prism'].includes(d.skin) ? 'legacy' : 'orbs';   // Claude's own mark is a node graph: the orbs
     return m === 'legacy' ? 'legacy' : 'orbs';
   }
   // The appearance's dressing: colours from its own tokens, a drawing style, and timing.
@@ -11916,7 +11955,7 @@ var Orbs = (() => {
       terminal: { ...base, style: 'pixel', pal: [accent, accent, text], steps: 10 },
       eclipse: { ...base, style: 'eclipse', pal: [glow2, glow, glow2] },
       aurora: { ...base, style: 'glow', trail: true, pal: [glow, glow2, glow3] },
-      clay: { ...base, style: 'clay', pal: [accent, accent, warn] },
+      clay: { ...base, nodes: true, pal: [accent, accent, glow2] },        // clay nodes; drawing blends to the soft apricot
       mono: { ...base, pal: [text, text, text], fold: true },
       void: { ...base, style: 'ring', pal: [text, text, text], speed: 1.25 },
       prism: { ...base, style: 'gradient', pal: [glow, glow3, glow2] },
@@ -11926,9 +11965,10 @@ var Orbs = (() => {
     return dress;
   }
   // ChatGPT's mark is one dot: the satellites fold into it while it only thinks.
-  const form = (act, t, i) => dress && dress.fold && act === 'think'
-    ? (i ? [0, 0, 0, 0, -1, 0] : [0, 0, .38 * (.84 + .16 * Math.sin(ORB_TAU * t / 1.4)), 1, 0, 0])
-    : (ORB_FORMS[act] || ORB_FORMS.think)(t, i);
+  // Claude's look draws its node graph; ChatGPT's mark is one dot whose satellites fold into it while it only thinks.
+  const form = (act, t, i) => dress && dress.nodes ? orbClayForm(act, t, i)
+    : dress && dress.fold && act === 'think' ? (i ? [0, 0, 0, 0, -1, 0] : [0, 0, .38 * (.84 + .16 * Math.sin(ORB_TAU * t / 1.4)), 1, 0, 0])
+    : orbForm(act, t, i);
   const state = (o, t, now) => orbState(o, t, now, form);
   const retarget = (o, act, t, now) => orbRetarget(o, act, t, now, form);
   function prepare(el) {
@@ -11963,6 +12003,14 @@ var Orbs = (() => {
         ctx.fillStyle = css(along(D.pal, q[5]), q[3] * .22 * (n + 1) / TRAIL);
         ctx.beginPath(); ctx.arc(cx + q[0] * s, cy + q[1] * s, Math.max(.3, q[2] * s * .8), 0, ORB_TAU); ctx.fill();
       }));
+    }
+    if (D.nodes && !still) {                                       // Claude: the faint lines of the node graph, behind the nodes
+      const on = orbs.filter(q => q[2] > .03 && q[3] > .05);
+      if (on.length > 1) {
+        ctx.strokeStyle = css(D.pal[0], .26); ctx.lineWidth = .8; ctx.beginPath();
+        on.forEach((q, n) => n ? ctx.lineTo(cx + q[0] * s, cy + q[1] * s) : ctx.moveTo(cx + q[0] * s, cy + q[1] * s));
+        if (on.length > 2) ctx.closePath(); ctx.stroke();
+      }
     }
     const order = orbs.map((q, i) => [q, i]).sort((a, b) => a[0][4] - b[0][4]);
     for (const [q, i] of order) {
@@ -14786,7 +14834,7 @@ function renderAppearance() {
       <div class="row${dis(op)}"><div class="row-text"><b>Density</b><small>${op ? `${opName} is already compact.` : 'Compact fits more on smaller screens.'}</small></div>${seg([['comfortable', 'Comfortable'], ['compact', 'Compact']], s.layout || 'comfortable', "(v=>saveSettings({layout:v}).then(renderAppearance))")}</div>
       ${rowHtml('Idle screen', 'A calm screen with the time when nothing happens. Any key brings it back.', seg([['off', 'Off'], ['5', '5 min'], ['10', '10 min'], ['30', '30 min']], String(s.ambient_idle ?? '10'), "(v=>saveSettings({ambient_idle:v}).then(renderAppearance))"))}
       ${rowHtml('Write replies in', 'Each new word fades in with the theme.', sw(store.get('animateReplies', true) !== false, `store.set('animateReplies', ${store.get('animateReplies', true) === false});renderAppearance()`))}
-      <div class="row tm-row"><div class="row-text"><b>Thinking mark</b><small>What moves while it works. Orbs fly into a new pattern for each kind of work. Auto: orbs, while Claude, ChatGPT, Grok and Gemini keep their own mark. Legacy: each appearance's mark from before.</small>
+      <div class="row tm-row"><div class="row-text"><b>Thinking mark</b><small>What moves while it works. Orbs fly into a new pattern for each kind of work. Auto: orbs (turning nodes in the Claude look), while ChatGPT, Grok and Gemini keep their own mark. Legacy: each appearance's mark from before.</small>
         <span class="tm-preview" aria-hidden="true"><span class="think" data-act="think"><i></i><i></i><i></i><i></i><i></i></span><span class="tm-act">Thinking</span></span></div>
         ${seg([['auto', 'Auto'], ['orbs', 'Orbs'], ['legacy', 'Legacy']], ['orbs', 'legacy'].includes(s.think_mark) ? s.think_mark : 'auto', "(v=>saveSettings({think_mark:v}).then(()=>{Orbs.sync();renderAppearance()}))")}</div>
     </div>
