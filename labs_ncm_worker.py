@@ -51,12 +51,26 @@ def main():
             ids = ids[:ids.index(eos)]
         return tk.pre_tokenizer.decode([i for i in ids if i not in (eos, pad)], skip_special_tokens=True)
 
+    # The coarsest level: the model writes it itself when it can (predict_level0 / query_level0). The current repo's
+    # TinyStories model can't - like the repo's own scripts/eval_shard.py, its first code is drawn from the level-0
+    # frequencies saved in the checkpoint (generation.level0_unigram, "generator.pt:inference.level0_unigram").
+    def level0():
+        if getattr(net, "predict_level0", False) or getattr(net, "query_level0", False) or not g.get("level0_unigram"):
+            return None
+        path, _, ref = str(g.level0_unigram).partition(":")
+        obj = sd if path == cfg.checkpoints.generator else torch.load(os.path.join(ck, path), map_location="cpu", weights_only=False)
+        for k in ref.split(".") if ref else ():
+            obj = obj[k]
+        p = obj.double().float().cuda()
+        return torch.multinomial(p, tk.vqvae.vq.levels[0], replacement=True).view(1, -1)
+
     torch.manual_seed(seed)
     with torch.no_grad():
         x = torch.full((1, 1), eos, device="cuda")
+        l0 = level0()
         torch.cuda.synchronize()
         t0 = time.time()
-        codes = net.generate(None, x, temperature=g.get("temperature", 1.0), top_k=g.get("top_k"),
+        codes = net.generate(l0, x, temperature=g.get("temperature", 1.0), top_k=g.get("top_k"),
                              top_p=g.get("top_p"), cfg_scale=g.get("cfg_scale", 0.0), cfg_null_eos=eos)
         torch.cuda.synchronize()
         seconds = time.time() - t0

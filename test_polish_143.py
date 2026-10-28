@@ -114,6 +114,17 @@ class SettingsTests(unittest.TestCase):
         self.assertNotIn('AI-inspired <span class="beta-tag">Beta</span>', HTML)
 
 
+class NcmWorkerTests(unittest.TestCase):
+    def test_the_first_level_comes_from_the_checkpoint_when_the_model_cant_write_it(self):
+        # Found in 1.4.3's live check: HazyResearch's current TinyStories config has neither predict_level0 nor
+        # query_level0, so generate(None, ...) asserted. Like the repo's own eval script, the first code is drawn
+        # from generation.level0_unigram.
+        src = (ROOT / "labs_ncm_worker.py").read_text(encoding="utf-8")
+        self.assertIn('getattr(net, "predict_level0", False) or getattr(net, "query_level0", False)', src)
+        self.assertIn("torch.multinomial(p, tk.vqvae.vq.levels[0], replacement=True)", src)
+        self.assertIn("codes = net.generate(l0, x,", src)
+
+
 class ShellWatchTests(unittest.TestCase):
     """launcher.pyw stops the server when the desktop app has closed - and only then. Found in 1.4.3's live checks:
     one failed process check, while the PC loaded a 9.7 GB model for the MoE test, stopped the server under a
