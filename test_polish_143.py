@@ -136,6 +136,33 @@ class AiLooksTests(unittest.TestCase):
         self.assertIn("box.classList.toggle('multiline', multi)", HTML)                      # one line opens to two rows
 
 
+class ImmersiveTests(unittest.TestCase):
+    """The AI-inspired appearances' Immersive switch: each app's voice from the local model, honest about what it is."""
+
+    def test_four_styles_each_honest(self):
+        import personas
+        for skin, pid in personas.AI_STYLES.items():
+            text = personas.resolve({}, pid)
+            self.assertIn("never claim to be", text, pid)
+            self.assertIn("running on this PC", text, pid)
+        self.assertIn("made by Anthropic", personas.resolve({}, "ai-clay"))
+        self.assertIn("witty", personas.resolve({}, "ai-void"))
+
+    def test_the_switch_is_a_setting_and_ids_stay_builtin(self):
+        import personas
+        self.assertFalse(personas.clean_settings({})["ai_immersive"])
+        self.assertTrue(personas.clean_settings({"ai_immersive": True})["ai_immersive"])
+        self.assertFalse(personas.clean_settings({"ai_immersive": "yes"})["ai_immersive"])
+        saved = personas.clean_settings({"personas": [{"id": "ai-clay", "name": "Fake", "text": "x"}]})["personas"]
+        self.assertNotIn("ai-clay", [p["id"] for p in saved])            # a style can't be saved over
+        self.assertIn("ai_immersive: bool | None = None", SERVER)
+
+    def test_the_page_sends_it_in_customs_place(self):
+        self.assertIn("return p.id === 'custom' && aiStyle() ? aiStyle() : p.id;", HTML)
+        self.assertIn('id="immersive-btn" hidden onclick="toggleImmersive()"', HTML)
+        self.assertIn("renderImmersiveBtn();", HTML)
+
+
 class NcmWorkerTests(unittest.TestCase):
     def test_the_first_level_comes_from_the_checkpoint_when_the_model_cant_write_it(self):
         # Found in 1.4.3's live check: HazyResearch's current TinyStories config has neither predict_level0 nor

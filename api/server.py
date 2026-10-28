@@ -526,6 +526,7 @@ class SettingsUpdate(BaseModel):
     voice_sounds: bool | None = None
     personas: list | None = None
     persona: str | None = None
+    ai_immersive: bool | None = None          # the AI-inspired appearances' Immersive switch (personas.AI_STYLES)
     unlocked_themes: list | None = None
     image_root: str | None = None
     image_quality: str | None = None

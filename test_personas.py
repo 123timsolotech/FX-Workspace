@@ -18,7 +18,7 @@ class PersonaSettingsTests(unittest.TestCase):
     def test_defaults(self):
         self.assertEqual(config.DEFAULT_SETTINGS["persona"], "custom")
         self.assertEqual(config.DEFAULT_SETTINGS["personas"], [{"id": "custom", "name": "Custom", "text": ""}])
-        self.assertEqual(personas.clean_settings({}), {"personas": [{"id": "custom", "name": "Custom", "text": ""}], "persona": "custom"})
+        self.assertEqual(personas.clean_settings({}), {"personas": [{"id": "custom", "name": "Custom", "text": ""}], "persona": "custom", "ai_immersive": False})
 
     def test_cleaning(self):
         raw = {"personas": [
@@ -151,7 +151,7 @@ class PageTests(unittest.TestCase):
         js = self.block("/* ---- Personas (personas.py)", "// ---- files")
         self.assertIn("persona: personaForTurn()", self.html)                # sent with every message
         # IsraelGPT (by day) and MossadGPT (after dark): only in Judaism Mode, in Custom's place, never saved or editable.
-        self.assertIn("p.id === 'custom' && activeSecretTheme() === 'judaism' ? secretPersona() : p.id", js)
+        self.assertIn("if (p.id === 'custom' && activeSecretTheme() === 'judaism') return secretPersona();", js)
         self.assertIn("activeSecretTheme() === 'judaism' ? (colorScheme() === 'dark' ? MOSSADGPT : ISRAELGPT) : ''", js)
         self.assertNotIn("editPersona('israelgpt')", js)
         self.assertNotIn("editPersona('mossadgpt')", js)

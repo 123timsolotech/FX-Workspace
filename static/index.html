@@ -2156,7 +2156,12 @@ body { font-size: calc(var(--base-size) * var(--text-scale, 1)); }
 .think.orb-mark > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 :root:is([data-motion="reduced"], [data-motion="off"]) .act-line .think.orb-mark { display: inline-block; }   /* still, but it shows the work */
 
-/* A part made of sections (Connections; Web search and network): each section keeps its own heading. */
+/* The AI-inspired looks' Immersive switch (top bar): a small pill, lit while on. */
+.immersive-btn { width: auto; gap: 6px; padding: 0 10px 0 8px; border-radius: 999px; font-size: 12.5px; font-weight: 500; color: var(--muted); }
+.immersive-btn .imm-label { white-space: nowrap; }
+.immersive-btn.on { color: var(--accent-text); background: var(--accent-soft); }
+.immersive-btn.on .icon { color: var(--accent); }
+@media (max-width: 760px) { .immersive-btn .imm-label { display: none; } .immersive-btn { padding: 0; width: 34px; justify-content: center; } }/* A part made of sections (Connections; Web search and network): each section keeps its own heading. */
 .set-sec { scroll-margin-top: 12px; }
 .set-sec + .set-sec { margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--border); }
 /* Settings search: the setting it found, lit for a moment. */
@@ -5664,6 +5669,7 @@ html.voice-on .idle-screen { display: none !important; }
         <button class="icon-btn chat-only" id="find-btn" onclick="Find.open()" aria-label="Find in this chat" title="Find in this chat (Ctrl+F)"><svg class="icon"><use href="#i-search"/></svg></button>
         <button class="icon-btn chat-only" id="more-btn" onclick="openMoreMenu(this)" aria-label="More for this chat: rename, branch, pins, export" title="More: rename, branch, pins, export" aria-haspopup="dialog"><svg class="icon"><use href="#i-dots"/></svg></button>
         <button class="icon-btn" id="mini-btn" onclick="api('/api/mini-window',{action:'toggle'}).then(r=>{if(r&&r.mini){S.settings.overlay_window=r.mini.open;toast(r.message||'')}}).catch(e=>toast(e.message))" aria-label="Mini window" title="Mini window: live panels, always on top (Ctrl+Alt+M)"><svg class="icon"><use href="#i-dock-right"/></svg></button>
+        <button class="icon-btn immersive-btn" id="immersive-btn" hidden onclick="toggleImmersive()" aria-pressed="false"><svg class="icon"><use href="#i-sparkle"/></svg><span class="imm-label">Immersive</span></button>
         <button class="icon-btn mode-btn" id="mode-btn" onclick="toggleColorMode()" aria-label="Switch to dark" title="Switch to dark (Ctrl+Alt+L)"><svg class="icon"><use href="#i-moon"/></svg></button>
         <button class="icon-btn" id="stats-btn" onclick="SessionStats.open()" aria-label="Speed and models for this chat" title="Speed and models - tok/s, waits and models for this chat"><svg class="icon"><use href="#i-activity"/></svg></button>
         <button class="icon-btn" id="panel-btn" onclick="togglePanel()" aria-label="Workspace panel" title="Progress, suggestions and activity" aria-pressed="false"><svg class="icon"><use href="#i-panel"/></svg><span class="badge hidden" id="sugg-badge">0</span></button>
@@ -6416,6 +6422,7 @@ function applyAppearance() {
   if (Overlay.active()) Overlay.paint();
   SecretFx.sync();                          // Judaism Mode's effects (off unless it's on)
   renderPersonaBtn();                       // Judaism Mode brings its own persona
+  renderImmersiveBtn();                     // the AI-inspired looks' Immersive switch
   renderModeBtn();
   if (window.Orbs) Orbs.sync();             // the thinking mark's dressing follows the appearance
 }
@@ -9642,11 +9649,32 @@ const secretPersona = () => activeSecretTheme() === 'judaism' ? (colorScheme() =
 // What this message asks for (ChatRequest.persona): the chosen one - or, in Judaism Mode, its own persona in Custom's place.
 function personaForTurn() {
   const p = personaChosen();
-  return p.id === 'custom' && activeSecretTheme() === 'judaism' ? secretPersona() : p.id;
+  if (p.id === 'custom' && activeSecretTheme() === 'judaism') return secretPersona();
+  return p.id === 'custom' && aiStyle() ? aiStyle() : p.id;
+}
+// The AI-inspired appearances' Immersive switch (1.4.3, the top bar): their app's voice in Custom's place - a style of
+// this local model, never the real product (personas.py says so to the model too).
+const AI_PERSONAS = { 'ai-clay': ['Claude-style', 'Warm, thoughtful prose, candid about what it doesn’t know.', 'i-sparkle'],
+  'ai-mono': ['ChatGPT-style', 'Friendly and organized, with a next step to offer.', 'i-sparkle'],
+  'ai-void': ['Grok-style', 'Witty, direct, a little irreverent.', 'i-sparkle'],
+  'ai-prism': ['Gemini-style', 'Clear and organized: the answer first, then the detail.', 'i-sparkle'] };
+const aiStyle = () => S.settings && S.settings.ai_immersive && !activeSecretTheme() && AI_APPEARANCES.includes(document.documentElement.dataset.skin) ? 'ai-' + document.documentElement.dataset.skin : '';
+function renderImmersiveBtn() {
+  const b = $('immersive-btn'); if (!b || !S.settings) return;
+  const skin = document.documentElement.dataset.skin, show = AI_APPEARANCES.includes(skin) && !activeSecretTheme();
+  b.hidden = !show; if (!show) return;
+  const on = !!S.settings.ai_immersive, name = APPEARANCE_INFO[skin].name;
+  b.setAttribute('aria-pressed', String(on)); b.classList.toggle('on', on);
+  b.title = on ? `Immersive: on - it talks like ${name} (a style of your local model). Click to turn off.` : `Immersive: talk like ${name} - its voice and manner, from your local model`;
+}
+function toggleImmersive() {
+  const on = !S.settings.ai_immersive;
+  saveSettings({ ai_immersive: on }).then(() => { renderImmersiveBtn(); renderPersonaBtn();
+    toast(on ? `Immersive on: replies in the ${APPEARANCE_INFO[document.documentElement.dataset.skin].name} style.` : 'Immersive off.'); });
 }
 function renderPersonaBtn() {
   const b = $('persona-btn'); if (!b || !S.settings) return;
-  const id = personaForTurn(), p = personaChosen(), own = SECRET_PERSONAS[id];
+  const id = personaForTurn(), p = personaChosen(), own = SECRET_PERSONAS[id] || AI_PERSONAS[id];
   const name = own ? own[0] : p.id === 'custom' ? (p.text ? 'Custom' : 'Persona') : p.name;
   $('persona-label').textContent = name;
   b.dataset.on = own || p.id !== 'custom' || p.text ? '1' : '0';
@@ -9660,7 +9688,7 @@ function openPersonaMenu(anchor) {
 }
 function renderPersonaMenu() {
   const pop = popEl; if (!pop || !pop.classList.contains('persona-pop')) return;
-  const own = SECRET_PERSONAS[secretPersona()], cur = personaChosen().id, f = S.personaForm, list = personaList();
+  const own = SECRET_PERSONAS[secretPersona()] || AI_PERSONAS[aiStyle()], cur = personaChosen().id, f = S.personaForm, list = personaList();
   const pick = (id, main, sub, extra = '') => `<div class="preset-row"><button type="button" class="pop-item${cur === id ? ' selected' : ''}" onclick="pickPersona('${esc(id)}')" aria-pressed="${cur === id}">${main}<span class="pop-main"><b>${sub[0]}</b><small>${sub[1]}</small></span>${icon('i-check', 'sm check')}</button>${extra}</div>`;
   const edit = p => `<button type="button" class="icon-btn" onclick="editPersona('${esc(p.id)}')" aria-label="Edit ${esc(p.name)}" title="Edit">${icon('i-edit', 'sm')}</button>`;
   const del = p => `<button type="button" class="icon-btn" onclick="deletePersona('${esc(p.id)}')" aria-label="Delete ${esc(p.name)}" title="Delete">${icon('i-trash', 'sm')}</button>`;
