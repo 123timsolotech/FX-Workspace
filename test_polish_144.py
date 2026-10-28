@@ -83,5 +83,26 @@ class CalmMotionTests(unittest.TestCase):
         self.assertIn("background: hsl(var(--fh, 220) 38% 44%)", self.page)
 
 
+class PageScriptTests(unittest.TestCase):
+    def test_the_page_script_parses(self):
+        # A second top-level `const fmtBytes` stopped the whole page from loading (1.4.4, caught live): every inline
+        # script must compile, which also catches a name declared twice.
+        import shutil
+        import subprocess
+        if not shutil.which("node"):
+            self.skipTest("node isn't installed")
+        js = ("const s=require('fs').readFileSync('index.html','utf8');let bad=[];"
+              "for(const m of s.matchAll(/<script(?![^>]*src)[^>]*>([\\s\\S]*?)<\\/script>/g)){try{new Function(m[1])}catch(e){bad.push(e.message)}}"
+              "console.log(JSON.stringify(bad))")
+        out = subprocess.run(["node", "-e", js], capture_output=True, text=True, timeout=60)
+        self.assertEqual(out.stdout.strip(), "[]", out.stderr)
+
+    def test_settings_pages_for_tor_and_data(self):
+        page = CalmMotionTests.page
+        self.assertIn("['data', 'Data and files', 'i-folder']", page)
+        self.assertIn("data: renderDataFiles", page)
+        self.assertIn("function torGroup(d)", page)
+
+
 if __name__ == "__main__":
     unittest.main()

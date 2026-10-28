@@ -2738,6 +2738,11 @@ body.resizing .sidebar { transition: none; }
 .net-alert.warn { border-color: color-mix(in srgb, var(--warn) 45%, var(--border)); background: color-mix(in srgb, var(--warn) 9%, var(--surface)); }
 .net-alert > span { flex: 1; min-width: 180px; }
 .net-route-now { margin: 8px 0 0; }
+.tor-acts { display: flex; gap: 6px; flex-shrink: 0; }
+.df-acts { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.df-perm { display: inline-flex; gap: 6px; align-items: center; font-size: 12.5px; color: var(--text-2); white-space: nowrap; }
+.tor-bridges { flex-wrap: wrap; }
+.tor-bridges textarea { flex: 1 1 100%; min-height: 64px; font-size: 12px; resize: vertical; }
 .net-log { max-height: 320px; overflow: auto; border: 1px solid var(--border); border-radius: 10px; }
 .net-table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
 .net-table th, .net-table td { padding: 5px 8px; text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
@@ -2783,7 +2788,7 @@ body.resizing .sidebar { transition: none; }
 .btn.primary:hover { filter: brightness(1.2); background: var(--text); }
 .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
 .btn.ghost:hover { background: var(--hover); color: var(--text); }
-.btn.danger { color: var(--danger); }
+.btn.danger { color: var(--danger-text); }        /* fitted to read at 4.5:1 on any appearance (1.4.4) */
 .btn.sm { height: 28px; padding: 0 10px; font-size: 12.5px; border-radius: 7px; }
 /* A key hint reads like its label (no opacity: it fell to 2:1); the faint border sets it apart. */
 .kbd { font-family: var(--mono); font-size: 10.5px; padding: 0 5px; border-radius: 4px; border: 1px solid color-mix(in srgb, currentColor 35%, transparent); margin-left: 2px; }
@@ -14356,7 +14361,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeSetti
 const SETTINGS_TABS = [['appearance', 'Appearance', 'i-brush'], ['models', 'Models', 'i-cpu'], ['proactive', 'Proactive help', 'i-bulb'],
   ['agent', 'Agent and web search', 'i-bolt'], ['memory', 'Memory and your profile', 'i-bookmark'], ['skills', 'Skills', 'i-sparkle'],
   ['knowledge', 'Knowledge - your files', 'i-book'], ['connections', 'Connections - connectors, MCP servers, Discord, Slack, webhook', 'i-plug'],
-  ['permissions', 'Permissions', 'i-shield'], ['privacy', 'Privacy', 'i-lock'],
+  ['permissions', 'Permissions', 'i-shield'], ['privacy', 'Privacy', 'i-lock'], ['data', 'Data and files - storage, open folders, clear chats', 'i-folder'],
   ['webnet', 'Web search and network - privacy modes, proxy, Tor, VPN, leak test', 'i-globe'], ['voice', 'Voice - talk to it', 'i-mic'], ['images', 'Images - made on this PC', 'i-image'],
   ['diagnostics', 'Diagnostics - speed and problems', 'i-activity'], ['remote', 'Phone access - use it from your phone', 'i-globe']];
 const Palette = (() => {
@@ -14555,7 +14560,7 @@ const SETTINGS_PAGES = [
   ['appearance', [['appearance', 'Appearance']]],
   ['agent', [['agent', 'How it answers'], ['systemmessage', 'System message'], ['memory', 'Memory'], ['skills', 'Skills'], ['knowledge', 'Knowledge'], ['proactive', 'Proactive help']]],
   ['models', [['models', 'Models'], ['diagnostics', 'Diagnostics']]],
-  ['permissions', [['permissions', 'Permissions'], ['privacy', 'Privacy']]],
+  ['permissions', [['permissions', 'Permissions'], ['privacy', 'Privacy'], ['data', 'Data and files']]],
   ['voice', [['voice', 'Voice'], ['images', 'Images']]],
   // 1.4.3: Connectors, MCP servers and Channels are one Connections part (everything that links the app to the
   // outside, a section each); Web search and Network one part (how traffic leaves this PC).
@@ -14611,7 +14616,7 @@ function settingsTabNow(tab) {
   const r = { appearance: renderAppearance, models: renderModelsTab, agent: renderAgent, systemmessage: renderSystemMessage,
               proactive: renderProactive, memory: renderMemory, permissions: renderPermissions, privacy: renderPrivacy,
               diagnostics: renderDiagnostics, voice: renderVoice, images: renderImages, about: renderAbout, skills: renderSkills,
-              knowledge: renderKnowledge, remote: renderRemote,
+              knowledge: renderKnowledge, remote: renderRemote, data: renderDataFiles,
               connections: () => renderStack('connections'), webnet: () => renderStack('webnet') }[tab];
   const body = $('settings-body');
   if (body.dataset.tab !== tab) { body.dataset.tab = tab; body.classList.remove('tab-in'); void body.offsetWidth; body.classList.add('tab-in'); body.scrollTop = 0; }
@@ -16102,8 +16107,8 @@ async function renderNetwork() {
       ${seg(NET_ROUTES, n.net_route, "(v=>saveNet({net_route:v}))")}
       <p class="lead net-route-now">Now: <b>${esc(r.label)}</b>${r.routed ? ` · names are resolved by the ${r.scheme === 'http' || r.scheme === 'https' ? 'proxy (CONNECT)' : 'proxy (socks5h)'}` : ''}${n.net_route === 'system' && !d.system_proxy ? ' · Windows has no proxy set, so this is direct' : ''}</p>
       ${n.net_route === 'proxy' ? rowHtml('Proxy address', 'SOCKS5 or HTTP, e.g. socks5://127.0.0.1:1080', `<input class="input" style="max-width:260px" value="${esc(n.net_proxy || '')}" placeholder="socks5://127.0.0.1:1080" aria-label="Proxy address" onchange="saveNet({net_proxy:this.value})">`) : ''}
-      ${n.net_route === 'tor' ? rowHtml('Tor port', 'Auto finds Tor (9050) or Tor Browser (9150).', seg([['0', 'Auto'], ['9050', '9050'], ['9150', '9150']], String(n.net_tor_port || 0), "(v=>saveNet({net_tor_port:Number(v)}))")) : ''}
     </div>
+    ${torGroup(d)}
     <div class="set-group"><div class="gt">Kill switch <small>· always on</small></div>
       <p class="set-note" style="margin:0">If the proxy or Tor goes down, traffic stops - it never goes direct by itself.</p>
       ${rowHtml('Go direct for this session', d.session_direct ? 'On until you turn it off or restart.' : 'Off.', sw(d.session_direct, `goDirectSession(${!d.session_direct})`))}
@@ -16134,6 +16139,100 @@ async function renderNetwork() {
     </details>
     <p class="set-note">This covers only this app - your browser and other apps have their own connections. A VPN hides your traffic from your ISP, not from the VPN; Tor hides your IP, not unencrypted traffic from its exit node.</p>`;
   loadNetLog();
+}
+/* ---- Settings > Data and files (data_files.py, 1.4.4) ------------------------------------------------------------
+   Everything this app keeps on this PC, kind by kind: its size, Open (File Explorer - to look, back up or change files
+   by hand) and Clear (to the Recycle Bin, or for good). Chats can keep the pinned ones. */
+async function renderDataFiles() {
+  const body = $('settings-body');
+  let d;
+  try { d = await api('/api/data-files'); }
+  catch (e) { body.innerHTML = `<h3>Data and files</h3><p class="lead" role="alert">Couldn't read the data folder: ${esc(e.message)} <button class="af-link" onclick="renderDataFiles()">Retry</button></p>`; return; }
+  if (S.settingsTab !== 'data') return;
+  const row = k => `<div class="row df-row"><div class="row-text"><b>${esc(k.label)}</b><small>${esc(k.what)} · <span class="mono">${k.files ? `${fmtBytes(k.bytes)} · ${k.files.toLocaleString()} file${k.files === 1 ? '' : 's'}` : 'empty'}</span></small></div>
+    <div class="df-acts"><button class="btn sm" onclick="dataOpen('${k.id}')" title="Open in File Explorer">${icon('i-folder', 'xs')}Open</button>
+    ${k.id === 'chats' ? `<label class="df-perm"><input type="checkbox" id="df-keep-pinned" checked> Keep pinned</label>` : ''}
+    ${k.clearable ? `<button class="btn sm danger" ${k.files ? '' : 'disabled'} onclick="dataClear('${k.id}', this)">${icon('i-trash', 'xs')}Clear…</button>` : ''}</div></div>`;
+  S.dataKinds = Object.fromEntries(d.kinds.map(k => [k.id, k]));
+  body.innerHTML = `<h3>Data and files</h3><p class="lead">Everything this app keeps on this PC - ${fmtBytes(d.bytes)} in all, in <span class="mono">${esc(d.data_dir)}</span>. Open a folder to look, back it up or change files by hand; clear what you don't need.</p>
+    <div class="set-group"><div class="gt">Where it lives</div>
+      ${rowHtml('The data folder', 'Chats, memory, settings, images and the rest - one folder.', `<button class="btn" onclick="dataOpen()">${icon('i-folder', 'xs')}Open data folder</button>`)}
+      ${rowHtml('When clearing', 'Cleared files go to the Recycle Bin, where Windows can put them back.', `<label class="df-perm"><input type="checkbox" id="df-permanent"${S.dataPermanent ? ' checked' : ''} onchange="S.dataPermanent=this.checked"> Skip the Recycle Bin</label>`)}
+    </div>
+    <div class="set-group"><div class="gt">What's kept <small>· largest first</small></div>${d.kinds.filter(k => k.clearable).sort((a, b) => b.bytes - a.bytes).map(row).join('')}</div>
+    <div class="set-group"><div class="gt">Kept while the app runs <small>· cleared on their own pages</small></div>${d.kinds.filter(k => !k.clearable).map(row).join('')}</div>
+    <p class="set-note">Clearing never touches your models (they live where you put them) or anything outside this folder, and it waits while a reply is running.</p>`;
+}
+async function dataOpen(kind) {
+  try { await api('/api/data-files/open', { kind: kind || null }); } catch (e) { toast(e.message); }
+}
+async function dataClear(kind, btn) {
+  const k = (S.dataKinds || {})[kind]; if (!k) return;
+  const permanent = !!S.dataPermanent;
+  const keepPinned = kind === 'chats' && !!($('df-keep-pinned') || {}).checked;
+  const what = kind === 'chats' && keepPinned ? 'every chat that isn\'t pinned' : `all ${k.label.toLowerCase()} (${k.files.toLocaleString()} file${k.files === 1 ? '' : 's'}, ${fmtBytes(k.bytes)})`;
+  if (!confirm(`Clear ${what}?\n\n${permanent ? 'They will be deleted for good - this cannot be undone.' : 'They go to the Recycle Bin.'}${k.note ? `\n${k.note}` : ''}`)) return;
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Clearing…';
+  try {
+    const r = await api('/api/data-files/clear', { kind, permanent, keep_pinned: keepPinned });
+    toast(r.ok ? `${k.label}: ${r.message}` : r.message);
+    if (r.ok && kind === 'chats') { if (r.closed_open_chat) newChat(); loadSidebar(); }
+  } catch (e) { toast(e.message); }
+  renderDataFiles();
+}
+/* Tor (1.4.4): the app ships its own (tor_service.py) - one switch sends web searches and page reads through it,
+   or the whole app (the route above). Its status shows while it connects; bridges for networks that block Tor. A Tor
+   already running on this PC (Tor Browser, the Expert Bundle) can be used instead. */
+function torGroup(d) {
+  const n = d.settings, t = d.tor || {}, comps = n.net_components || {};
+  const usesTor = n.net_route === 'tor' || Object.values(comps).includes('tor');
+  const searchTor = comps.search === 'tor' || (n.net_route === 'tor' && (comps.search || 'app') === 'app');
+  const builtin = t.available && n.net_tor_source !== 'external';
+  const rows = [];
+  if (t.available) rows.push(rowHtml('Search through Tor', 'Web searches and the pages it reads go through the built-in Tor - your IP stays hidden from the sites. Slower, and some sites refuse Tor. Everything else keeps the route above.',
+    sw(searchTor, `saveNet({net_components:{search:'${searchTor ? 'app' : 'tor'}'}, net_tor_source:'builtin'})`)));
+  if (usesTor && t.available) rows.push(rowHtml('Which Tor', builtin ? `The one built into this app (Tor ${esc(t.version || '')}) - nothing to install or start.` : 'One already running on this PC: Tor Browser (9150) or the Tor Expert Bundle (9050).',
+    seg([['builtin', 'Built in'], ['external', 'Tor on this PC']], builtin ? 'builtin' : 'external', "(v=>saveNet({net_tor_source:v}))")));
+  if (usesTor && !builtin) rows.push(rowHtml('Tor port', 'Auto finds Tor (9050) or Tor Browser (9150).', seg([['0', 'Auto'], ['9050', '9050'], ['9150', '9150']], String(n.net_tor_port || 0), "(v=>saveNet({net_tor_port:Number(v)}))")));
+  if (usesTor && builtin) {
+    rows.push(`<div class="row"><div class="row-text"><b>Status</b><small id="tor-status" aria-live="polite">${torStatusText(t)}</small></div><div class="tor-acts" id="tor-acts">${torActs(t)}</div></div>`);
+    rows.push(rowHtml('Bridges', 'For networks that block Tor. Snowflake works out of the box; obfs4 needs bridge lines from bridges.torproject.org.',
+      seg([['off', 'Off'], ['snowflake', 'Snowflake'], ['obfs4', 'obfs4']], n.net_tor_bridges || 'off', "(v=>saveNet({net_tor_bridges:v}))")));
+    if (n.net_tor_bridges === 'obfs4') rows.push(`<div class="row tor-bridges"><div class="row-text"><b>obfs4 bridge lines</b><small>One per line, as bridges.torproject.org gives them.</small></div>
+      <textarea class="input mono" rows="3" spellcheck="false" aria-label="obfs4 bridge lines" placeholder="obfs4 1.2.3.4:443 FINGERPRINT cert=… iat-mode=0" onchange="saveNet({net_tor_bridge_lines:this.value})">${esc(n.net_tor_bridge_lines || '')}</textarea></div>`);
+  }
+  if (!rows.length) return '';
+  if (usesTor && builtin && t.state === 'connecting') torPoll();
+  return `<div class="set-group" id="tor-group"><div class="gt">Tor <small>· hides your IP from the sites it reaches</small></div>${rows.join('')}</div>`;
+}
+function torStatusText(t) {
+  if (t.state === 'ready') return `Connected${t.seconds ? ` in ${Math.round(t.seconds)} s` : ''}${t.bridges && t.bridges !== 'off' ? ` · through ${esc(t.bridges)} bridges` : ''} · each chat gets its own circuit`;
+  if (t.state === 'connecting') return `Connecting… ${t.progress || 0}%${t.summary ? ` · ${esc(t.summary)}` : ''}`;
+  if (t.state === 'failed') return `Couldn't connect${t.error ? `: ${esc(t.error)}` : ''}. Nothing was sent direct.`;
+  return 'Starts with the first search that goes through it.';
+}
+function torActs(t) {
+  return t.state === 'failed' ? `<button class="btn sm" onclick="torRetry(this)">${icon('i-retry', 'xs')}Try again</button>`
+    : t.state === 'ready' ? `<button class="btn sm" onclick="torNewIdentity(this)" title="New circuits (and exits) for new requests">${icon('i-retry', 'xs')}New identity</button>` : '';
+}
+function torPoll() {
+  clearTimeout(torPoll._t);
+  torPoll._t = setTimeout(async () => {
+    if (!setShowing('network') || !$('tor-status')) return;
+    let t; try { t = await api('/api/network/tor'); } catch (_) { return torPoll(); }
+    $('tor-status').innerHTML = torStatusText(t); $('tor-acts').innerHTML = torActs(t);
+    if (t.state === 'connecting') torPoll();
+  }, 1000);
+}
+async function torNewIdentity(btn) {
+  btn.disabled = true;
+  try { const r = await api('/api/network/tor/new-identity', {}); toast(r.message); } catch (e) { toast(e.message); }
+  setTimeout(() => { btn.disabled = false; }, 10000);          // Tor allows one every ~10 s
+}
+async function torRetry(btn) {
+  btn.disabled = true;
+  try { await api('/api/network/tor/retry', {}); } catch (e) { toast(e.message); }
+  renderNetwork();
 }
 async function saveNet(changes) {
   await saveSettings(changes);
@@ -16187,7 +16286,7 @@ async function speedTest(btn) {
   } catch (e) { out.innerHTML = `<div class="ws-result bad">${esc(e.message)}</div>`; }
   btn.disabled = false; btn.innerHTML = `${icon('i-gauge', 'xs')}Run`;
 }
-const fmtBytes = n => n == null ? '–' : n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(n < 10240 ? 1 : 0)} KB` : `${(n / 1048576).toFixed(1)} MB`;
+const fmtBytes = n => n == null ? '–' : n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(n < 10240 ? 1 : 0)} KB` : n < 2 ** 30 ? `${(n / 1048576).toFixed(1)} MB` : `${(n / 2 ** 30).toFixed(1)} GB`;
 async function loadNetLog() {
   const box = $('net-log'); if (!box) return;
   try {
@@ -20030,7 +20129,7 @@ const NEW_NAV = [
   ['Assistant', [['agent', 'How it answers', 'i-bolt'], ['systemmessage', 'System message', 'i-message'], ['memory', 'Memory', 'i-bookmark'], ['skills', 'Skills', 'i-sparkle'],
                  ['knowledge', 'Knowledge', 'i-book'], ['connections', 'Connections', 'i-plug'], ['proactive', 'Proactive help', 'i-bulb']]],
   ['App', [['appearance', 'Appearance', 'i-brush'], ['models', 'Models', 'i-cpu'], ['voice', 'Voice', 'i-mic'], ['images', 'Images', 'i-image'],
-           ['permissions', 'Permissions', 'i-shield'], ['privacy', 'Privacy', 'i-lock']]],
+           ['permissions', 'Permissions', 'i-shield'], ['privacy', 'Privacy', 'i-lock'], ['data', 'Data and files', 'i-folder']]],
   ['Network', [['webnet', 'Web search and network', 'i-globe'], ['remote', 'Phone access', 'i-message'], ['diagnostics', 'Diagnostics', 'i-activity']]],
   ['', [['about', 'About', 'i-help']]],
 ];

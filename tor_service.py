@@ -140,8 +140,14 @@ def _reader(proc):
                 _st["progress"], _st["phase"], _st["summary"] = int(m.group(1)), m.group(2) or "", m.group(3)
                 if _st["progress"] >= 100 and not _st["ready_at"]:
                     _st["ready_at"] = time.time()
-            elif "[err]" in line or "[warn]" in line and ("Problem bootstrapping" in line or "Could not" in line):
-                _st["error"] = line.split("] ", 1)[-1][:300]
+            elif "[warn]" in line:
+                _st["warn"] = line.split("] ", 1)[-1][:300]
+                if "Problem bootstrapping" in line or "Could not" in line:
+                    _st["error"] = _st["warn"]
+            elif "[err]" in line:
+                err = line.split("] ", 1)[-1][:300]
+                # "Reading config failed--see warnings above": the warning is the useful part.
+                _st["error"] = (_st.get("warn") or err) if "see warnings above" in err else err
 
 
 def _start(bridges: str, bridge_lines: str) -> bool:

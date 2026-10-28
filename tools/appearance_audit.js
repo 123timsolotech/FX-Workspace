@@ -54,7 +54,7 @@ const SURFACES = [
   ['context', `showChat(${JSON.stringify(CHAT)}); await openContextMenu(document.getElementById('ctx-btn'))`],
   ['palette', `Palette.open()`],
   ['toast', `showThread(false); toast('Saved - this is a toast.')`],
-  ...['appearance', 'agent', 'models', 'permissions', 'voice', 'websearch', 'about'].map(t => ['settings-' + t, `openSettings('${t}')`]),
+  ...['appearance', 'agent', 'models', 'permissions', 'data', 'voice', 'websearch', 'network', 'about'].map(t => ['settings-' + t, `openSettings('${t}')`]),
   ...['images', 'videos', 'music', 'notes', 'docs', 'mail', 'compare', 'projects', 'routines', 'labs'].map(p => ['place-' + p, `showPlace('${p}')`]),
   ['phone-home', `showThread(false)`, { width: 360, height: 780 }],
   ['phone-chat', `showChat(${JSON.stringify(CHAT)})`, { width: 360, height: 780 }],

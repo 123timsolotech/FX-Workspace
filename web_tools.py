@@ -264,6 +264,12 @@ def _check_public(url: str, resolve=None) -> str:
     parts = urlparse(url)
     if parts.scheme not in ("http", "https") or not parts.hostname:
         raise BlockedAddress(f"'{url}' is not an http(s) web address.")
+    if parts.hostname.lower().endswith(".onion"):
+        # An onion address exists only inside Tor: read through it, never looked up or sent anywhere else (1.4.4).
+        if netlayer.route_for("search").kind != "tor":
+            raise BlockedAddress(f"{parts.hostname} is a Tor onion address - it opens only when web search goes "
+                                 "through Tor (Settings > Web search and network > Search through Tor).")
+        return url
     if resolve is None and netlayer.route_for("search").routed:
         _check_name(parts.hostname)                  # no local DNS lookup around the proxy
         return url
@@ -646,6 +652,8 @@ def _load_page(target: str, browser_fallback: bool, deadline: float) -> dict:
     why = {"script": "builds its text with JavaScript, so a direct read gets an empty page",
            "sign-in": "sends readers who aren't signed in to a sign-in page"}.get(
         reason, f"refused automated reading ({reason})")
+    if reason not in ("script", "sign-in") and netlayer.route_for("search").kind == "tor":
+        why += " - it may refuse Tor exits (a new circuit was tried); reading it directly would show your IP to it"
     tried = []
     if browser_fallback and time.monotonic() < deadline - 12:
         try:
@@ -920,7 +928,7 @@ def _unwrap_ddg(href: str) -> str:
     if href.startswith("//"):
         href = "https:" + href
     parsed = urlparse(href)
-    if parsed.netloc.endswith("duckduckgo.com") and parsed.path.startswith("/l/"):
+    if parsed.netloc.endswith(("duckduckgo.com", DDG_ONION)) and parsed.path.startswith("/l/"):
         target = parse_qs(parsed.query).get("uddg")
         if target:
             return target[0]
@@ -941,6 +949,10 @@ def _unwrap_bing(href: str) -> str:
 
 
 DDG_URL = "https://html.duckduckgo.com/html/"
+# Through Tor: DuckDuckGo's own onion service - no exit node in between, and it doesn't refuse Tor the way the
+# public address often does (1.4.4; tested: same results page).
+DDG_ONION = "duckduckgogg42xjoc72x3sjasowoarfbgcmvfimaftt6twagswzczad.onion"
+DDG_ONION_URL = f"https://{DDG_ONION}/html/"
 DDG_GAP = 3.0                  # seconds between two DuckDuckGo requests: it refuses bursts
 DDG_PAUSE = (120.0, 1200.0)    # after a refusal: the first pause and the longest (it doubles each time)
 SEARCH_CACHE_TTL = 15 * 60
@@ -983,9 +995,11 @@ def _duckduckgo(query: str, df: str = "", kl: str = "") -> tuple[list, str]:
         if _ddg["last"] + DDG_GAP > now:
             time.sleep(_ddg["last"] + DDG_GAP - now)
         form = {"q": query, **({"df": df} if df else {}), **({"kl": kl} if kl else {})}
+        onion = netlayer.route_for("search").kind == "tor"
+        url, origin = (DDG_ONION_URL, f"https://{DDG_ONION}") if onion else (DDG_URL, "https://html.duckduckgo.com")
         try:
-            resp, body, _ = fetch(DDG_URL, method="POST", data=form, headers={
-                **BROWSER_HEADERS, "Origin": "https://html.duckduckgo.com", "Referer": "https://html.duckduckgo.com/"})
+            resp, body, _ = fetch(url, method="POST", data=form, headers={
+                **BROWSER_HEADERS, "Origin": origin, "Referer": origin + "/"})
         finally:
             _ddg["last"] = time.monotonic()
         text = _decode(resp, body)

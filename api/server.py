@@ -28,7 +28,9 @@ import browser
 import context as ctx
 import elements
 import llama_local
+import data_files
 import local_runtime
+import tor_service
 import mini_window
 import model_monitor
 import llama_builds
@@ -491,6 +493,9 @@ class SettingsUpdate(BaseModel):
     net_route: str | None = None
     net_proxy: str | None = None
     net_tor_port: int | None = None
+    net_tor_source: str | None = None
+    net_tor_bridges: str | None = None
+    net_tor_bridge_lines: str | None = None
     net_components: dict | None = None
     net_require_vpn: bool | None = None
     net_log_save: bool | None = None
@@ -637,7 +642,11 @@ def update_settings(body: SettingsUpdate):
     if any(k.startswith("net_") for k in updates):
         netlayer.apply_env()                      # litellm's proxy variables follow the new route
         netlayer.clear_blocked()
-        if {"net_route", "net_proxy", "net_tor_port", "net_components"} & set(updates):
+        if netlayer.uses_builtin_tor():
+            netlayer.start_builtin_tor()          # connecting now, so it's ready by the first search
+        else:
+            tor_service.stop()                    # nothing goes through the built-in Tor any more
+        if {"net_route", "net_proxy", "net_tor_port", "net_tor_source", "net_components"} & set(updates):
             browser.close_all()                   # the assistant's browser restarts with the new route's flags
     if {"overlay_window", "overlay_clickthrough", "overlay_opacity", "mini_place"} & set(updates):
         app_window.overlay_sync(current)
@@ -1499,6 +1508,7 @@ def _start_background_services():
     if os.environ.get("AGENTIC_DISABLE_NETGUARD") != "1":
         netlayer.install()
     netlayer.apply_env()
+    threading.Thread(target=netlayer.start_builtin_tor, daemon=True, name="tor-start").start()   # when a route uses it
     # Phone access, when it's on (remote_access.py): its listener starts once this server is up.
     if (shared.app_state["settings"].get("remote_access") or "off") != "off":
         threading.Timer(3, lambda: remote_access.sync()).start()
@@ -1803,9 +1813,9 @@ def search_test(body: SearchTestBody):
     except Exception as e:
         out.update(ok=False, message=str(e)[:300])
     if route.kind == "tor" and out.get("ok"):
-        ip = netlayer.public_ip(force=True)       # through the same route: does Tor see it as Tor?
+        ip = netlayer.public_ip(force=True, comp="search")   # through the same route: does Tor see it as Tor?
         out["tor_confirmed"] = ip.get("is_tor")
-        out["exit"] = {k: ip.get(k) for k in ("ip", "country")}
+        out["exit"] = {k: ip.get(k) for k in ("ip", "country", "error") if ip.get(k)}
     return out
 
 
@@ -2023,7 +2033,68 @@ def network_status():
             "routes": {c: netlayer.route_for(c).public() for c in netlayer.COMPONENTS},
             "blocked": netlayer.blocked_state(), "session_direct": netlayer.session_direct(),
             "system_proxy": netlayer.system_proxy(), "guard": netlayer.installed(),
-            "public": dict(netlayer._public) or None, "vpn": dict(netlayer._vpn["value"])}
+            "public": dict(netlayer._public) or None, "vpn": dict(netlayer._vpn["value"]), "tor": tor_service.status()}
+
+
+@app.get("/api/network/tor")
+def network_tor():
+    """The built-in Tor's state - polled by Settings while it connects."""
+    return tor_service.status()
+
+
+@app.post("/api/network/tor/new-identity")
+def network_tor_new_identity():
+    ok = tor_service.new_identity()
+    if ok:
+        event_log.log_action("Tor: new identity - new requests use new circuits.")
+    return {"ok": ok, "message": "New circuits for new requests." if ok else "Tor isn't connected yet."}
+
+
+@app.get("/api/data-files")
+def data_files_summary():
+    """Settings > Data and files: each kind of data this app keeps, its size and folder."""
+    return data_files.summary()
+
+
+class DataOpenBody(BaseModel):
+    kind: str | None = None
+
+
+@app.post("/api/data-files/open")
+def data_files_open(body: DataOpenBody):
+    return {"ok": data_files.open_folder(body.kind)}
+
+
+class DataClearBody(BaseModel):
+    kind: str
+    permanent: bool = False
+    keep_pinned: bool = False
+
+
+@app.post("/api/data-files/clear")
+def data_files_clear(body: DataClearBody):
+    """Clear one kind of data (Recycle Bin unless permanent). Never while a reply runs."""
+    def go():
+        result = data_files.clear(body.kind, permanent=body.permanent, keep_pinned=body.keep_pinned)
+        if result.get("ok") and body.kind == "chats":
+            shared.chat_store._summary.clear()
+            chat = shared.app_state.get("active_chat") or {}
+            if chat.get("id") and shared.chat_store.load(chat["id"]) is None and not chat.get("temporary"):
+                sessions.forget_active_if(chat_id=chat["id"])
+                _reset_conversation_locked()
+                result["closed_open_chat"] = True
+        if result.get("ok"):
+            event_log.log_action(f"Data and files: cleared {data_files.KINDS[body.kind][0]} - {result['message']}")
+        return result
+    return _with_lock(go)
+
+
+@app.post("/api/network/tor/retry")
+def network_tor_retry():
+    """After Tor failed to connect: start it again (when a route still uses it)."""
+    tor_service.retry()
+    netlayer.start_builtin_tor()
+    return tor_service.status()
 
 
 @app.get("/api/network/stats")

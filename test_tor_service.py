@@ -97,6 +97,54 @@ class RouteTests(unittest.TestCase):
         self.assertEqual((c["net_tor_source"], c["net_tor_bridges"], c["net_tor_bridge_lines"]), ("builtin", "off", OBFS4))
 
 
+class SearchingThroughTorTests(RouteTests):
+    def test_onion_addresses_only_through_tor(self):
+        import web_tools
+        self.settings = {"net_route": "direct"}
+        with self.assertRaises(web_tools.BlockedAddress):
+            web_tools._check_public(f"https://{web_tools.DDG_ONION}/html/")
+        with self.assertRaises(netlayer.RouteBlocked):
+            netlayer.check(netlayer.route_for("search"), "search", "example.onion")
+        self.settings = {"net_route": "direct", "net_components": {"search": "tor"}}
+        self.assertTrue(web_tools._check_public(f"https://{web_tools.DDG_ONION}/html/"))
+
+    def test_duckduckgo_through_its_onion_service(self):
+        import web_tools
+        self.settings = {"net_route": "direct", "net_components": {"search": "tor"}}
+        web_tools.reset_search_state()
+        seen = {}
+
+        def fake_fetch(url, **kw):
+            seen["url"] = url
+            class R:
+                status_code, headers, url = 200, {}, "x"
+            return R(), b'<a class="result__a" href="https://example.com/">Example</a>', url
+        with patch.object(web_tools, "fetch", fake_fetch):
+            web_tools._duckduckgo("llama.cpp")
+        self.assertEqual(seen["url"], web_tools.DDG_ONION_URL)
+        self.assertEqual(web_tools._unwrap_ddg(f"https://{web_tools.DDG_ONION}/l/?uddg=https%3A%2F%2Fa.org%2F"), "https://a.org/")
+
+    def test_a_refusing_exit_gets_one_new_circuit(self):
+        import httpx
+        self.settings = {"net_route": "tor"}
+        used = []
+
+        class Inner(httpx.BaseTransport):
+            def __init__(self, proxy):
+                self.proxy = proxy
+
+            def handle_request(self, request):
+                used.append(self.proxy)
+                return httpx.Response(403 if len(used) == 1 else 200, content=b"ok")
+        t = netlayer.GuardedTransport("search")
+        with patch.object(tor_service, "wait_ready", return_value=True), \
+                patch.object(netlayer.GuardedTransport, "_inner", lambda self, route: Inner(route.proxy)):
+            resp = t.handle_request(httpx.Request("GET", "https://example.com/"))
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(len(used), 2)
+        self.assertNotEqual(used[0], used[1])                   # another SOCKS username: another circuit
+
+
 @unittest.skipUnless(os.environ.get("FX_LIVE_TOR") == "1", "set FX_LIVE_TOR=1 to start the real Tor")
 class LiveTorTests(unittest.TestCase):
     def test_a_search_goes_through_tor(self):

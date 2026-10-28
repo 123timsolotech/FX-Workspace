@@ -71,6 +71,7 @@ ROUTE_LABELS = {"direct": "Direct", "system": "System proxy", "proxy": "Custom p
 OVERRIDES = ("app", "direct", "proxy", "tor")
 TOR_PORTS = (9050, 9150)                  # Tor Expert Bundle, Tor Browser
 TOR_WAIT_S = 60                           # how long a request waits for the built-in Tor to connect
+TOR_REFUSED = (403, 429, 503)             # answers a site often gives one Tor exit and not another
 LOG_MAX = 500
 LOG_SAVE_MAX = 5000                       # lines kept in data/netlog.jsonl
 LOG_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "netlog.jsonl")
@@ -332,6 +333,13 @@ def uses_builtin_tor() -> bool:
 tor_service.set_wanted(uses_builtin_tor)
 
 
+def start_builtin_tor():
+    """Start (or restart, for new bridge settings) the built-in Tor when a route uses it - before the first request."""
+    s = settings()
+    if uses_builtin_tor():
+        tor_service.ensure(s["net_tor_bridges"], s["net_tor_bridge_lines"])
+
+
 def route_for(comp: str = "other") -> Route:
     """The route a component's traffic takes right now."""
     s = settings()
@@ -395,6 +403,9 @@ def check(route: Route, comp: str, host: str = ""):
     reason = _OFFLINE.get()
     if reason:
         _block(reason, "offline", comp, host)
+    if str(host).lower().endswith(".onion") and route.kind != "tor":
+        _block(f"{host} is a Tor onion address: it opens only through Tor, and looking it up any other way would "
+               "leak it.", "offline", comp, host)
     s = settings()
     if s["net_require_vpn"] and not vpn_status().get("active"):
         _block("Require VPN is on and no VPN is connected, so nothing was sent. Connect your VPN, or turn "
@@ -572,6 +583,13 @@ class GuardedTransport(httpx.BaseTransport):
         try:
             with _var(_INSIDE, route):
                 resp = self._inner(route).handle_request(request)
+                if route.label == "Tor (built in)" and request.method in ("GET", "HEAD") and resp.status_code in TOR_REFUSED:
+                    # Many sites refuse some Tor exits, not all: once, the same request on a new circuit (another
+                    # SOCKS username - another exit) before giving up (1.4.4).
+                    resp.close()
+                    again = Route("tor", route.proxy.replace(":x@", "-r:x@", 1), route.label)
+                    resp = self._inner(again).handle_request(request)
+                    entry["retried"] = "new Tor circuit"
         except RouteBlocked:
             raise
         except Exception as e:
@@ -894,24 +912,34 @@ def vpn_status(force: bool = False, query=None) -> dict:
 _public: dict = {}
 
 
-def public_ip(force: bool = False) -> dict:
+def public_ip(force: bool = False, comp: str = "other") -> dict:
     """This app's public address and approximate country, fetched through the
-    active route - only on demand or when the route changed."""
-    route = route_for("other")
-    if not force and _public.get("route") == route.label and time.time() - _public.get("at", 0) < 600:
+    active route - only on demand or when the route changed. comp: another part's
+    route (Search through Tor's test asks through "search"; not kept as the app's)."""
+    route = route_for(comp)
+    if comp == "other" and not force and _public.get("route") == route.label and time.time() - _public.get("at", 0) < 600:
         return dict(_public)
     out = {"route": route.label, "at": time.time()}
     try:
-        with client("other", timeout=15, private=True) as c:
+        with client(comp, timeout=15, private=True) as c:
             data = c.get("https://ipinfo.io/json").json()
         out.update(ip=data.get("ip"), country=data.get("country"), city=data.get("city"), org=data.get("org"),
                    service="ipinfo.io")
-        if route.kind == "tor":
-            with client("other", timeout=20, private=True) as c:
-                tor = c.get("https://check.torproject.org/api/ip").json()
-            out["is_tor"] = bool(tor.get("IsTor"))
     except Exception as e:
         out["error"] = str(e)[:200]
+    if route.kind == "tor":
+        # On its own: ipinfo.io often answers Tor exits with a page instead of its JSON (1.4.4).
+        try:
+            with client(comp, timeout=20, private=True) as c:
+                tor = c.get("https://check.torproject.org/api/ip").json()
+            out["is_tor"] = bool(tor.get("IsTor"))
+            if not out.get("ip") and tor.get("IP"):
+                out.update(ip=tor["IP"], service="check.torproject.org")
+                out.pop("error", None)
+        except Exception as e:
+            out.setdefault("error", str(e)[:200])
+    if comp != "other":
+        return out
     _public.clear()
     _public.update(out)
     return dict(out)
