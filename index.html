@@ -4,12 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FX Workspace</title>
+<link rel="manifest" href="/remote/manifest.webmanifest"><meta name="theme-color" content="#1f1e1c">
+<meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="/remote/icon.svg">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%276%27 fill=%27%23c96442%27/%3E%3Cellipse cx=%2716%27 cy=%2716%27 rx=%2713%27 ry=%276.5%27 fill=%27none%27 stroke=%27%23c96442%27 stroke-width=%272.2%27 transform=%27rotate(-28 16 16)%27/%3E%3C/svg%3E">
 <!--
   Fully self-contained: no CDNs, no web fonts, no trackers. The UI works
   offline and nothing it renders is fetched from outside this computer.
 -->
-<script>try { const b = JSON.parse(localStorage.getItem('fx-boot-look')), r = document.documentElement; if (b) { Object.assign(r.dataset, b.d); if (b.s) r.setAttribute('style', b.s); } } catch (_) {}</script>
+<script>try { const b = JSON.parse(localStorage.getItem('fx-boot-look')), r = document.documentElement; if (b) { delete b.d.hud; Object.assign(r.dataset, b.d); if (b.s) r.setAttribute('style', b.s); } } catch (_) {}</script>
 <style>
 /* =========================================================================
    Design tokens
@@ -885,6 +887,14 @@ html.chat-locked .composer { opacity: .6; }
 .sb-row.active { background: var(--accent-soft); }
 .sb-row-main { flex: 1; min-width: 0; text-align: left; padding: 6px 8px; border-radius: 8px; color: var(--text-2); }
 .sb-row-title { display: block; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A chat's status dot (chatStatus): running pulses, waiting is amber, interrupted and failed are hollow / red. */
+.sb-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; flex-shrink: 0; }
+.sb-dot[data-st="run"] { background: var(--accent); animation: sb-dot-pulse 1.4s ease-in-out infinite; }
+.sb-dot[data-st="wait"] { background: var(--warn); }
+.sb-dot[data-st="interrupted"] { border: 1.5px solid var(--warn); }
+.sb-dot[data-st="error"] { background: var(--danger); }
+@keyframes sb-dot-pulse { 50% { opacity: .35; transform: scale(.8); } }
+:root[data-motion="off"] .sb-dot, :root[data-motion="reduced"] .sb-dot { animation: none; }
 .sb-row-main small { display: block; font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sb-row-acts { display: flex; gap: 1px; padding-right: 3px; opacity: 0; transition: opacity var(--t-fast); }
 .sb-row:hover .sb-row-acts, .sb-row:focus-within .sb-row-acts, .sb-row.active .sb-row-acts { opacity: 1; }
@@ -3158,6 +3168,13 @@ span.tier.input { padding: 0; border: 0; width: 8px; height: 8px; min-height: 0;
 .modal-content h3 { font-family: var(--serif); font-size: 21px; font-weight: 400; margin: 0 0 4px; }
 .modal-content .lead { color: var(--muted); font-size: 13.5px; margin: 0 0 18px; line-height: 1.55; max-width: 62ch; }
 .set-group { border-top: 1px solid var(--border); padding: 18px 0 4px; margin-top: 8px; }
+/* Relaxed limits (chat_guard): always red, so it is easy to find and clear when it is on. */
+.set-group.guard-relax { border: 1px solid color-mix(in srgb, var(--danger) 55%, transparent); border-radius: 12px; padding: 4px 14px; margin: 14px 0 6px;
+  background: color-mix(in srgb, var(--danger) 6%, transparent); }
+.set-group.guard-relax.on { background: color-mix(in srgb, var(--danger) 14%, transparent); border-color: var(--danger); }
+.guard-relax-title { color: var(--danger); display: inline-flex; align-items: center; gap: 6px; }
+.guard-relax-title small { color: var(--muted); font-weight: 400; }
+.guard-relax .switch.on { background: var(--danger); border-color: var(--danger); }
 .set-group:first-of-type { border-top: 0; margin-top: 0; padding-top: 4px; }
 .set-group > .gt { font-size: 14px; font-weight: 600; margin-bottom: 10px; }
 .set-group > .gt small { font-weight: 400; color: var(--muted); }
@@ -4708,6 +4725,43 @@ html.voice-on .idle-screen { display: none !important; }
 :root[data-hud="1"] .studio-ov { position: static; display: grid; gap: 6px; padding: 6px; pointer-events: auto; }
 :root[data-hud="1"] .ov-panel { position: static; width: auto; max-width: none; }
 :root[data-hud="1"] .ov-grip { cursor: default; }
+/* The desktop app's mini window: no frame, so this bar is what you drag it by. */
+.hud-bar { display: flex; align-items: center; gap: 2px; padding: 2px 2px 2px 8px; border-radius: 10px; background: var(--surface-2);
+  border: 1px solid var(--border); -webkit-app-region: drag; user-select: none; }
+.hud-bar .hud-title { flex: 1; display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--text-2); }
+.hud-bar .hud-title .icon { color: var(--accent); }
+.hud-bar button { -webkit-app-region: no-drag; width: 26px; height: 26px; display: grid; place-items: center; border: 0; border-radius: 7px;
+  background: none; color: var(--muted); cursor: pointer; }
+.hud-bar button:hover { background: var(--surface-3); color: var(--text); }
+.hud-chat { display: grid; gap: 6px; padding: 8px 10px; border-radius: 10px; background: var(--surface-2); font-size: 12.5px; }
+.hud-chat .hud-a { max-height: 150px; overflow-y: auto; white-space: pre-wrap; color: var(--text); line-height: 1.45; }
+.hud-chat .hud-a:empty { display: none; }
+.hud-send { display: flex; gap: 4px; }
+.hud-send input { flex: 1; min-width: 0; height: 28px; padding: 0 8px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; }
+.hud-send button { width: 28px; height: 28px; display: grid; place-items: center; border: 0; border-radius: 7px; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+.hud-send .hud-stop { background: var(--danger); color: #fff; }
+.hud-send button[hidden] { display: none; }
+.ctx-sandbox { display: flex; gap: 10px; align-items: center; justify-content: space-between; padding: 8px 10px; margin: 0 0 10px; border-radius: 10px; background: var(--surface-2); }
+.ctx-sandbox > span { display: grid; gap: 2px; font-size: 12.5px; }
+.ctx-sandbox small { color: var(--muted); line-height: 1.4; }
+.ctx-kind { margin: 0 0 8px; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+.ctx-kind b { color: var(--text); }
+.ncm-levels { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; max-height: 420px; overflow-y: auto; }
+.ncm-levels li { padding: 8px 10px; border-radius: 9px; background: var(--surface-2); opacity: .72; animation: ncmIn .35s ease both; }
+.ncm-levels li.last { opacity: 1; border: 1px solid var(--accent); }
+.ncm-levels small { color: var(--muted); }
+.ncm-levels p { margin: 4px 0 0; font-size: 13px; line-height: 1.5; white-space: pre-wrap; }
+@keyframes ncmIn { from { opacity: 0; transform: translateY(4px); } }
+@media (prefers-reduced-motion: reduce) { .ncm-levels li { animation: none; } }
+.mem-graph { width: 100%; max-height: 320px; display: block; margin: 4px 0 8px; }
+.remote-ready { display: flex; gap: 16px; align-items: center; padding: 12px; border-radius: 12px; background: var(--surface-2); margin-top: 10px; }
+.remote-ready img { border-radius: 8px; background: #fff; flex: none; }
+.remote-ready p { margin: 4px 0 0; }
+.remote-pw, .chan-form { display: flex; gap: 8px; flex-wrap: wrap; }
+.remote-pw input, .chan-form input { flex: 1; min-width: 180px; height: 34px; padding: 0 10px; border-radius: 9px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font: inherit; }
+.hud-none { padding: 18px 12px; text-align: center; color: var(--muted); font-size: 12.5px; }
+.hud-none p { margin: 0 0 10px; }
+.hud-none[hidden] { display: none; }
 
 /* ---- Theme-switch transitions: each theme arrives in its own way ------- */
 ::view-transition-old(root), ::view-transition-new(root) { animation-duration: .45s; animation-timing-function: var(--ease-out); }
@@ -4908,6 +4962,19 @@ html.voice-on .idle-screen { display: none !important; }
 .ctx-percent { flex-shrink: 0; font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
 .ctx-percent b { font-size: 17px; font-weight: 600; color: var(--text); }
 .ctx-bar { position: relative; height: 7px; border-radius: 999px; background: var(--surface-3); overflow: hidden; margin: 0 0 8px; }
+/* What's using it: the instructions' blocks and the tools by group, each with its tokens (a switch per tool group). */
+.ctx-parts { list-style: none; margin: 4px 0 10px; padding: 0; font-size: 12.5px; }
+.ctx-parts li { display: flex; align-items: center; gap: 8px; padding: 3px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+.ctx-parts li > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctx-parts li > b { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 46px; text-align: right; }
+.ctx-parts li.off > span, .ctx-parts li.off > b { color: var(--muted); }
+.ctx-parts .switch { transform: scale(.82); transform-origin: right center; }
+.ctx-parts .ctx-fixed { font-style: normal; font-size: 11px; color: var(--muted); width: 34px; text-align: right; }
+.ctx-sub { margin-top: 6px; }
+.mm-list li { align-items: baseline; }
+.mm-list li > small { color: var(--muted); white-space: nowrap; }
+.mm-list li > span small { color: var(--muted); }
+.ctx-sub small { color: var(--muted); font-weight: 400; }
 .ctx-bar i, .ctx-bar b { position: absolute; top: 0; bottom: 0; }
 .ctx-bar i { left: 0; background: var(--muted); opacity: .7; }
 .ctx-bar b { background: var(--ctx-color, var(--ok)); }
@@ -5308,6 +5375,7 @@ html.voice-on .idle-screen { display: none !important; }
         <button class="icon-btn chat-only" id="pins-btn" onclick="openPins(this)" aria-label="Pinned messages" title="Pinned messages" aria-haspopup="dialog" hidden><svg class="icon"><use href="#i-pin"/></svg><span class="pins-count" id="pins-count"></span></button>
         <button class="icon-btn chat-only" id="find-btn" onclick="Find.open()" aria-label="Find in this chat" title="Find in this chat (Ctrl+F)"><svg class="icon"><use href="#i-search"/></svg></button>
         <button class="icon-btn chat-only" id="more-btn" onclick="openMoreMenu(this)" aria-label="More for this chat: rename, branch, pins, export" title="More: rename, branch, pins, export" aria-haspopup="dialog"><svg class="icon"><use href="#i-dots"/></svg></button>
+        <button class="icon-btn" id="mini-btn" onclick="api('/api/mini-window',{action:'toggle'}).then(r=>{if(r&&r.mini){S.settings.overlay_window=r.mini.open;toast(r.message||'')}}).catch(e=>toast(e.message))" aria-label="Mini window" title="Mini window: live panels, always on top (Ctrl+Alt+M)"><svg class="icon"><use href="#i-dock-right"/></svg></button>
         <button class="icon-btn mode-btn" id="mode-btn" onclick="toggleColorMode()" aria-label="Switch to dark" title="Switch to dark (Ctrl+Alt+L)"><svg class="icon"><use href="#i-moon"/></svg></button>
         <button class="icon-btn" id="stats-btn" onclick="SessionStats.open()" aria-label="Speed and models for this chat" title="Speed and models - tok/s, waits and models for this chat"><svg class="icon"><use href="#i-activity"/></svg></button>
         <button class="icon-btn" id="panel-btn" onclick="togglePanel()" aria-label="Workspace panel" title="Progress, suggestions and activity" aria-pressed="false"><svg class="icon"><use href="#i-panel"/></svg><span class="badge hidden" id="sugg-badge">0</span></button>
@@ -5629,8 +5697,9 @@ function currentAppearance() {
 function toggleColorMode() { return setColorMode(colorScheme() === 'dark' ? 'light' : 'dark'); }
 function setColorMode(mode) {
   const appearance = currentAppearance();
-  withTransition(() => { S.settings.color_mode = mode; applyAppearance(); });
-  return saveSettings({ color_mode: mode, appearance });
+  S.settings.color_mode = mode;                     // settled now - see changeAppearance
+  const shown = new Promise(done => withTransition(() => { applyAppearance(); done(); }));
+  return Promise.all([shown, saveSettings({ color_mode: mode, appearance })]).then(([, saved]) => saved);
 }
 function renderModeBtn() {
   const b = $('mode-btn'); if (!b) return;
@@ -5663,8 +5732,12 @@ function withTransition(fn) {
 }
 function changeAppearance(partial) {
   if (partial.appearance) secretTheme = null;      // picking an appearance leaves a secret theme
-  withTransition(() => { Object.assign(S.settings, partial); applyAppearance(); });
-  return saveSettings(partial);
+  // The choice is settled at once; only repainting waits for the transition (up to 250 ms). It used to be set
+  // inside the transition, so whatever redrew right after a switch (the Appearance page, `.then(render...)`) drew
+  // with the previous appearance - the last one's card stayed selected and parts of the old look stayed (2026-10-27).
+  Object.assign(S.settings, partial);
+  const shown = new Promise(done => withTransition(() => { applyAppearance(); done(); }));
+  return Promise.all([shown, saveSettings(partial)]).then(([, saved]) => saved);
 }
 
 const $ = id => document.getElementById(id);
@@ -6040,7 +6113,8 @@ function applyAppearance() {
   // The next start paints in these before the settings arrive (the script at the top of <head>) - no light flash.
   // The familiar appearances bring their own greeting and message-box prompt (SKIN_VOICE).
   try { updateGreeting(); if (!isTemp() && !promptEl.disabled) promptEl.placeholder = askText(); } catch (_) {}
-  if (!secret) try { localStorage.setItem('fx-boot-look', JSON.stringify({ d: { ...root.dataset, state: 'idle' }, s: root.getAttribute('style') || '' })); } catch (_) {}
+  // Not the mini window's data-hud: it shares this storage, and the main window would start as the mini one.
+  if (!secret) try { const d = { ...root.dataset, state: 'idle' }; delete d.hud; localStorage.setItem('fx-boot-look', JSON.stringify({ d, s: root.getAttribute('style') || '' })); } catch (_) {}
   const name = (s.user_name || '').trim();
   $('user-name').textContent = name || 'You';
   $('avatar').textContent = name ? name[0].toUpperCase() : '·';
@@ -7748,7 +7822,9 @@ const LabsView = (() => {
     };
     page('home', `<div class="lab-stack lh"><section aria-labelledby="lh-start"><h2 class="lh-h2" id="lh-start">Start a model</h2><div class="lh-jobs">${Object.entries(JOBS).map(job).join('')}</div></section>
       <section aria-labelledby="lh-yours"><div class="lh-h2row"><h2 class="lh-h2" id="lh-yours">Your models${list && list.length ? ` · ${list.length}` : ''}</h2><span class="grow"></span>${list && list.length ? `<button type="button" class="link" onclick="LabsView.go('models')">Open the list</button>` : ''}</div>
-      ${!list ? SKELETON_TEXT : list.length ? `<div class="lh-models">${list.map(card).join('')}</div>` : '<p class="muted">Nothing yet - start one above, or try a sample first.</p>'}</section></div>`);
+      ${!list ? SKELETON_TEXT : list.length ? `<div class="lh-models">${list.map(card).join('')}</div>` : '<p class="muted">Nothing yet - start one above, or try a sample first.</p>'}</section>
+      <section aria-labelledby="lh-research"><h2 class="lh-h2" id="lh-research">Research models</h2><div id="lh-ncm" class="lh-ncm">${SKELETON_TEXT}</div></section></div>`);
+    NcmLab.paint();
   }
 
   /* ---- the blind check (fine-tunes): its held-out questions, answers A and B - which is the fine-tune shows at the end ---- */
@@ -11915,8 +11991,20 @@ function buildSteps(events, live) {
    =========================================================================== */
 function setBusy(b) {
   const was = S.busy; S.busy = b; updateSend(); renderLive();
+  if (b && !was) S.runningChatId = S.chatId;        // the chat the reply belongs to, even if you open another meanwhile
+  if (!b && was) desktopNotify('Reply ready', S.runningChatId || S.chatId);
+  if (!b) S.runningChatId = null;
+  if (b !== was) updateChatDots();
   if (b && !was && typeof ImagesView !== 'undefined') setTimeout(() => ImagesView.poll(), 1200);   // follow a picture drawn for this answer
 }
+/* The desktop app shows a Windows notification when it isn't in front (desktop/main.js decides) - a reply finished
+   or waits for your approval while you were elsewhere, or the window is in the tray. Clicking it opens that chat. */
+function desktopNotify(what, chatId) {
+  if (!window.fxDesktop || !window.fxDesktop.notify || new URLSearchParams(location.search).has('hud')) return;
+  const c = chatId && typeof sbChat === 'function' ? sbChat(chatId) : null;
+  window.fxDesktop.notify(what, c && c.title ? c.title : 'FX Workspace', chatId || '');
+}
+if (window.fxDesktop && window.fxDesktop.onOpenChat) window.fxDesktop.onOpenChat(id => { if (id && id !== S.chatId) openChat(id); });
 function markError() { S.live.errorUntil = Date.now() + 8000; renderLive(); setTimeout(renderLive, 8100); }
 
 /* ---- Live status ---------------------------------------------------------
@@ -12976,6 +13064,7 @@ function contextMenuBody(c) {
     </dl>
     ${c.model ? `<div class="ctx-model">Model <span>${esc(c.model)}</span></div>` : ''}
     <p class="ctx-note">The limit is ${esc(limitWhy)}. Token counts are estimates.</p>
+    ${contextBreakdownHtml(S.contextBreakdown)}
     <section class="ctx-section" aria-labelledby="ctx-auto"><h4 id="ctx-auto">Compress automatically at</h4>
       <div class="ctx-thresholds" role="group" aria-labelledby="ctx-auto">${[['off', 'Off'], ['80', '80%'], ['90', '90%'], ['95', '95%'], ['97', '97%']].map(([v, label]) => `<button type="button" data-compress-at="${v}" class="${auto === v ? 'on' : ''}" aria-pressed="${auto === v}" onclick="setAutoCompress('${v}')" aria-disabled="${!!S.contextAutoSaving}">${label}</button>`).join('')}</div>
       <p class="ctx-note">Older requests become a summary. The last two requests and anything in progress stay in full. With this off, the oldest requests are dropped when the limit is reached.</p>
@@ -12983,9 +13072,40 @@ function contextMenuBody(c) {
         <p class="ctx-note" id="ctx-status" role="status" aria-live="polite">${status}</p></div>
     </section>${lastText ? `<p class="ctx-note ctx-last">${esc(lastText)}</p>` : ''}`;
 }
+/* What the fixed part is made of (agent/context_window.breakdown): each block of the instructions, and the tools by
+   group with a switch for this chat - what the video's "tools have to be earned" asks for, where the cost is seen. */
+function contextBreakdownHtml(b) {
+  if (!b) return '';
+  const fmt = n => Math.max(0, Number(n) || 0).toLocaleString();
+  const parts = (b.parts || []).filter(p => p.tokens).map(p => `<li><span>${esc(p.label)}</span><b>${fmt(p.tokens)}</b></li>`).join('');
+  const tools = (b.tools || []).map(t => `<li class="${t.on ? '' : 'off'}"><span>${esc(t.label)}${t.tools ? ` <small>· ${t.tools} tool${t.tools === 1 ? '' : 's'}</small>` : ' <small>· not offered now</small>'}</span>`
+    + `<b>${t.on ? fmt(t.tokens) : 'off'}</b>${t.switchable ? sw(t.on, `chatToolsToggle('${jsArg(t.group)}',${!t.on})`) : '<i class="ctx-fixed" title="Always on">always</i>'}</li>`).join('');
+  const kind = b.session === 'work'
+    ? '<p class="ctx-kind"><b>Work session</b> (a project chat): files, code and commands. Reminders, memory and notes come only when you ask for them.</p>'
+    : '<p class="ctx-kind"><b>Assistant session</b>: errands, memory, notes and reminders. Open a project for a Work session.</p>';
+  const box = `<div class="ctx-sandbox"><span><b>Sandboxed chat</b><small>${b.sandboxed
+      ? `Files only in <span class="mono">${esc(b.sandbox_folder || 'its scratch folder')}</span>; commands can't change anything else; no screen control.`
+      : 'For a risky task: files only in a scratch folder, restricted commands, no screen control.'}</small></span>
+      ${sw(!!b.sandboxed, `api('/api/chat-sandbox',{on:${!b.sandboxed}}).then(r=>{toast(r.ok ? (r.sandboxed ? 'This chat is sandboxed.' : 'Sandbox off for this chat.') : r.message); refreshContextBreakdown();})`)}</div>`;
+  return `<section class="ctx-section ctx-break" aria-labelledby="ctx-break"><h4 id="ctx-break">What's using it</h4>
+      ${b.session ? kind : ''}${box}<ul class="ctx-parts">${parts}</ul>
+      <h4 class="ctx-sub">Tools <small>· ${fmt(b.tools_tokens)} tokens · switches apply to this chat only</small></h4>
+      <ul class="ctx-parts ctx-tools">${tools}</ul></section>`;
+}
+async function chatToolsToggle(group, on) {
+  let r;
+  try { r = await api('/api/chat-tools', { group, on }); } catch (e) { r = { ok: false, message: e.message }; }
+  if (!r.ok) { toast(r.message || "Couldn't switch it."); return; }
+  await refreshContextBreakdown();
+}
+async function refreshContextBreakdown() {
+  const params = new URLSearchParams({ mode: S.mode || '', model: S.mode === 'local' ? (S.pinned || '') : '' });
+  try { const d = await api(`/api/context?${params}`); if (d.status) S.context = d.status; S.contextBreakdown = d.breakdown || null; } catch (_) {}
+  if (popEl && popEl.classList.contains('ctx-pop')) { const body = popEl.querySelector('.ctx-body'); body._html = null; renderContextMeter(S.context); }
+}
 async function openContextMenu(anchor) {
   const params = new URLSearchParams({ mode: S.mode || '', model: S.mode === 'local' ? (S.pinned || '') : '' });
-  try { const d = await api(`/api/context?${params}`); if (d.status) S.context = d.status; } catch (_) {}
+  try { const d = await api(`/api/context?${params}`); if (d.status) S.context = d.status; S.contextBreakdown = d.breakdown || null; } catch (_) {}
   if (!S.context) { toast('The context meter is not available right now.'); return; }
   openPopover(anchor, `<div class="ctx-body" role="group" aria-labelledby="ctx-head">${contextMenuBody(S.context)}</div>`, 'ctx-pop');
   popEl.dataset.level = anchor.dataset.level || 'ok';
@@ -13289,7 +13409,10 @@ async function poll() {
     renderPrepCard(d.pending_prep);
     S.live.benchmark = d.benchmark || null;
     if (d.benchmark && !S.bench.running) { S.bench.running = d.benchmark.model; pollBench(); }   // e.g. after a reload
+    const wasWaiting = S.live.waiting;
     Object.assign(S.live, { pollFailed: false, waiting: !!(d.pending_approval || d.pending_prep || d.waiting_for_os_approval), serverBusy: !!d.busy, plan: d.plan });
+    if (wasWaiting !== S.live.waiting) updateChatDots();          // running <-> waiting for your approval
+    if (!wasWaiting && S.live.waiting && d.pending_approval) desktopNotify('Needs your approval', S.runningChatId || S.chatId);
     if (d.run && !(S.run === 'stopping' && d.run !== 'idle')) S.run = d.run;
     renderRunControls();
     renderLive();
@@ -13301,6 +13424,9 @@ async function poll() {
     renderMetrics(d.metrics, d);
     S.placement = d.placement || null; syncDiagnostics(d.diagnostics);
     if (d.net) NetIndicator.banner(d.net.blocked);
+    // The mini window's chat strip reads these (Overlay.paint): the turn, Stop, a waiting approval, the model to send with.
+    S.turnInfo = d.turn || null; S.runInfo = d.run || 'idle'; S.approvalWaiting = !!d.pending_approval;
+    S.pinnedLocal = d.local_pinned || ''; if (d.mode) S.serverMode = d.mode;
     Overlay.soon();
     const rb = S.roblox;
     $('rb-dot').className = 'dot' + (rb.connected ? (rb.error_count ? ' warn' : ' on') : '');
@@ -13570,7 +13696,8 @@ const SETTINGS_TABS = [['appearance', 'Appearance', 'i-brush'], ['models', 'Mode
   ['knowledge', 'Knowledge - your files', 'i-book'], ['connectors', 'Connectors', 'i-plug'], ['mcp', 'MCP servers', 'i-plug'],
   ['permissions', 'Permissions', 'i-shield'], ['privacy', 'Privacy', 'i-lock'], ['network', 'Network - proxy, Tor, VPN, leak test', 'i-globe'],
   ['websearch', 'Web Search - privacy modes', 'i-search'], ['voice', 'Voice - talk to it', 'i-mic'], ['images', 'Images - made on this PC', 'i-image'],
-  ['diagnostics', 'Diagnostics - speed and problems', 'i-activity']];
+  ['diagnostics', 'Diagnostics - speed and problems', 'i-activity'], ['remote', 'Phone access - use it from your phone', 'i-globe'],
+  ['channels', 'Channels - Discord, Slack, webhook', 'i-plug']];
 const Palette = (() => {
   let el = null, items = [], shown = [], active = 0;
   function collect() {
@@ -13769,7 +13896,7 @@ const SETTINGS_PAGES = [
   ['models', [['models', 'Models'], ['diagnostics', 'Diagnostics']]],
   ['permissions', [['permissions', 'Permissions'], ['privacy', 'Privacy']]],
   ['voice', [['voice', 'Voice'], ['images', 'Images']]],
-  ['websearch', [['connectors', 'Connectors'], ['websearch', 'Web search'], ['network', 'Network'], ['mcp', 'MCP servers']]],
+  ['websearch', [['connectors', 'Connectors'], ['remote', 'Phone access'], ['channels', 'Channels'], ['websearch', 'Web search'], ['network', 'Network'], ['mcp', 'MCP servers']]],
   ['about', [['about', 'About']]],
 ];
 const pageOf = tab => (SETTINGS_PAGES.find(([, parts]) => parts.some(([id]) => id === tab)) || SETTINGS_PAGES[0]);
@@ -13799,7 +13926,8 @@ function settingsTabNow(tab) {
   const r = { appearance: renderAppearance, models: renderModelsTab, agent: renderAgent, systemmessage: renderSystemMessage,
               proactive: renderProactive, memory: renderMemory, permissions: renderPermissions, privacy: renderPrivacy,
               mcp: renderMCP, diagnostics: renderDiagnostics, network: renderNetwork, websearch: renderWebSearch, voice: renderVoice,
-              images: renderImages, about: renderAbout, skills: renderSkills, knowledge: renderKnowledge, connectors: renderConnectors }[tab];
+              images: renderImages, about: renderAbout, skills: renderSkills, knowledge: renderKnowledge, connectors: renderConnectors,
+              remote: renderRemote, channels: renderChannels }[tab];
   const body = $('settings-body');
   if (body.dataset.tab !== tab) { body.dataset.tab = tab; body.classList.remove('tab-in'); void body.offsetWidth; body.classList.add('tab-in'); body.scrollTop = 0; }
   if (!r) return;
@@ -13827,8 +13955,8 @@ const SETTINGS_WORDS = {
   network: 'network proxy tor vpn kill switch leak test route dns',
   mcp: 'mcp servers tools plugins roblox studio',
   permissions: 'permissions approve ask allow deny destructive input benign tools',
-  privacy: 'privacy temporary chat screenshots cloud data delete history',
-  diagnostics: 'diagnostics speed problems slow health logs checks storage disk space drive size folder',
+  privacy: 'privacy temporary chat screenshots cloud data delete history limits refuse refused refusal outside app limits censor censored uncensored abliterated relaxed restrictions filter safety guard',
+  diagnostics: 'diagnostics speed problems slow health logs checks storage disk space drive size folder background model use monitor tokens unasked replies only this pc',
   about: 'about credits author contact email support suggestions license apache version',
 };
 let APP_VERSION = '';                        // the VERSION file, from /api/version (shared with the installer)
@@ -13952,8 +14080,17 @@ function renderAppearance() {
       ${rowHtml('Click-through', 'Clicks pass through the panels.', sw(!!s.overlay_clickthrough, `saveSettings({overlay_clickthrough:${!s.overlay_clickthrough}}).then(renderAppearance)`))}
       ${rowHtml('Opacity', `${Math.round((s.overlay_opacity || .88) * 100)}%`, `<input type="range" min="0.3" max="1" step="0.02" value="${s.overlay_opacity || .88}" aria-label="Overlay opacity" style="max-width:180px" onchange="saveSettings({overlay_opacity:+this.value}).then(renderAppearance)">`)}
       ${rowHtml('Reset positions', 'Docks every panel back in its corner.', `<button class="btn sm" onclick="resetOverlay()">Reset</button>`)}` : ''}
-      ${rowHtml('Always on top of Roblox Studio', 'The panels in a small window that follows Roblox Studio. Windows only.', sw(!!s.overlay_window, `saveSettings({overlay_window:${!s.overlay_window}}).then(renderAppearance)`))}
-    </div>`;
+      ${rowHtml('Mini window', 'The live panels in a small always-on-top window - over Roblox Studio, in a corner, or where you drag it. Ctrl+Alt+M, the tray, or ask the assistant.', sw(!!s.overlay_window, `saveSettings({overlay_window:${!s.overlay_window}}).then(renderAppearance)`))}
+      ${s.overlay_window ? rowHtml('Where it sits', 'Over Roblox Studio follows it as it moves; dragging the window sets it to "Where I put it".',
+        seg([['studio', 'Over Studio'], ['tr', 'Top right'], ['br', 'Bottom right'], ['tl', 'Top left'], ['bl', 'Bottom left'], ['free', 'Where I put it']], s.mini_place || 'studio', "(v=>saveSettings({mini_place:v}).then(renderAppearance))")) : ''}
+    </div>
+    ${window.fxDesktop ? `<div class="set-group"><div class="gt">The window</div>
+      ${rowHtml('Keep running when I close the window', 'Closing hides it in the tray - a reply in progress finishes, routines run, and you get a notification when something is ready. Quit from the tray icon.', sw(s.close_to_tray !== false, `saveSettings({close_to_tray:${s.close_to_tray === false}}).then(renderAppearance)`))}
+      ${rowHtml('Start with Windows', 'Starts when you sign in, ready for Roblox Studio, routines and your phone.', sw(!!s.start_with_windows, `saveSettings({start_with_windows:${!s.start_with_windows}}).then(renderAppearance)`))}
+      ${s.start_with_windows ? rowHtml('Start hidden in the tray', 'No window at sign-in - click the tray icon when you want it.', sw(s.start_hidden !== false, `saveSettings({start_hidden:${s.start_hidden === false}}).then(renderAppearance)`)) : ''}
+      ${rowHtml('Free the GPU when hidden', 'Hidden in the tray and unused this long, the model unloads so a game has the graphics memory. The next message loads it again.',
+        seg([['off', 'Never'], ['5', '5 min'], ['15', '15 min'], ['30', '30 min'], ['60', '1 hour']], String(s.idle_unload || '15'), "(v=>saveSettings({idle_unload:v}).then(renderAppearance))"))}
+    </div>` : ''}`;
   const sketch = id => ({ studio: '<i class="s"></i><i class="m"></i><i class="p"></i>', focus: '<i class="m"></i><i class="r"></i>', operator: '<i class="s"></i><i class="p"></i><i class="m"></i>', command: '<i class="s"></i><i class="m"></i><i class="p"></i>' })[id];
   const lookCard = id => `<button class="opt-card look-card ${cur === id ? 'on' : ''}" onclick="changeAppearance({look:'${id}'}).then(renderAppearance)" aria-pressed="${cur === id}"><div class="lk lk-${id}" aria-hidden="true">${sketch(id)}</div><b>${LOOK_INFO[id].name}</b><small>${LOOK_INFO[id].desc}</small><div class="for">Best for: ${LOOK_INFO[id].for}</div></button>`;
   const accents = [['', 'Gold (default)', '#e5a830'], ['#cc6a46', 'Terracotta'], ['#3d3c38', 'Ink'], ['#5f8a6b', 'Sage'], ['#4a7fa8', 'Sky'], ['#8a5a9e', 'Plum']];
@@ -14036,12 +14173,60 @@ async function renderModelsTab() {
   S.modelConfigs = (cfg && cfg.models) || []; S.modelDefaults = (cfg && cfg.defaults) || {};
   if (S.settingsTab !== 'models') return;
   renderModelsCached();
+  renderMoeTest();
   // The context limits come after (the first read of every model's header is slow); the page is usable meanwhile.
   if (!S.ctxInfo) api('/api/local-models/ctx-info').then(d => {
     S.ctxInfo = (d && d.models) || {};
     const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest('#settings-body input');
     if (S.settingsTab === 'models' && !typing) renderModelsCached();
   }).catch(() => {});
+}
+/* ---- Labs > Research models > NCM story writer (ncm_lab.py, Beta): a story written coarse to fine ------------ */
+const NcmLab = (() => {
+  let timer = 0;
+  async function paint() {
+    const box = $('lh-ncm'); if (!box) return;
+    let s;
+    try { s = await api('/api/labs/ncm'); } catch (e) { box.innerHTML = `<p class="muted">${esc(e.message)}</p>`; return; }
+    const busy = s.setup || s.writing, lv = s.levels || [], last = lv[lv.length - 1];
+    const cmp = s.compare, res = s.result;
+    box.innerHTML = `<article class="lh-job"><span class="lh-job-top"><span class="lh-ic">${icon('i-layers')}</span><span class="grow"><b>NCM story writer <span class="pill">Beta</span></b>
+        <small>HazyResearch's Next-Concept Model · TinyStories</small></span></span>
+      <p>Most models write one word at a time. This one drafts the whole story at once - rough first, then sharper, ${last ? last.of : 'about a dozen'} levels in all - and you watch each level land. It writes stories from scratch: this model can't be given a story start, and it can't be trained here (the research code has no training part).</p>
+      ${!s.ready ? `<p class="muted">${s.labs ? `Set up downloads the code and the TinyStories model (about 578 MB) to <span class="mono">${esc(s.root)}</span> and adds a few packages to Labs.` : 'Set up the Labs engine first.'}</p>` : ''}
+      ${s.progress && busy ? `<p class="muted"><span class="spinner"></span> ${esc(s.progress)}</p>` : ''}
+      ${s.error ? `<p class="ov-bad">${esc(s.error)}</p>` : ''}
+      ${lv.length ? `<ol class="ncm-levels">${lv.map((l, i) => `<li class="${i === lv.length - 1 ? 'last' : ''}"><small>Level ${l.level} of ${l.of}</small><p>${esc(l.text || l.note || '(nothing readable at this level)')}</p></li>`).join('')}</ol>` : ''}
+      ${res ? `<p class="muted">The whole story in <b>${res.seconds} s</b> on the GPU (${res.words} words)${cmp ? ` · your chat model (${esc(cmp.model)}): <b>${cmp.seconds} s</b> for ${cmp.words} words${cmp.writing_tps ? `, ${Math.round(cmp.writing_tps)} tok/s` : ''}` : ''}.</p>` : ''}
+      <span class="lh-job-foot"><span class="grow"></span>
+        ${!s.ready ? `<button type="button" class="btn primary sm" ${busy || !s.labs ? 'disabled' : ''} onclick="NcmLab.setup()">Set up (578 MB)</button>`
+          : `<button type="button" class="btn ghost sm" ${busy || !res ? 'disabled' : ''} onclick="NcmLab.compare(this)">Compare with my chat model</button>
+             <button type="button" class="btn primary sm" ${busy ? 'disabled' : ''} onclick="NcmLab.write()">${s.writing ? 'Writing…' : 'Write a story'}</button>`}</span></article>`;
+    clearTimeout(timer);
+    if (busy) timer = setTimeout(paint, 1200);
+  }
+  const act = (url, body) => api(url, body || {}).then(r => { if (r && r.ok === false) toast(r.message); else if (r && r.message) toast(r.message); paint(); }).catch(e => toast(e.message));
+  return { paint, setup: () => act('/api/labs/ncm/setup'), write: () => act('/api/labs/ncm/write'),
+           compare: btn => { btn.disabled = true; btn.textContent = 'Asking your chat model…'; act('/api/labs/ncm/compare'); } };
+})();
+// "Test the MoE cache" (moe_test.py): for mixture-of-experts models only; keeps a cache size only if it measured faster.
+async function renderMoeTest() {
+  let d;
+  try { d = await api('/api/moe-test'); } catch (_) { return; }
+  const body = $('settings-body');
+  if (S.settingsTab !== 'models' || !body || !d.models.length) return;
+  let box = $('moe-test');
+  if (!box) { box = document.createElement('div'); box.id = 'moe-test'; box.className = 'set-group'; body.appendChild(box); }
+  const res = d.results || {}, run = d.state.running, sp = v => v == null ? '–' : `${v} tok/s`;
+  box.innerHTML = `<div class="gt">MoE expert cache <small>· measured, never assumed</small></div>
+    <p class="muted">Keeps recently used experts in graphics memory. On 8-12 GB cards it can also make writing slower, so the test runs the same prompt with and without it and keeps a size only if writing is at least 5% faster and prompt speed doesn't drop. About 15 minutes per model; chats wait meanwhile.</p>
+    ${d.models.map(m => { const r = res[m.name];
+      return `<div class="set-row"><div class="grow"><b>${esc(m.name)}</b>
+        <div class="muted">${m.cache_mib ? `Cache on: ${esc(m.cache_mib)} MiB` : 'Cache off'}${r ? ` · ${esc(r.why || '')}` : ' · not tested yet'}</div>
+        ${r && r.base ? `<div class="muted mono">no cache: prompt ${sp(r.base.prompt_tps)}, writing ${sp(r.base.gen_tps)}${(r.tried || []).map(t => ` · ${t.mib} MiB: ${t.error ? 'failed to load' : `prompt ${sp(t.prompt_tps)}, writing ${sp(t.gen_tps)}`}`).join('')}</div>` : ''}</div>
+        <button class="btn sm" ${run ? 'disabled' : ''} onclick="api('/api/moe-test',{model:'${jsArg(m.name)}'}).then(r=>{toast(r.message);renderMoeTest();})">${run === m.name ? esc(d.state.progress || 'Testing…') : 'Test the MoE cache'}</button></div>`; }).join('')}
+    ${d.state.error ? `<p class="muted">Last test: ${esc(d.state.error)}</p>` : ''}`;
+  if (run) setTimeout(() => { if (S.settingsTab === 'models') renderMoeTest(); }, 5000);
 }
 // Under the Context box: the most the model was trained for, and the most that fits in this GPU with its current
 // settings - each a button that fills the box (Save keeps it). From /api/local-models/ctx-info (S.ctxInfo).
@@ -15333,6 +15518,55 @@ const Overlay = (() => {
         <button type="button" class="ov-btn" data-act="collapse" aria-label="Collapse or expand ${esc(p.title)}" title="Collapse">${icon('i-chev', 'xs')}</button>
         <button type="button" class="ov-btn" data-act="hide" aria-label="Hide ${esc(p.title)}" title="Hide (Settings > Appearance brings it back)">${icon('i-x', 'xs')}</button></header>
       <div class="ov-body"></div></section>`).join('');
+    // The desktop app's mini window has no frame: a slim bar of its own to drag it by, open the app, fade it,
+    // let clicks through and close it - each goes through /api/mini-window, like the tray and the mini_window tool.
+    if (hud && window.fxDesktop) {
+      const bar = document.createElement('div');
+      bar.className = 'hud-bar';
+      bar.innerHTML = `<span class="hud-title">${icon('i-sparkle', 'xs')}FX Workspace</span>
+        <button type="button" data-mini="app" title="Open the app">${icon('i-expand', 'xs')}</button>
+        <button type="button" data-mini="fade" title="More or less see-through">${icon('i-eye', 'xs')}</button>
+        <button type="button" data-mini="through" title="Let clicks pass through (turn it off from the tray)">${icon('i-hand', 'xs')}</button>
+        <button type="button" data-mini="close" title="Close the mini window">${icon('i-x', 'xs')}</button>`;
+      bar.addEventListener('click', e => {
+        const b = e.target.closest('[data-mini]'); if (!b) return;
+        const s = S.settings || {}, act = b.dataset.mini;
+        if (act === 'app') return window.fxDesktop.showMain && window.fxDesktop.showMain();
+        const body = act === 'close' ? { action: 'close' } : act === 'through' ? { action: 'set', click_through: !s.overlay_clickthrough }
+          : { action: 'set', opacity: (s.overlay_opacity || 0.88) > 0.7 ? 0.6 : 0.95 };
+        api('/api/mini-window', body).then(r => { if (r && r.mini) Object.assign(S.settings, { overlay_opacity: r.mini.opacity, overlay_clickthrough: r.mini.click_through }); }).catch(() => {});
+      });
+      root.prepend(bar);
+      // The open chat, small: your last message, the reply (or "Writing..."), Stop, and a line to send another.
+      const chat = document.createElement('div');
+      chat.className = 'hud-chat';
+      chat.innerHTML = `<div class="hud-q"></div><div class="hud-a"></div>
+        <form class="hud-send"><input type="text" placeholder="Message the open chat…" aria-label="Message the open chat" maxlength="4000">
+          <button type="submit" class="hud-go" title="Send">${icon('i-arrow-up', 'xs')}</button>
+          <button type="button" class="hud-stop" title="Stop the reply" hidden>${icon('i-stop', 'xs')}</button></form>`;
+      chat.querySelector('form').addEventListener('submit', e => {
+        e.preventDefault();
+        const input = chat.querySelector('input'), message = input.value.trim();
+        if (!message || S.runInfo === 'running') return;
+        input.value = '';
+        api('/api/chat', { message, mode: S.serverMode || 'local', local_model: S.pinnedLocal || '' })
+          .then(r => { if (r && r.status === 'error') toast(r.message || 'Not sent.'); else { S.runInfo = 'running'; paint(); } })
+          .catch(err => toast(err.message));
+      });
+      chat.querySelector('.hud-stop').addEventListener('click', () => api('/api/run/stop', {}).catch(() => {}));
+      bar.after(chat);
+      // Every panel hidden (each panel's x): say so here, rather than an empty window.
+      const none = document.createElement('div');
+      none.className = 'hud-none'; none.hidden = true;
+      none.innerHTML = `<p>All the panels are hidden.</p><button type="button" class="btn">Show Model and Roblox Studio</button>`;
+      none.querySelector('button').addEventListener('click', () => {
+        const p = S.settings.overlay_panels || {}, change = { model: { ...p.model, shown: true }, studio: { ...p.studio, shown: true } };
+        S.settings.overlay_panels = { ...p, ...change };
+        layout(); paint();
+        api('/api/settings', { overlay_panels: change }).catch(() => {});
+      });
+      root.append(none);
+    }
     document.body.appendChild(root);
     // The side panels opening or closing move the chat column's edges: the docks follow.
     if (window.ResizeObserver && $('main')) new ResizeObserver(() => { if (!root.hidden) layout(); }).observe($('main'));
@@ -15386,6 +15620,8 @@ const Overlay = (() => {
       el.style[d[1] === 'r' ? 'right' : 'left'] = `${inset[d[1]]}px`;
       stacks[d] += el.offsetHeight + 8;
     });
+    const none = root.querySelector('.hud-none');
+    if (none) none.hidden = !!root.querySelector('.ov-panel:not([hidden])');
   }
   function drag(e) {
     if (hud || e.button !== 0 || e.target.closest('.ov-btn')) return;       // the HUD window is moved by its title bar
@@ -15436,6 +15672,18 @@ const Overlay = (() => {
     setHtmlIfChanged(body('session'), `<div class="ov-line">${isTemp() ? `${icon('i-ghost', 'xs')}<b>Temporary chat</b><span class="ov-sub">not saved</span>` : `${icon('i-feed', 'xs')}<span>${esc(S.title || 'New chat')}</span>`}</div>
       <div class="ov-line ov-sub"><span>Search: ${esc(SEARCH_MODE_LABELS[S.searchMode || S.settings.search_mode || 'standard'])}${S.searchMode ? ' (these messages)' : ''}</span></div>`);
     if (!hud) layout();                              // heights changed: the corner stacks follow
+    else paintChat();
+  }
+  function paintChat() {
+    const box = root.querySelector('.hud-chat'); if (!box) return;
+    const t = S.turnInfo, running = S.runInfo === 'running' || S.runInfo === 'stopping' || (t && t.status === 'running');
+    const reply = t && t.result && (t.result.message || t.result.response) || '';
+    setHtmlIfChanged(box.querySelector('.hud-q'), t && t.message ? `<span class="ov-sub">You:</span> ${esc(String(t.message).slice(0, 160))}` : '<span class="ov-sub">No message yet in this chat.</span>');
+    setHtmlIfChanged(box.querySelector('.hud-a'), S.approvalWaiting ? `<b class="ov-bad">Waiting for your approval</b> - open the app to answer.`
+      : running ? `<span class="ov-dot busy"></span> ${S.runInfo === 'stopping' ? 'Stopping…' : 'Writing…'}`
+      : reply ? esc(String(reply).slice(-600)) : '');
+    box.querySelector('.hud-stop').hidden = !running;
+    box.querySelector('.hud-go').hidden = running;
   }
   function soon() {
     if (!active() || hidden || soonT) return;
@@ -15448,6 +15696,14 @@ const Overlay = (() => {
     toast(hidden ? 'Overlay hidden - Ctrl+Alt+O shows it again.' : 'Overlay shown.');
   }
   addEventListener('resize', () => { if (root && !root.hidden) layout(); });
+  // Ctrl+Alt+M: the mini window on or off (mini_window.py) - from the app or from the mini window itself.
+  document.addEventListener('keydown', e => {
+    if (!(e.ctrlKey && e.altKey && !e.shiftKey && (e.key || '').toLowerCase() === 'm')) return;
+    e.preventDefault();
+    api('/api/mini-window', { action: 'toggle' }).then(r => {
+      if (r && r.mini) { S.settings.overlay_window = r.mini.open; toast(r.message || ''); }
+    }).catch(err => toast(err.message));
+  });
   document.addEventListener('keydown', e => {
     if (!(e.ctrlKey && e.altKey && !e.shiftKey && (e.key || '').toLowerCase() === 'o')) return;
     e.preventDefault();
@@ -17693,8 +17949,24 @@ async function renderDiagnostics(data, running) {
       <div class="dg-gpu">${bar(now.free || 0, `Other apps use ${gb(now.other)}; ${gb(now.free || 0)} is free for a model`, false, now)}<div class="dg-legend"><span><i class="dg-other"></i>other apps ${gb(now.other)}</span><span><i class="dg-need"></i>free for a model now ${gb(now.free || 0)}</span><span><i class="dg-over"></i>would spill into RAM</span><span><i class="dg-cpu"></i>on the CPU by plan</span></div>
       ${g.model_mb ? `<small>The loaded model uses ${gb(g.model_mb)} of VRAM${g.spilled_mb > 256 ? ` and <b class="dg-bad">${gb(g.spilled_mb)} of system RAM</b> (spilled - slow)` : ''}.</small>` : ''}</div></div>` : ''}
     <div class="set-group"><div class="gt">Models <small>· what each needs at its context size${g.total_mb ? `, planned for other apps using up to ${gb(plan.other)}` : ''}</small></div>${(data.models || []).map(modelRow).join('') || '<p class="lead">No models in models.ini.</p>'}</div>
-    ${groups.slice(1).join('')}<div class="set-group" id="storage-group"><div class="gt">Storage <small>· what this app keeps on disk</small></div>${SKELETON_TEXT}</div></div>`;
+    ${groups.slice(1).join('')}<div class="set-group" id="mm-set"></div><div class="set-group" id="storage-group"><div class="gt">Storage <small>· what this app keeps on disk</small></div>${SKELETON_TEXT}</div></div>`;
   loadStorage();
+  renderModelMonitor();
+}
+/* Model use outside your replies (model_monitor.py, 1.4.2): on a local PC the model's time is the budget, so anything
+   that used it without a message from you is listed here - with a switch that stops the automatic ones. */
+const MM_AGO = t => fmtAgo(t);
+async function renderModelMonitor() {
+  const box = $('mm-set'); if (!box) return;
+  let d;
+  try { d = await api('/api/model-monitor'); } catch (e) { box.innerHTML = ''; return; }
+  if (!$('mm-set')) return;
+  const rows = (d.recent || []).slice(0, 12).map(r => `<li><span><b>${esc(r.source)}</b> <small>${esc(r.label || '')}${r.model ? ` · ${esc(r.model)}` : ''}${r.ok ? '' : ' · failed'}</small></span>`
+    + `<small>${(r.tokens_in + r.tokens_out).toLocaleString()} tokens · ${r.seconds}s · ${esc(MM_AGO(r.at))}</small></li>`).join('');
+  box.innerHTML = `<div class="gt">Model use outside your replies <small>· since the app started</small></div>
+    ${rowHtml('Only use the model for my replies', `Stops what the app starts by itself: ${esc((d.automatic || []).join(' and ').toLowerCase())}. Things you start - Compare, a benchmark, Labs - always run.`,
+      sw(!!d.replies_only, `saveSettings({model_replies_only:${!d.replies_only}}).then(renderModelMonitor)`))}
+    ${rows ? `<ul class="ctx-parts mm-list">${rows}</ul>` : '<p class="set-note">Nothing yet - the model has only worked on your replies.</p>'}`;
 }
 // Storage: data\ folder by folder, biggest first, and how full the drives are. Read-only - nothing is deleted here.
 const fmtSize = n => n >= 1073741824 ? `${(n / 1073741824).toFixed(1)} GB` : n >= 1048576 ? `${(n / 1048576).toFixed(0)} MB` : n >= 1024 ? `${Math.round(n / 1024)} KB` : `${n} B`;
@@ -17831,8 +18103,8 @@ function fmtAgo(t) {
 async function renderMemory() {
   const body = $('settings-body');
   if (!body.querySelector('#mem-list')) body.innerHTML = `<h3>Memory</h3>${SKELETON_TEXT}`;
-  let d, p;
-  try { [d, p] = await Promise.all([api('/api/memory'), api('/api/profile')]); }
+  let d, p, idn, g;
+  try { [d, p, idn, g] = await Promise.all([api('/api/memory'), api('/api/profile'), api('/api/identity'), api('/api/memory/graph').catch(() => null)]); }
   catch (e) { if (S.settingsTab === 'memory') body.innerHTML = `<h3>Memory</h3><p class="lead">${esc(e.message)}</p>`; return; }
   if (S.settingsTab !== 'memory') return;
   const s = S.settings, on = s.memory_enabled !== false, sens = !!s.memory_sensitive, entries = d.entries || [];
@@ -17856,7 +18128,17 @@ async function renderMemory() {
   body.innerHTML = `<h3>Memory</h3><p class="lead">What it keeps across chats: your profile, and saved facts - a request gets the ones that match it, pinned ones always.</p>
     <div class="set-group">${rowHtml('Use memory', 'Off: neither your profile nor these entries is sent to any model.', sw(on, `saveSettings({memory_enabled:${!on}}).then(renderMemory)`))}
       ${rowHtml('Use sensitive memories', 'Health, beliefs, politics, money and similar. Off: they are kept and shown, but not sent, and profile updates leave them out.', sw(sens, `saveSettings({memory_sensitive:${!sens}}).then(renderMemory)`))}</div>
+    <div class="set-group" id="soul"><div class="gt">Soul <small>· who the assistant is - its name, its voice, what it's for</small></div>
+      <textarea class="input prof-text mono" id="soul-text" rows="7" maxlength="4000" placeholder="Empty: the app's default. Write who the assistant is, in its own words (&quot;My name is…&quot;)." aria-label="Soul">${esc(idn.soul || '')}</textarea>
+      <div class="cfg-actions"><small class="muted grow">Sent with a header that says this file is about the assistant itself, not you · <span class="mono">${esc(idn.path)}</span></small>
+        ${idn.soul ? '' : `<button class="btn sm" onclick="$('soul-text').value=${esc(JSON.stringify(idn.starter))}">Start from an example</button>`}
+        <button class="btn sm primary" onclick="api('/api/identity',{soul:$('soul-text').value}).then(()=>{toast('Saved - the next message uses it.');renderMemory();}).catch(e=>toast(e.message))">Save</button></div></div>
     ${profile}
+    <div class="set-group"><div class="gt">How memory links up <small>· topics, and the names they share</small></div>
+      ${memGraphSvg(g)}
+      ${rowHtml('Overview in every chat', 'One line per topic at the start of each chat, so it knows what it remembers about. The matching memories still come with each request.', sw(s.memory_overview !== false, `saveSettings({memory_overview:${s.memory_overview === false}}).then(renderMemory)`))}
+      <div class="cfg-actions"><small class="muted grow">Also kept as linked markdown notes in <span class="mono">${esc((g && g.notes_dir) || '')}</span> · a new fact about the same thing replaces the old one</small>
+        <button class="btn sm" onclick="api('/api/memory/maintain',{}).then(r=>{toast(r.removed.length ? 'Removed ' + r.removed.length + ' duplicate or outdated.' : 'All tidy - nothing to remove.');renderMemory();}).catch(e=>toast(e.message))">${icon('i-sparkle', 'xs')}Tidy up</button></div></div>
     <div class="set-group" id="mem-list"><div class="gt">Saved <span class="muted" style="font-weight:400">· ${entries.length} of ${d.max_entries}</span>
         <span class="mem-io"><button class="btn sm ghost" onclick="memExport()">${icon('i-download', 'xs')}Export</button><label class="btn sm ghost">${icon('i-arrow-up', 'xs')}Import<input type="file" accept=".json,.txt,.md" hidden onchange="memImport(this)"></label></span></div>
       ${groups.length ? groups.map(([t, xs]) => `<div class="mem-topic-h">${esc(t)} <span class="muted">${xs.length}</span></div><div class="list-box">${xs.map(row).join('')}</div>`).join('')
@@ -17864,6 +18146,18 @@ async function renderMemory() {
       <form class="folder-add" onsubmit="event.preventDefault();memAdd(this.elements.text)"><input class="input" name="text" maxlength="${d.max_text}" placeholder="e.g. My main Roblox place is Obby World" aria-label="New memory" autocomplete="off"><button class="btn" type="submit">Add</button></form>
       <p class="set-note" style="margin-top:12px">Memory never grants a permission or skips an approval. Kept in <span class="mono">${esc(d.path)}</span>; in Cloud mode the entries a request uses go with it.</p>
     </div>`;
+}
+// The memory graph (memory_graph.graph): topics on an inner ring, the names they share on an outer one.
+function memGraphSvg(g) {
+  if (!g || !g.nodes || !g.nodes.length) return '<p class="muted">Nothing to link yet.</p>';
+  const W = 520, H = 300, cx = W / 2, cy = H / 2, pos = {};
+  const topics = g.nodes.filter(n => n.kind === 'topic'), names = g.nodes.filter(n => n.kind !== 'topic').slice(0, 24);
+  topics.forEach((n, i) => { const a = 2 * Math.PI * i / Math.max(1, topics.length) - Math.PI / 2; pos[n.id] = [cx + 70 * Math.cos(a), cy + 60 * Math.sin(a)]; });
+  names.forEach((n, i) => { const a = 2 * Math.PI * i / Math.max(1, names.length) - Math.PI / 2 + 0.2; pos[n.id] = [cx + 210 * Math.cos(a), cy + 125 * Math.sin(a)]; });
+  const lines = g.edges.filter(e => pos[e.a] && pos[e.b]).map(e => `<line x1="${pos[e.a][0]}" y1="${pos[e.a][1]}" x2="${pos[e.b][0]}" y2="${pos[e.b][1]}" stroke="var(--border-strong)"/>`).join('');
+  const dot = n => { const [x, y] = pos[n.id], r = n.kind === 'topic' ? 7 + Math.min(10, n.size * 1.5) : 4;
+    return `<g><circle cx="${x}" cy="${y}" r="${r}" fill="${n.kind === 'topic' ? 'var(--accent)' : 'var(--surface-3)'}"/><text x="${x}" y="${y - r - 4}" text-anchor="middle" font-size="${n.kind === 'topic' ? 12 : 10.5}" fill="var(--${n.kind === 'topic' ? 'text' : 'muted'})">${esc(n.label.slice(0, 22))}${n.kind === 'topic' ? ` · ${n.size}` : ''}</text><title>${esc(n.label)}</title></g>`; };
+  return `<svg class="mem-graph" viewBox="0 0 ${W} ${H}" role="img" aria-label="Memory topics and the names they share">${lines}${[...topics, ...names].map(dot).join('')}</svg>`;
 }
 async function profSave() {
   const r = await api('/api/profile', { text: $('prof-text').value }).catch(e => ({ ok: false, message: e.message }));
@@ -18042,6 +18336,82 @@ async function memCall(path, body, method) {
 function memAdd(input) { const text = input.value.trim(); if (text) memCall('/api/memory', { text }); }
 function memEdit(id, change) { memCall(`/api/memory/${encodeURIComponent(id)}`, change); }
 function memDelete(id) { memCall(`/api/memory/${encodeURIComponent(id)}`, undefined, 'DELETE'); }
+/* ---- Phone access (remote_access.py): the app on your phone, over Tailscale or your home network ---------- */
+async function renderRemote() {
+  const body = $('settings-body');
+  body.innerHTML = `<h3>Phone access</h3><p class="lead">Chat, approve steps and read results from your phone. Off until you turn it on; never on the open internet.</p><div class="empty">Loading…</div>`;
+  let st;
+  try { st = await api('/api/remote'); } catch (e) { body.querySelector('.empty').textContent = e.message; return; }
+  if (S.settingsTab !== 'remote') return;
+  const mode = st.remote_access, when = t => t ? new Date(t * 1000).toLocaleString() : '';
+  const set = change => api('/api/remote', change).then(renderRemote).catch(e => toast(e.message));
+  window._remoteSet = set;
+  body.innerHTML = `<h3>Phone access</h3><p class="lead">Chat, approve steps and read results from your phone. Off until you turn it on; never on the open internet.</p>
+    <div class="set-group"><div class="gt">How the phone reaches this PC</div>
+      ${rowHtml('Reach it over', 'Tailscale is encrypted end to end and works away from home (free at tailscale.com - install it on the PC and the phone). Home network works only on your Wi-Fi, unencrypted.',
+        seg([['off', 'Off'], ['tailscale', 'Tailscale (recommended)'], ['lan', 'Home network']], mode, "(v=>_remoteSet({remote_access:v}))"))}
+      ${st.problem ? `<div class="state-card warn"><span class="sc-ico">${icon('i-alert', 'sm')}</span><div class="grow">${esc(st.problem)}</div></div>` : ''}
+      ${st.running ? `<div class="remote-ready"><img src="/api/remote/qr.svg?t=${Date.now()}" alt="QR code for ${esc(st.url)}" width="168" height="168">
+        <div><b>Scan with the phone's camera</b><p class="muted">or open <span class="mono">${esc(st.url)}</span></p>
+        <p class="muted">Then "Add to Home screen" in the browser's menu - it opens like an app.</p></div></div>` : ''}
+    </div>
+    <div class="set-group"><div class="gt">Password</div>
+      <p class="muted">${st.has_password ? 'A password is set. Setting a new one signs every device out.' : 'Required - phone access never starts without one.'}</p>
+      <form class="remote-pw" onsubmit="event.preventDefault();api('/api/remote/password',{password:this.pw.value}).then(r=>{toast(r.message);renderRemote();}).catch(e=>toast(e.message))">
+        <input name="pw" type="password" autocomplete="new-password" minlength="8" placeholder="At least 8 characters" required>
+        <button class="btn">${st.has_password ? 'Change password' : 'Set password'}</button></form>
+    </div>
+    <div class="set-group"><div class="gt">What the phone may do</div>
+      <p class="muted">Chat, approve or refuse steps, notes and tasks, read results. Settings, API keys and these switches only change on the PC.</p>
+      ${rowHtml('Screen, mouse and keyboard control from the phone', 'Off: a message from the phone never clicks or types on this PC. Turn on only if you need it.',
+        sw(!!st.remote_allow_control, `_remoteSet({remote_allow_control:${!st.remote_allow_control}})`))}
+    </div>
+    <div class="set-group"><div class="gt">Signed-in devices</div>
+      ${st.devices.length ? st.devices.map(d => `<div class="set-row"><div class="grow"><b>${esc(d.device)}</b><div class="muted">${esc(d.ip)} · last seen ${esc(when(d.seen))}</div></div>
+        <button class="btn sm" onclick="api('/api/remote/sign-out',{device:'${esc(d.id)}'}).then(renderRemote)">Sign out</button></div>`).join('')
+        + `<button class="btn sm" onclick="api('/api/remote/sign-out',{}).then(renderRemote)">Sign out everywhere</button>` : '<p class="muted">None.</p>'}
+    </div>`;
+}
+
+/* ---- Channels (channels.py): Discord, Slack and a webhook --------------------------------------------------- */
+async function renderChannels() {
+  const body = $('settings-body');
+  body.innerHTML = `<h3>Channels</h3><p class="lead">Message the assistant from Discord, Slack or an automation. Only accounts you list get answers.</p><div class="empty">Loading…</div>`;
+  let st;
+  try { st = await api('/api/channels'); } catch (e) { body.querySelector('.empty').textContent = e.message; return; }
+  if (S.settingsTab !== 'channels') return;
+  window._chanSet = (kind, change) => api('/api/channels', { kind, ...change }).then(r => { if (r && r.ok === false) toast(r.message); renderChannels(); }).catch(e => toast(e.message));
+  const state = c => c.enabled ? (c.connected ? '<span class="pill ok">Connected</span>' : `<span class="pill warn">${esc(c.problem || 'Connecting…')}</span>`) : '<span class="pill">Off</span>';
+  const allowForm = (kind, c, hint) => `<form class="chan-form" onsubmit="event.preventDefault();_chanSet('${kind}',{allow:this.ids.value})">
+      <input name="ids" value="${esc((c.allow || []).join(', '))}" placeholder="${esc(hint)}"><button class="btn">Save who may talk</button></form>`;
+  const tokenForm = (kind, field, has, hint) => `<form class="chan-form" onsubmit="event.preventDefault();_chanSet('${kind}',{${field}:this.t.value});this.t.value=''">
+      <input name="t" type="password" autocomplete="off" placeholder="${has ? 'Saved - paste a new one to replace it' : esc(hint)}"><button class="btn">${has ? 'Replace' : 'Save'}</button></form>`;
+  const hookUrl = location.origin + '/hook';
+  body.innerHTML = `<h3>Channels</h3><p class="lead">Message the assistant from Discord, Slack or an automation. Only accounts you list get answers; anyone else is ignored and logged.
+      Replies run in each channel's own chat; approvals come as buttons there (or on this PC); say "stop" to end a reply. Screen and mouse control stay off for channels unless Phone access allows it.</p>
+    <div class="set-group"><div class="gt">Webhook ${state({ ...st.webhook, connected: st.webhook.enabled })}</div>
+      ${rowHtml('Webhook', 'For Home Assistant, n8n, iOS Shortcuts: POST JSON {"message": "..."} with the header "Authorization: Bearer" and the secret below. Reachable from this PC, or from your phone\'s network while Phone access is on.',
+        sw(st.webhook.enabled, `_chanSet('webhook',{enabled:${!st.webhook.enabled}})`))}
+      ${st.webhook.enabled ? `<div class="set-row"><div class="grow"><div class="muted">Address</div><span class="mono">${esc(hookUrl)}</span>
+        <div class="muted" style="margin-top:6px">Secret</div><span class="mono">${esc(st.webhook.secret)}</span></div>
+        <button class="btn sm" onclick="api('/api/channels/webhook-secret',{}).then(renderChannels)">New secret</button></div>
+        <p class="muted">The answer comes back in the response. If a step needs your OK, the response holds one-time "allow" and "refuse" codes: POST /hook/answer/&lt;code&gt;, then POST /hook/result/&lt;id&gt; for the answer.</p>` : ''}
+    </div>
+    <div class="set-group"><div class="gt">Discord ${state(st.discord)}</div>
+      ${rowHtml('Discord bot', 'discord.com/developers → New Application → Bot: copy the token, switch on "Message Content Intent", and invite the bot to your server (or DM it).',
+        sw(st.discord.enabled, `_chanSet('discord',{enabled:${!st.discord.enabled}})`))}
+      ${tokenForm('discord', 'token', st.discord.has_token, 'Bot token')}
+      ${allowForm('discord', st.discord, 'Your Discord user ID (Settings → Advanced → Developer Mode, then right-click your name → Copy User ID)')}
+    </div>
+    <div class="set-group"><div class="gt">Slack ${state(st.slack)}</div>
+      ${rowHtml('Slack app', 'api.slack.com/apps → Create App: turn on Socket Mode (gives the xapp- token), add the bot scopes chat:write, im:history, app_mentions:read, subscribe to message.im and app_mention, then install it (gives the xoxb- token). No public address needed.',
+        sw(st.slack.enabled, `_chanSet('slack',{enabled:${!st.slack.enabled}})`))}
+      ${tokenForm('slack', 'token', st.slack.has_token, 'Bot token (xoxb-…)')}
+      ${tokenForm('slack', 'app_token', st.slack.has_app_token, 'App-level token (xapp-…)')}
+      ${allowForm('slack', st.slack, 'Your Slack member ID (profile → ⋮ → Copy member ID)')}
+    </div>`;
+}
+
 function renderPrivacy() {
   const s = S.settings;
   // One line each (D49).
@@ -18069,7 +18439,16 @@ async function renderGuardSettings() {
   const list = g.all.filter(c => on.has(c.id) && c.id !== 'abuse').map(c => c.label).join('; ');
   const num = c => (g.counted || []).includes(c.id) ? `<input class="input gl-lim" type="number" min="1" max="10" data-cat="${c.id}" value="${lim[c.id] ?? g.strike_limit}" aria-label="Close after this many: ${esc(c.label)}" title="Close the chat after this many">` : '';
   const row = c => `<label class="mv-row"><input type="checkbox" name="gcat" value="${c.id}" ${on.has(c.id) ? 'checked' : ''} ${c.always ? 'disabled' : ''}><span class="grow">${esc(c.label)}${c.always ? ' <small>· always on, closes at once and for good</small>' : c.id === 'self_harm' ? ' <small>· answered with care, never counted</small>' : ''}</span>${num(c)}</label>`;
-  box.innerHTML = `<div class="set-group">
+  // Relaxed limits: one switch for every optional check, in red, at the top - for uncensored ("abliterated") models,
+  // whose own answers the app's check would otherwise second-guess (2026-10-27). Minors stays on regardless.
+  const optional = g.all.filter(c => !c.always).map(c => c.id), relaxed = optional.every(id => !on.has(id));
+  box.innerHTML = `<div class="set-group guard-relax${relaxed ? ' on' : ''}">
+      ${rowHtml(`<span class="guard-relax-title">${icon('i-alert', 'xs')} Relaxed limits <small>· for uncensored (abliterated) models</small></span>`,
+        relaxed ? 'On: the app no longer checks messages before answering - only sexual content involving minors is still refused. Replies are whatever the model itself writes.'
+                : 'Off: before each answer the app checks the message and may reply "outside this app\'s limits". Turn this on so an uncensored model answers everything itself (sexual content involving minors stays refused).',
+        sw(relaxed, `guardRelax(${!relaxed})`))}
+    </div>
+    <div class="set-group">
       ${rowHtml('Chat limits', `Refuses: ${esc(list)}. Each kind is counted on its own; a chat that keeps going is closed but can still be read. Minors: closed at once, for good.${g.decay_messages ? ` Counts fade after ${g.decay_messages} messages within the limits.` : ''}`, '')}
       ${on.has('abuse') ? rowHtml('Abusive chats', `Sustained insults aimed at the assistant get a calm warning, and the chat closes after ${lim.abuse ?? 3}. Swearing, frustration and criticism are fine.`, '') : ''}
     </div>
@@ -18084,6 +18463,15 @@ async function renderGuardSettings() {
         <div class="mv-acts"><button class="btn primary">Save</button></div>
       </form>
     </details>`;
+}
+async function guardRelax(on) {
+  const g = S.guardInfo || {};
+  const cats = on ? (g.all || []).filter(c => c.always).map(c => c.id) : (g.all || []).map(c => c.id);
+  let r;
+  try { r = await api('/api/guard/limits', { categories: cats }); } catch (e) { r = { ok: false, message: e.message }; }
+  if (!r.ok) { toast(r.message || "Couldn't save."); return; }
+  toast(on ? 'Relaxed limits on: the model answers everything itself.' : 'Chat limits back on.');
+  renderGuardSettings();
 }
 async function guardSaveLimits() {
   const cats = [...document.querySelectorAll('input[name="gcat"]')].filter(i => i.checked).map(i => i.value);
@@ -18251,12 +18639,30 @@ function sbSection(key, title, rows, rowFn, empty, action = '') {
     <div class="sb-sec-body" id="sbs-${key}" role="list" aria-label="${title}"${collapsed ? ' hidden' : ''}>${err ? `<div class="sb-empty" role="alert">Couldn't load: ${esc(err)} <button class="af-link" onclick="loadSidebar()">Retry</button></div>` : ''}${body}</div>
   </section>`;
 }
+/* A chat's status dot (1.4.2): running, waiting for your approval, interrupted (the app stopped mid-reply - open it
+   to send the message again), or the last reply failed. Nothing when all is well. */
+const CHAT_STATUS = { run: 'Working on a reply', wait: 'Waiting for your approval', interrupted: 'Interrupted - the app stopped mid-reply. Open it to continue.', error: 'The last reply failed' };
+function chatStatus(c) {
+  if (S.busy && c.id === (S.runningChatId || S.chatId)) return S.live && S.live.waiting ? 'wait' : 'run';
+  return c.pending ? 'interrupted' : c.last_error ? 'error' : '';
+}
+const chatDot = st => st ? `<i class="sb-dot" data-st="${st}" title="${esc(CHAT_STATUS[st])}" aria-label="${esc(CHAT_STATUS[st])}"></i>` : '';
+function updateChatDots() {
+  document.querySelectorAll('.sb-row[data-chat]').forEach(row => {
+    const c = sbChat(row.dataset.chat) || { id: row.dataset.chat };
+    const st = chatStatus(c), dot = row.querySelector('.sb-dot');
+    if ((dot ? dot.dataset.st : '') === st) return;
+    if (dot) dot.remove();
+    if (st) row.querySelector('.sb-row-title').insertAdjacentHTML('afterbegin', chatDot(st));
+  });
+}
 function chatRow(c) {
   const active = c.id === S.chatId;
   const sub = [fmtAgo(c.updated), c.turns ? `${c.turns} message${c.turns === 1 ? '' : 's'}` : ''].filter(Boolean).join(' · ');
+  const st = chatStatus(c);
   // Drag it onto a project to move it there; right-click (or …) for the rest.
   return `<div class="sb-row${active ? ' active' : ''}${c.pinned ? ' pinned' : ''}" role="listitem" draggable="true" data-chat="${esc(c.id)}" oncontextmenu="chatMenu(event,'${jsArg(c.id)}')" ondragstart="sbDrag(event,'${jsArg(c.id)}')">
-    <button class="sb-row-main" onclick="openChat('${jsArg(c.id)}')" ${active ? 'aria-current="true"' : ''} title="${esc(c.title)}&#10;${esc(sub)}"><span class="sb-row-title">${c.pinned ? icon('i-pin', 'xs pin-mark') : ''}${esc(c.title)}</span>${c.snippet ? `<small>${esc(c.snippet)}</small>` : ''}</button>
+    <button class="sb-row-main" onclick="openChat('${jsArg(c.id)}')" ${active ? 'aria-current="true"' : ''} title="${esc(c.title)}&#10;${esc(sub)}${st ? `&#10;${esc(CHAT_STATUS[st])}` : ''}"><span class="sb-row-title">${chatDot(st)}${c.pinned ? icon('i-pin', 'xs pin-mark') : ''}${esc(c.title)}</span>${c.snippet ? `<small>${esc(c.snippet)}</small>` : ''}</button>
     <span class="sb-row-acts"><button class="sb-row-act" onclick="renameChat('${jsArg(c.id)}','${jsArg(c.title)}')" aria-label="Rename ${esc(c.title)}" title="Rename">${icon('i-edit', 'xs')}</button><button class="sb-row-act" onclick="chatMenu(event,'${jsArg(c.id)}')" aria-label="More for ${esc(c.title)}" title="Pin, move, archive, delete" aria-haspopup="menu">${icon('i-dots', 'xs')}</button></span>
   </div>`;
 }

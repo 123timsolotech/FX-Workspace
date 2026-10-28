@@ -200,7 +200,11 @@ class BrowserPolicyTests(unittest.TestCase):
             with self.assertRaisesRegex(browser.BrowserError, "control port"):
                 self.b.ensure()
             connect.assert_not_called()
-            self.spawn.assert_not_called()
+            # The patch is process-wide, so a GPU poll from another test's background thread can land here too;
+            # only a browser launch (it always carries the debugging port) counts.
+            launches = [c for c in self.spawn.call_args_list
+                        if any(str(a).startswith("--remote-debugging-port") for a in c.args[0])]
+            self.assertEqual(launches, [])
 
 
 if __name__ == "__main__":

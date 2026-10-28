@@ -24,6 +24,7 @@ from run_control import run_control
 import studio_mcp
 import tool_registry
 import untrusted
+import url_guard
 
 import agent.models as llm
 import agent.parsing as parsing
@@ -85,6 +86,7 @@ def _append_tool_result(tc, tool_name, res):
         found = untrusted.find_instructions(message)
         if found:
             _report_embedded_instructions(tool_name, found)
+        url_guard.note_read(message)            # from here on, only addresses seen so far open by themselves
         message = untrusted.frame(tool_name, message, found)
     shared.app_state["conversation"].append({
         "role": "tool", "tool_call_id": tc.id, "name": tool_name,
@@ -351,6 +353,9 @@ def _decide(name: str, args, tainted: bool) -> tuple:
     the assistant; permissions.request_grantable). The grants end with the request (agent/tasks)."""
     settings = shared.app_state["settings"]
     bucket, why = permissions.explain(name, settings, tainted=tainted, args=args)
+    guard = url_guard.check(name, args) if bucket != "deny" else None
+    if guard and (guard[0] == "deny" or bucket == "auto"):
+        return guard                            # an address a page could have built, or one carrying a key
     if (bucket == "ask" and name in (shared.app_state.get("request_grants") or ())
             and permissions.request_grantable(name, settings, tainted=tainted, args=args)):
         return "auto", "you allowed it for the rest of this request"

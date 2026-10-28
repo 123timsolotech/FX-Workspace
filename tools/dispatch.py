@@ -98,8 +98,24 @@ def _run_cancellable(cmd, shell: bool, timeout: float, encoding: str = None) -> 
     """Run a process the user can stop: Stop kills it instead of waiting up to
     `timeout` for it to finish. errors="replace": a program printing bytes
     outside the console code page used to fail the whole tool."""
-    proc = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                            text=True, errors="replace", encoding=encoding)
+    import sandbox
+    try:
+        # A sandboxed chat: Low integrity, in a job object, in its scratch folder (sandbox.py) - or not at all.
+        proc = sandbox.boxed_popen(cmd, shell, encoding)
+    except Exception as e:
+        return {"ok": False, "status": "permanent_failure",
+                "message": f"The sandbox couldn't restrict this command, so it didn't run ({e})."}
+    if proc is None:
+        proc = subprocess.Popen(cmd, shell=shell, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                text=True, errors="replace", encoding=encoding)
+    try:
+        return _wait_cancellable(proc, timeout)
+    finally:
+        if isinstance(proc, sandbox.BoxedProcess):
+            proc.close()
+
+
+def _wait_cancellable(proc, timeout: float) -> dict:
     deadline = time.monotonic() + timeout
     while True:
         try:
@@ -155,7 +171,16 @@ def _browser_fallback(settings: dict) -> bool:
 
 
 def execute_tool(tool_name: str, args: dict) -> dict:
+    # A sandboxed chat (sandbox.py): files only in its scratch folder, no screen control.
+    import sandbox
+    args, refused = sandbox.confine(tool_name, args)
+    if refused:
+        return {"ok": False, "status": "permanent_failure", "message": refused}
     try:
+        if tool_name == "sandbox_copy_out":
+            return sandbox.copy_out(args.get("path", ""), args.get("destination", ""))
+        if tool_name == "windows_sandbox_run":
+            return sandbox.windows_sandbox_run(args.get("path", ""))
         # -------- messaging (messaging.py) and model routing (model_router.py)
         if tool_name in messaging.MESSAGING_TOOL_NAMES:
             return shared.messaging_hub.run_tool(tool_name, args)
@@ -742,6 +767,11 @@ def execute_tool(tool_name: str, args: dict) -> dict:
         elif tool_name == "send_notification":
             return productivity_tools.send_notification(args["title"], args["message"],
                                                          args.get("duration_seconds", 8))
+
+        elif tool_name == "mini_window":
+            import mini_window                          # this app's own window only: nothing outside the app changes
+            return mini_window.apply(args.get("action", "toggle"), args.get("opacity"), args.get("click_through"),
+                                     args.get("place"))
 
         elif tool_name == "save_memory":
             if privacy.active():

@@ -508,6 +508,9 @@ def classify_turn(message: str, with_vision: bool = False, previous: dict | None
     # "it says you have access to it, so do it pls": the request comes at the end.
     if not explicit_action and not question:
         explicit_action = bool(_DO_IT_RE.search(work))
+    # "Show / hide the mini window" changes the app's own window (the mini_window tool) - not a read, not chat.
+    if not explicit_action and not question:
+        explicit_action = bool(re.match(r"^(?:please\s+)?(?:show|hide|bring\s+(?:up|back)|pop\s+out)\b.*\bmini[\s-]?window\b", work))
     if explicit_action:
         return {"mode": "action", "allow_mutation": True, "reason": "explicit current-turn action"}
 

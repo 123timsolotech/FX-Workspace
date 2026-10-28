@@ -29,6 +29,8 @@ import context as ctx
 import elements
 import llama_local
 import local_runtime
+import mini_window
+import model_monitor
 import llama_builds
 import effort
 import memory
@@ -59,8 +61,8 @@ import system_metrics
 import web_tools
 from urllib.parse import urlparse
 from fastapi import Request
-from fastapi.responses import JSONResponse
-from starlette.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import JSONResponse, PlainTextResponse, RedirectResponse, HTMLResponse
+import remote_access
 
 import agent.benchmark_runner as benchmark_runner
 import agent.context_window as context_window
@@ -93,6 +95,8 @@ import osint.store as osint_store
 
 
 app = FastAPI()
+# A turn from your phone or a channel asks with a card, never a popup on the PC (approval_broker.remote_turn).
+approvals.broker.remote_turn = lambda: (shared.app_state.get("turn_origin") or "pc") != "pc"
 # The network layer reads its settings (Settings > Network) from the live settings.
 netlayer.configure(lambda: shared.app_state["settings"])
 finance.configure(lambda: shared.app_state["settings"])
@@ -141,15 +145,40 @@ def _refusal(request: Request) -> str | None:
     return None
 
 
+def _host_ok(request: Request) -> bool:
+    """TrustedHostMiddleware's check, with the phone listener's own address added while it runs (remote_access)."""
+    host = (request.headers.get("host") or "").split(":")[0].strip("[]").lower()
+    return host in ALLOWED_HOSTS or host in remote_access.allowed_hosts()
+
+
+def _phone_gate(request: Request):
+    """A request on the phone listener (remote_access.py): signed in, and not something only the PC may do."""
+    if not remote_access.is_remote(request.scope):
+        return None
+    path = request.url.path
+    if path in remote_access.OPEN_PATHS or path == "/hook" or path.startswith("/hook/"):
+        return None                          # the sign-in page; the webhook checks its own secret (channels.py)
+    if remote_access.session(request.cookies.get(remote_access.COOKIE)) is None:
+        if path.startswith(("/api/", "/roblox/")):
+            return JSONResponse({"status": "error", "ok": False, "message": "Sign in first."}, status_code=401)
+        return RedirectResponse("/remote/login", status_code=303)
+    if path.startswith("/roblox/") or remote_access.blocked(request.method, path):
+        return JSONResponse({"status": "error", "ok": False,
+                             "message": "Not from a phone - change this on the PC."}, status_code=403)
+    return None
+
+
 @app.middleware("http")
 async def _same_origin_only(request: Request, call_next):
+    if not _host_ok(request):
+        return PlainTextResponse("Invalid host header", status_code=400)
+    gate = _phone_gate(request)
+    if gate is not None:
+        return gate
     why = _refusal(request)
     if why:
         return JSONResponse({"status": "error", "ok": False, "message": why}, status_code=403)
     return await call_next(request)
-
-
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
 
 # Compare, Find models, Notes & tasks, Docs and Mail (api/extras.py).
 import api.extras as extras
@@ -167,11 +196,14 @@ def _gpu_wait() -> bool:
 
 
 @app.post("/api/chat")
-def start_chat(req: shared.ChatRequest):
+def start_chat(req: shared.ChatRequest, request: Request = None):
     """Start a turn in the background and return its id at once. The UI then
     long-polls GET /api/turn/{id}; a reloaded page finds it in /api/state."""
     if not req.message.strip():
         return {"status": "error", "message": "Empty message."}
+    if not tasks.turns.running():
+        # From your phone, screen/mouse/keyboard control stays off unless Phone access allows it (schemas.origin_off).
+        shared.app_state["turn_origin"] = "phone" if request is not None and remote_access.is_remote(request.scope) else "pc"
     open_temp = sessions.temporary_chat()
     if chat_guard.is_locked(shared.app_state.get("active_chat")):
         # Closed for pushing past the chat limits (chat_guard.py): readable, but nothing more is sent to it.
@@ -382,6 +414,13 @@ def get_local_models():
 
 
 class SettingsUpdate(BaseModel):
+    model_replies_only: bool | None = None   # Settings > This PC: no automatic model use outside replies (model_monitor)
+    close_to_tray: bool | None = None        # closing the window keeps the app in the tray (desktop/main.js)
+    mini_place: str | None = None            # the mini window's place (mini_window.py)
+    start_with_windows: bool | None = None   # the desktop app starts at sign-in...
+    start_hidden: bool | None = None         # ...in the tray
+    idle_unload: str | None = None           # minutes hidden and unused before the model is unloaded (idle_unload.py)
+    memory_overview: bool | None = None      # a one-line-per-topic memory overview in every chat (memory_graph.py)
     chat_font: str = None
     user_name: str = None
     cloud_allow_screenshots: bool = None
@@ -595,7 +634,7 @@ def update_settings(body: SettingsUpdate):
         netlayer.clear_blocked()
         if {"net_route", "net_proxy", "net_tor_port", "net_components"} & set(updates):
             browser.close_all()                   # the assistant's browser restarts with the new route's flags
-    if "overlay_window" in updates or "overlay_clickthrough" in updates or "overlay_opacity" in updates:
+    if {"overlay_window", "overlay_clickthrough", "overlay_opacity", "mini_place"} & set(updates):
         app_window.overlay_sync(current)
     if updates:
         event_log.log_action(f"Settings updated: {', '.join(updates.keys())}.")
@@ -679,8 +718,323 @@ def _context_status(mode: str | None = None, model: str | None = None) -> dict |
 
 @app.get("/api/context")
 def get_context(mode: str | None = None, model: str | None = None):
-    """How full the next request's context is, and the compression setting."""
-    return {"status": _context_status(mode, model), "thresholds": list(context_window.THRESHOLDS)}
+    """How full the next request's context is, the compression setting, and what the fixed part is made of
+    (asked when the meter's popover opens - not on every poll)."""
+    try:
+        _, local = _next_model(mode, model)
+        parts = context_window.breakdown(None, local)
+    except Exception as e:                 # the meter never breaks the page
+        event_log.log_action(f"Context breakdown unavailable: {str(e)[:120]}")
+        parts = None
+    return {"status": _context_status(mode, model), "thresholds": list(context_window.THRESHOLDS), "breakdown": parts}
+
+
+@app.get("/api/shell")
+def get_shell():
+    """What the desktop app applies about once a second (desktop/main.js): close-to-tray, and the mini window -
+    open, opacity, click-through, place, and Roblox Studio's window to sit over (mini_window.py)."""
+    return mini_window.shell_state()
+
+
+class ShellWindowBody(BaseModel):
+    visible: bool
+
+
+@app.post("/api/shell/window")
+def shell_window(body: ShellWindowBody):
+    """The desktop app's main window was shown or hidden in the tray: hidden and unused for a while, the model
+    leaves the GPU (idle_unload.py)."""
+    import idle_unload
+    idle_unload.start()
+    idle_unload.window(body.visible)
+    return {"ok": True}
+
+
+class MiniWindowBody(BaseModel):
+    action: str = "toggle"
+    opacity: float | None = None
+    click_through: bool | None = None
+    place: str | None = None
+
+
+@app.post("/api/mini-window")
+def set_mini_window(body: MiniWindowBody):
+    """The top bar's and the tray's mini-window button (the assistant's mini_window tool does the same)."""
+    return mini_window.apply(body.action, body.opacity, body.click_through, body.place)
+
+
+# ---- Phone access (remote_access.py): only from this PC - the phone listener refuses /api/remote ----------------
+@app.get("/api/remote")
+def remote_get():
+    return remote_access.status()
+
+
+class RemoteBody(BaseModel):
+    remote_access: str | None = None
+    remote_port: int | None = None
+    remote_allow_control: bool | None = None
+
+
+@app.post("/api/remote")
+def remote_set(body: RemoteBody):
+    current = shared.app_state["settings"]
+    changes = {k: v for k, v in config._dump_model(body).items() if v is not None}
+    current.update(remote_access.clean_settings({**current, **changes}))
+    config.save_settings(current)
+    if changes:
+        event_log.log_action(f"Phone access: {', '.join(f'{k}={v}' for k, v in changes.items())}.")
+    return remote_access.sync(current)
+
+
+class RemotePassword(BaseModel):
+    password: str
+
+
+@app.post("/api/remote/password")
+def remote_password(body: RemotePassword):
+    r = remote_access.set_password(body.password)
+    return {**r, "status": remote_access.sync()} if r["ok"] else r
+
+
+class RemoteSignOut(BaseModel):
+    device: str | None = None
+
+
+@app.post("/api/remote/sign-out")
+def remote_sign_out(body: RemoteSignOut):
+    n = remote_access.sign_out(body.device or None)
+    event_log.log_action(f"Phone access: signed out {n} device(s).")
+    return {"ok": True, "signed_out": n, "devices": remote_access.devices()}
+
+
+@app.get("/api/remote/qr.svg")
+def remote_qr():
+    st = remote_access.status()
+    if not st["url"]:
+        raise HTTPException(status_code=404, detail="Phone access isn't running.")
+    return Response(remote_access.qr_svg(st["url"]), media_type="image/svg+xml")
+
+
+@app.get("/remote/login")
+def remote_login_page():
+    return HTMLResponse(remote_access.LOGIN_PAGE)
+
+
+class RemoteLogin(BaseModel):
+    password: str = ""
+    device: str = ""
+
+
+@app.post("/remote/login")
+def remote_login(body: RemoteLogin, request: Request):
+    if not remote_access.is_remote(request.scope):
+        return JSONResponse({"ok": False, "message": "This sign-in is for your phone."}, status_code=403)
+    r = remote_access.login(request.client.host if request.client else "?", body.password, body.device)
+    if not r["ok"]:
+        return JSONResponse(r, status_code=401)
+    resp = JSONResponse({"ok": True})
+    resp.set_cookie(remote_access.COOKIE, r["token"], max_age=remote_access.SESSION_DAYS * 86400,
+                    httponly=True, samesite="strict", path="/")
+    return resp
+
+
+@app.get("/remote/manifest.webmanifest")
+def remote_manifest():
+    return JSONResponse(remote_access.MANIFEST, media_type="application/manifest+json")
+
+
+@app.get("/remote/icon.svg")
+def remote_icon():
+    return Response(remote_access.ICON, media_type="image/svg+xml")
+
+
+# ---- Channels (channels.py): Discord, Slack and a webhook ---------------------------------------------------------
+def _channel_turn(chat_id, message: str, origin: str, on_approval):
+    """One channel message as a turn in the channel's own chat. The chat open on the PC is reopened afterwards;
+    an approval card is passed to on_approval while the turn waits for it."""
+    if tasks.turns.running() or not shared.state_lock.acquire(timeout=2):
+        return chat_id, {"status": "error", "message": "Busy - another task is running on the PC. Try again soon."}
+    previous = (shared.app_state.get("active_chat") or {}).get("id")
+    previous_project = shared.app_state.get("active_project")
+    try:
+        _reset_conversation_locked()
+        if not (chat_id and shared.chat_store.load(chat_id) and sessions.open_chat(chat_id)):
+            shared.app_state["active_project"] = None       # a channel's chat is an Assistant session, in no project
+            sessions.new_chat()
+    finally:
+        shared.state_lock.release()
+    shared.app_state["turn_origin"] = origin
+    req = shared.ChatRequest(message=message, mode=shared.app_state.get("mode") or config.MODE_LOCAL,
+                             local_model=shared.app_state.get("local_model") or "")
+    req.command = None
+    turn = tasks.turns.start(req, {"message": message[:500], "with_vision": False, "command": None,
+                                   "event_seq": shared.app_state.get("event_seq", 0), "temp": None, "origin": origin})
+    if turn is None:
+        return chat_id, {"status": "error", "message": "Busy - another task is running on the PC."}
+    asked = None
+    while True:
+        done = tasks.turns.wait(turn["id"], 1.0)
+        if done is None or done.get("status") != "running":
+            break
+        p = approvals.broker.pending()
+        if p and p["id"] != asked:
+            asked = p["id"]
+            try:
+                on_approval(p)
+            except Exception:
+                pass
+    used = (shared.app_state.get("active_chat") or {}).get("id") or chat_id
+    shared.app_state["turn_origin"] = "pc"
+    if shared.state_lock.acquire(timeout=10):
+        try:                                            # back to what the PC had open
+            _reset_conversation_locked()
+            if not (previous and shared.chat_store.load(previous) and sessions.open_chat(previous)):
+                shared.app_state["active_project"] = previous_project
+                sessions.new_chat()
+        finally:
+            shared.state_lock.release()
+    return used, (done or {}).get("result") or {}
+
+
+import channels                                         # noqa: E402
+channels.configure(_channel_turn)
+
+
+@app.get("/api/channels")
+def channels_get():
+    return channels.status()
+
+
+class ChannelBody(BaseModel):
+    kind: str
+    enabled: bool | None = None
+    token: str | None = None
+    app_token: str | None = None
+    allow: list | str | None = None
+
+
+@app.post("/api/channels")
+def channels_set(body: ChannelBody):
+    return channels.configure_channel(body.kind, body.enabled, body.token, body.app_token, body.allow)
+
+
+@app.post("/api/channels/webhook-secret")
+def channels_new_secret():
+    return {"ok": True, "secret": channels.new_webhook_secret()}
+
+
+class HookBody(BaseModel):
+    message: str
+    secret: str | None = None
+    wait: float | None = 120
+
+
+def _hook_secret(request: Request, body_secret: str | None) -> str:
+    auth = request.headers.get("authorization") or ""
+    return auth[7:].strip() if auth.lower().startswith("bearer ") else (request.headers.get("x-fx-secret") or body_secret or "")
+
+
+@app.post("/hook")
+def hook(body: HookBody, request: Request):
+    """The webhook: Home Assistant, n8n, iOS Shortcuts... "Authorization: Bearer <secret>" (or "secret" in the
+    body). Answers within `wait` seconds, or says it needs an approval (one-time codes) or is still working."""
+    why = channels.hook_check(_hook_secret(request, body.secret), request.client.host if request.client else "?")
+    if why:
+        return JSONResponse({"status": "error", "message": why}, status_code=403)
+    return channels.hook_message(body.message[:8000], max(1.0, min(600.0, body.wait or 120)))
+
+
+@app.post("/hook/answer/{code}")
+def hook_answer(code: str):
+    return channels.hook_answer(code)
+
+
+class HookResult(BaseModel):
+    secret: str | None = None
+
+
+@app.post("/hook/result/{run_id}")
+def hook_result(run_id: str, body: HookResult, request: Request):
+    why = channels.hook_check(_hook_secret(request, body.secret), request.client.host if request.client else "?")
+    if why:
+        return JSONResponse({"status": "error", "message": why}, status_code=403)
+    return channels.hook_result(run_id)
+
+
+# ---- The MoE cache speed test (moe_test.py) -----------------------------------------------------------------------
+@app.get("/api/moe-test")
+def moe_test_get():
+    import moe_test
+    return moe_test.results()
+
+
+class MoeTestBody(BaseModel):
+    model: str
+
+
+@app.post("/api/moe-test")
+def moe_test_start(body: MoeTestBody):
+    import moe_test
+    if tasks.turns.running():
+        return {"ok": False, "message": "Wait for the reply to finish first."}
+    return moe_test.start(body.model)
+
+
+@app.get("/api/model-monitor")
+def get_model_monitor():
+    """Local model calls outside your replies since the app started (model_monitor) - Settings > This PC."""
+    return {"recent": model_monitor.recent(), "totals": model_monitor.totals(),
+            "replies_only": bool(shared.app_state["settings"].get("model_replies_only")),
+            "automatic": sorted(model_monitor.AUTOMATIC)}
+
+
+class ChatToolsBody(BaseModel):
+    group: str
+    on: bool
+
+
+@app.post("/api/chat-tools")
+def set_chat_tools(body: ChatToolsBody):
+    """Switch a tool group on or off for the open chat (the context meter's breakdown). Saved with the chat; a
+    temporary chat keeps it in memory only. The core group (plan, ask, look) can't be switched off."""
+    if body.group == "core":
+        return {"ok": False, "message": "The core tools can't be switched off."}
+    chat = shared.app_state.get("active_chat")
+    if not chat:
+        return {"ok": False, "message": "Open or start a chat first - the switch belongs to a chat."}
+    off = set(chat.get("tools_off") or ())
+    (off.discard if body.on else off.add)(body.group)
+    chat["tools_off"] = sorted(off)
+    if not sessions.temporary_chat() and chat.get("id"):
+        try:
+            shared.chat_store.set_tools_off(chat["id"], chat["tools_off"])
+        except Exception as e:
+            return {"ok": False, "message": f"Couldn't save the switch: {str(e)[:160]}"}
+    event_log.log_action(f"Tools {'on' if body.on else 'off'} for this chat: {body.group}.")
+    return {"ok": True, "tools_off": chat["tools_off"]}
+
+
+class ChatSandboxBody(BaseModel):
+    on: bool
+
+
+@app.post("/api/chat-sandbox")
+def set_chat_sandbox(body: ChatSandboxBody):
+    """Sandbox the open chat (sandbox.py): files only in its scratch folder, restricted commands, no screen control."""
+    import sandbox
+    if tasks.turns.running():
+        return {"ok": False, "message": "Wait for the reply to finish, or stop it, first."}
+    chat = shared.app_state.get("active_chat")
+    if not chat:
+        return {"ok": False, "message": "Open or start a chat first - the sandbox belongs to a chat."}
+    chat["sandboxed"] = bool(body.on)
+    if not sessions.temporary_chat() and chat.get("id"):
+        saved = shared.chat_store.load(chat["id"])
+        if saved is not None:
+            saved["sandboxed"] = bool(body.on)
+            shared.chat_store.save(saved, touch=False)
+    event_log.log_action(f"Sandbox {'on' if body.on else 'off'} for this chat.")
+    return {"ok": True, "sandboxed": bool(body.on), "folder": sandbox.folder() if body.on else None}
 
 
 class ContextCompressBody(BaseModel):
@@ -1070,6 +1424,8 @@ def warm_local_model(body: WarmRequest):
     model = (body.model or "").strip()
     if body.mode != config.MODE_LOCAL or not model:
         return {"started": False, "reason": "No local model is chosen."}
+    if model_monitor.blocked("Loading ahead while you type", shared.app_state.get("settings")):
+        return {"started": False, "reason": "Model use outside replies is off (Settings > This PC)."}
     if _warming["model"] or _model_loading() or shared.state_lock.locked() or local_runtime.busy() or labs.gpu_busy():
         return {"started": False, "reason": "Busy."}
     known = set(llama_local.server_models() or [])
@@ -1089,8 +1445,10 @@ def warm_local_model(body: WarmRequest):
                 seconds = llama_local.force_load(model, timeout=180)
                 system_metrics.finish_model_load(model)
                 llm.engage_local_model(model)
+                model_monitor.record(model, seconds=seconds, label="Load the model", source="Loading ahead while you type")
                 event_log.log_action(f"Loaded {model} while you typed ({seconds:.1f}s).")
         except Exception as e:
+            model_monitor.record(model, label="Load the model", source="Loading ahead while you type", ok=False)
             event_log.log_action(f"Couldn't load {model} ahead of the message: {str(e)[:160]}")
         finally:
             _warming["model"] = None
@@ -1122,6 +1480,11 @@ def _start_background_services():
     if os.environ.get("AGENTIC_DISABLE_NETGUARD") != "1":
         netlayer.install()
     netlayer.apply_env()
+    # Phone access, when it's on (remote_access.py): its listener starts once this server is up.
+    if (shared.app_state["settings"].get("remote_access") or "off") != "off":
+        threading.Timer(3, lambda: remote_access.sync()).start()
+    # Channels you connected (channels.py): their listeners, the same way.
+    threading.Timer(4, lambda: __import__("channels").start_all()).start()
     # A crash leaves temporary chats' folders behind: nothing of them survives a restart (privacy.py).
     swept = privacy.sweep()
     if swept:
@@ -1825,6 +2188,41 @@ def favicon(domain: str):
     if not hit[1]:
         return Response(status_code=404, headers={"Cache-Control": cache or "max-age=3600"})
     return Response(content=hit[1], media_type=hit[2], headers={"Cache-Control": cache or "max-age=86400"})
+
+
+@app.get("/api/identity")
+def identity_get():
+    """The assistant's identity file (identity.py) and a starter to fill it with."""
+    import identity
+    return {"soul": identity.get(), "starter": identity.STARTER, "path": identity.PATH}
+
+
+class SoulBody(BaseModel):
+    soul: str
+
+
+@app.post("/api/identity")
+def identity_set(body: SoulBody):
+    import identity
+    text = identity.save(body.soul)
+    event_log.log_action("Soul (who the assistant is) " + ("saved." if text else "cleared."))
+    return {"ok": True, "soul": text}
+
+
+@app.get("/api/memory/graph")
+def memory_graph_get():
+    import memory_graph
+    memory_graph.write_notes_if_stale()
+    return {**memory_graph.graph(), "notes_dir": memory_graph.notes_dir()}
+
+
+@app.post("/api/memory/maintain")
+def memory_maintain():
+    import memory_graph
+    report = memory_graph.maintain()
+    event_log.log_action(f"Memory upkeep: {len(report['removed'])} duplicate or outdated, {report['unlinked']} unlinked "
+                         f"from deleted projects, {report['notes']} notes written.")
+    return {"ok": True, **report}
 
 
 @app.get("/api/memory")
@@ -3170,6 +3568,37 @@ def labs_status():
 def labs_setup():
     event_log.log_action("Labs: setting up its engine (PyTorch).")
     return {"ok": True, "setup": labs.setup()}
+
+
+# ---- Labs > NCM story writer (ncm_lab.py, Beta) ----------------------------------------------------------------
+@app.get("/api/labs/ncm")
+def labs_ncm_status():
+    import ncm_lab
+    return ncm_lab.status()
+
+
+@app.post("/api/labs/ncm/setup")
+def labs_ncm_setup():
+    import ncm_lab
+    event_log.log_action(f"Labs: setting up the NCM story writer in {ncm_lab.ROOT} (about 600 MB).")
+    return ncm_lab.setup()
+
+
+@app.post("/api/labs/ncm/write")
+def labs_ncm_write():
+    import ncm_lab
+    return ncm_lab.write()
+
+
+@app.post("/api/labs/ncm/compare")
+def labs_ncm_compare():
+    import ncm_lab
+    if tasks.turns.running():
+        return {"ok": False, "message": "Wait for the reply to finish first."}
+    try:
+        return ncm_lab.compare_local()
+    except Exception as e:
+        return {"ok": False, "message": str(e)[:300]}
 
 
 @app.get("/api/labs/datasets")

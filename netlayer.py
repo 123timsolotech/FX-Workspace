@@ -568,6 +568,24 @@ def client(comp: str = "other", *, direct=None, timeout=20.0, private: bool | No
     return httpx.Client(**kwargs)
 
 
+def ws_session(comp: str = "other", **kwargs):
+    """An aiohttp session for a long-lived websocket (a chat channel's listener, channels.py). Direct mode only:
+    aiohttp can't follow a proxy or Tor route, and a channel must never go around one - in a routed mode, offline
+    work or Require VPN without a VPN it's refused (RouteBlocked), like any other connection the kill switch stops."""
+    import aiohttp
+    reason = _OFFLINE.get()
+    if reason:
+        _block(f"Blocked: {reason}", "offline", comp)
+    route = route_for(comp)
+    if route.routed:
+        _block(f"Channels connect directly, and the network route is {route.label} - turn it to Direct in Settings > "
+               "Network to use them.", "kill", comp)
+    if settings()["net_require_vpn"] and not vpn_status().get("active"):
+        _block("Require VPN is on and no VPN is connected.", "kill", comp)
+    _log({"component": comp, "host": "websocket", "route": route.label, "kind": "socket", "status": "channel"})
+    return aiohttp.ClientSession(trust_env=False, **kwargs)
+
+
 def local_client(timeout=10.0) -> httpx.Client:
     """For this PC's own services (llama-server, the browser's DevTools): refuses any other host."""
     return httpx.Client(timeout=timeout, trust_env=False, transport=_LocalOnly())

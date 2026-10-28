@@ -8,15 +8,16 @@ Everything runs on this PC by default. Nothing is sent anywhere unless you use a
 
 **[Download the latest installer](https://github.com/fuxion64-ctrl/FX-Workspace/releases/latest)** · [What's new in each version](CHANGELOG.md) · [All releases](https://github.com/fuxion64-ctrl/FX-Workspace/releases)
 
-## What's new in 1.4.1
+## What's new in 1.4.2
 
-- Replies start in about a second instead of 20-40 seconds.
-- The model loads while you type (Beta).
-- Stop works every time.
-- The System panel shows the right numbers.
-- Every icon has its own hover animation.
+- See what each chat costs the model, and turn tools off per chat.
+- It keeps working with the window closed, in the tray.
+- A built-in mini window that stays on top.
+- Use it from your phone, or from Discord, Slack (Beta) and a webhook.
+- A Soul file and memory that updates instead of piling up.
+- Sandboxed chats for risky tasks.
 
-See the [changelog](CHANGELOG.md) for every version, or the [full 1.4.1 notes](docs/releases/1.4.1.md).
+See the [changelog](CHANGELOG.md) for every version, or the [full 1.4.2 notes](docs/releases/1.4.2.md).
 
 ## Features
 

@@ -135,7 +135,12 @@ DEFAULT_SETTINGS = {
     "overlay_panels": {},               # {panel: {shown, collapsed, x, y, dock}} - positions persist
     "overlay_clickthrough": False,
     "overlay_opacity": 0.88,
-    "overlay_window": False,            # also an always-on-top window over Roblox Studio (app_window.py)
+    "overlay_window": False,            # the mini window: always on top (desktop/main.js; app_window.py outside it)
+    "mini_place": "studio",             # where it sits: over Roblox Studio (follows it), a screen corner, or where dragged
+    "close_to_tray": True,              # closing the window keeps the app running in the tray (desktop/main.js)
+    "start_with_windows": False,        # the desktop app starts when you sign in (Electron's login item)
+    "start_hidden": True,               # ...in the tray, without a window
+    "idle_unload": "15",                # minutes hidden and unused before the model leaves the GPU (idle_unload.py)
     "unlocked_themes": [],              # secret themes found (index.html SECRET_THEMES); never switched on by itself
     **image_gen.DEFAULT_SETTINGS,       # Settings > Images (image_gen.py)
     # MossadGPT's world monitor (osint/): feeds collected on this PC while it's on screen.
@@ -277,13 +282,20 @@ def _num(value, lo, hi, default):
     return default if v != v else max(lo, min(hi, v))
 
 
+MINI_PLACES = ("studio", "tr", "tl", "br", "bl", "free")     # the mini window: over Studio, a corner, or dragged
+IDLE_UNLOAD = ("off", "5", "15", "30", "60")   # minutes hidden in the tray and unused before the model leaves the GPU
+
+
 def clean_privacy_settings(s: dict) -> dict:
     """Web Search, Network, the Studio Overlay and secret themes: bad values -> defaults.
     An older settings.json has none of these keys; it loads unchanged and gets the defaults."""
     out = {"search_mode": s.get("search_mode") if s.get("search_mode") in SEARCH_MODES else "standard"}
     for key, default in (("search_preview", False), ("search_history", False), ("overlay_clickthrough", False),
-                         ("overlay_window", False)):
+                         ("overlay_window", False), ("close_to_tray", True), ("start_with_windows", False),
+                         ("start_hidden", True)):
         out[key] = s.get(key) if isinstance(s.get(key), bool) else default
+    out["mini_place"] = s.get("mini_place") if s.get("mini_place") in MINI_PLACES else "studio"
+    out["idle_unload"] = str(s.get("idle_unload")) if str(s.get("idle_unload")) in IDLE_UNLOAD else "15"
     out["search_cache_minutes"] = int(_num(s.get("search_cache_minutes", 15), 0, 1440, 15))
     out["search_history_days"] = int(_num(s.get("search_history_days", 30), 1, 365, 30))
     out.update(netlayer.clean_settings(s))

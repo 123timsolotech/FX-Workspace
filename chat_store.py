@@ -35,7 +35,9 @@ import history
 MAX_TRANSCRIPT = 400
 # Kept from the saved file when a save doesn't mention them (the open chat is
 # saved from its in-memory copy, which doesn't carry them).
-KEEP_KEYS = ("pinned", "archived", "branched_from", "guard")     # guard: strikes / lock (chat_guard.py)
+KEEP_KEYS = ("pinned", "archived", "branched_from", "guard",     # guard: strikes / lock (chat_guard.py)
+             "tools_off",                                       # tool groups switched off for this chat (tools/schemas)
+             "sandboxed")                                       # files only in a scratch folder, restricted commands (sandbox.py)
 MAX_CONVERSATION = 300
 _ID = re.compile(r"^[a-f0-9]{12}$")
 
@@ -144,6 +146,16 @@ class ChatStore:
                     chat[key] = bool(value)           # False, not removed: save() would bring the old value back
             return self.save(chat, touch=False)
 
+    def set_tools_off(self, chat_id: str, groups: list) -> dict | None:
+        """The tool groups switched off for this chat (tools/schemas.tool_group); an empty list is kept, not
+        removed - save() would bring the old value back."""
+        with self._lock:
+            chat = self.load(chat_id)
+            if chat is None:
+                return None
+            chat["tools_off"] = sorted({g for g in groups if isinstance(g, str) and g})
+            return self.save(chat, touch=False)
+
     def set_project(self, chat_id: str, project: str | None) -> dict | None:
         """Move a chat into a project (None: out of every project)."""
         with self._lock:
@@ -181,7 +193,11 @@ class ChatStore:
                 summary = {"id": chat_id, "title": chat.get("title") or "New chat", "project": chat.get("project"),
                            "created": chat.get("created"), "updated": chat.get("updated"),
                            "turns": sum(1 for e in transcript if e.get("r") == "u"), "last_reply": last[:300],
-                           "pinned": bool(chat.get("pinned")), "archived": bool(chat.get("archived"))}
+                           "pinned": bool(chat.get("pinned")), "archived": bool(chat.get("archived")),
+                           # The sidebar's status dot: a message saved as pending was never answered (the app stopped
+                           # mid-reply), or the last thing in the chat is an error.
+                           "pending": bool(chat.get("pending")),
+                           "last_error": bool(transcript) and isinstance(transcript[-1], dict) and transcript[-1].get("r") == "e"}
                 full = summary["title"] + " " + text
                 cached = (mtime, summary, full.casefold(), full)
                 self._summary[chat_id] = cached

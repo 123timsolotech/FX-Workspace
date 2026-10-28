@@ -247,8 +247,13 @@ class FitTests(unittest.TestCase):
         with patch.object(schemas, "_local_context_window", lambda: window), \
                 patch.object(schemas.roblox_bridge, "is_connected", lambda: True), \
                 patch.object(schemas, "mcp_schemas", lambda: mcp), patch.object(shared, "mcp_hub", hub), \
-                patch.dict(shared.app_state["settings"], {"skills_on": self.skills_on}), \
-                patch.dict(shared.app_state, {"chat_skills": [], "turn_skills": None}):     # a fresh chat's skills
+                patch.dict(shared.app_state["settings"], {"skills_on": self.skills_on, "auto_model_routing": False}), \
+                patch.dict(shared.app_state, {"chat_skills": [], "turn_skills": None,       # a fresh chat's skills
+                                              # nothing left from earlier tests: no open chat or project, no composer
+                                              # tools, a turn from this PC, and (skills off) no request words
+                                              "active_chat": None, "active_project": None, "turn_tools": (),
+                                              "turn_origin": "pc", "current_user_request":
+                                              shared.app_state.get("current_user_request") if self.skills_on else ""}):
             return schemas.tools_for_mode(True, "action")
 
     skills_on = False
@@ -267,7 +272,9 @@ class FitTests(unittest.TestCase):
         mcp = [n.split("__")[-1] for n in names if n.startswith("mcp__")]
         self.assertEqual(mcp[:3], ["execute_luau", "multi_edit", "insert_asset"])
         self.assertLess(len(mcp), 8)                                    # some left out - never the core ones
-        self.assertTrue({"execute_luau", "multi_edit", "insert_asset", "search_game_tree"} <= set(mcp))
+        self.assertTrue({"execute_luau", "multi_edit", "insert_asset", "search_game_tree"} <= set(mcp),
+                        f"MCP fitted: {mcp}; built-in ({schemas._cost([t for t in tools if not t['function']['name'].startswith('mcp__')])} "
+                        f"tokens): {sorted(n for n in names if not n.startswith('mcp__'))}")
         self.assertLessEqual(schemas._cost(tools) + schemas._cost(prompts.SYSTEM_PROMPT_COMPACT),
                              int(16_384 * schemas.TOOLS_SHARE))
         # Roblox's Studio MCP replaced the bridge tools it overlaps; roblox_status stays.

@@ -4,6 +4,20 @@ What changed in each version of FX Workspace, newest first. Each version links t
 
 Parts marked **Beta** work, but are still being finished.
 
+## 1.4.2 - 2026-10-28
+
+[Full notes](docs/releases/1.4.2.md)
+
+- **See what each chat costs:** a token breakdown behind the context meter, tool groups off per chat, status dots, and a monitor for background model calls.
+- **Keeps working with the window closed:** close to tray, done notifications, start with Windows, and the model unloads when hidden and idle.
+- **A built-in mini window** with a chat strip replaces the Edge overlay; the assistant can move it when you ask.
+- **Use it from your phone** over Tailscale or your home network, with a password.
+- **Discord and Slack (Beta) and a webhook,** with approvals in the channel.
+- **A Soul file, memory that replaces old facts** and linked memory notes; Work and Assistant chats.
+- **Sandboxed chats** and Windows Sandbox runs for risky tasks.
+- **Labs:** an MoE cache speed test and the NCM story writer (Beta).
+- **Safer:** prompt-injection defences, fair answers on politics, and a Relaxed limits switch for uncensored models.
+
 ## 1.4.1 - 2026-10-27
 
 [Full notes](docs/releases/1.4.1.md)

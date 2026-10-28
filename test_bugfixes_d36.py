@@ -145,6 +145,12 @@ class ModelSettingsSave(_Api):
         p = patch.object(llama_local, "_ini_path", return_value=self.ini)
         p.start()
         self.addCleanup(p.stop)
+        # A save restarts the router so it reads models.ini again. Never the real one: with the app open, this test
+        # restarted the user's llama-server and the orphan held the test runner open (2026-10-27).
+        import model_scan
+        r = patch.object(model_scan, "restart_router", return_value=False)
+        r.start()
+        self.addCleanup(r.stop)
 
     def test_blank_boxes_are_sent_as_null_and_the_save_works(self):
         """The UI's exact request: blank boxes are null. That was a 422, shown as 'Save failed'."""

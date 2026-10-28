@@ -89,7 +89,7 @@ Name: "{app}\data"
 [Icons]
 Name: "{autoprograms}\{#AppName}"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; Comment: "Your private, local AI assistant"
 Name: "{autodesktop}\{#AppName}"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; Tasks: desktopicon
-Name: "{userstartup}\{#AppName}"; Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; Tasks: startup
+Name: "{userstartup}\{#AppName}"; Filename: "{app}\{#AppExe}"; Parameters: "--hidden"; WorkingDir: "{app}"; Tasks: startup
 
 [Registry]
 ; Models and engines on another drive: the app reads AGENTIC_HOME (paths.py). Only set when it isn't the default.

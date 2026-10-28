@@ -113,6 +113,65 @@ def status(model: str | None = None, local: bool | None = None, known: bool = Tr
             "auto_at": threshold(), "last": shared.app_state.get("context_last_compression")}
 
 
+def _group_label(group: str) -> str:
+    import skills
+    if group.startswith("mcp:"):
+        return f"MCP server: {group[4:]}"
+    return "Core (plan, ask, look)" if group == "core" else skills.NAMES.get(group, group)
+
+
+def breakdown(model: str | None = None, local: bool | None = None) -> dict:
+    """What the next request's fixed part is made of (the context meter's "What's using it", 2026-10-27): each
+    block of the system prompt, and the tools by group - with the groups this chat switched off, and what each
+    would cost on. Estimates (characters per token); the last reply's measured prompt size is in its footer."""
+    import personas
+    import system_messages
+    local = (shared.app_state.get("mode") == config.MODE_LOCAL) if local is None else local
+    tok = lambda text: history.approx_tokens({"s": text}) if text else 0      # noqa: E731
+    parts = []
+    if not shared.app_state.get("raw_mode"):
+        selected = system_messages.clean_settings(shared.app_state.get("turn_system_message")
+                                                  or shared.app_state.get("settings"))
+        offered = [t["function"]["name"] for t in schemas.tools_for_current_turn(local)]
+        base = system_messages.resolve(selected, local, None)
+        if selected["system_message_variant"] != "custom":
+            base = prompts.for_tools(base, offered, schemas.TOOL_NAMES)
+        parts.append({"label": "Instructions (system message)", "tokens": tok(base)})
+        studio = prompts.studio_rules(offered)
+        if studio:
+            parts.append({"label": "Roblox Studio rules", "tokens": tok(studio)})
+        import identity
+        soul = identity.block()
+        if soul:
+            parts.append({"label": "Soul (who the assistant is)", "tokens": tok(soul)})
+        if shared.app_state.get("turn_persona"):
+            parts.append({"label": "Persona", "tokens": tok(personas.block(shared.app_state["turn_persona"]))})
+        import memory_graph
+        overview = memory_graph.overview_block()
+        if overview:
+            parts.append({"label": "Memory overview", "tokens": tok(overview)})
+    summary = shared.app_state.get("context_summary") or ""
+    if summary:
+        parts.append({"label": "Summary of earlier messages", "tokens": tok(summary_block(summary))})
+    parts.append({"label": "Live machine state", "tokens": LIVE_BLOCK_TOKENS})
+    off = schemas.chat_tools_off()
+    groups: dict[str, dict] = {}
+    for t in schemas._tools_for_mode(local, "action"):
+        g = schemas.tool_group(t["function"]["name"])
+        e = groups.setdefault(g, {"group": g, "label": _group_label(g), "tools": 0, "tokens": 0, "on": g not in off,
+                                  "switchable": g != "core"})
+        e["tools"] += 1
+        e["tokens"] += history.approx_tokens({"t": [t]})
+    for g in off - set(groups):                    # off and not offered now: still listed, so it can be switched back on
+        groups[g] = {"group": g, "label": _group_label(g), "tools": 0, "tokens": 0, "on": False, "switchable": True}
+    tools = sorted(groups.values(), key=lambda e: (not e["on"], -e["tokens"]))
+    import sandbox
+    return {"parts": parts, "tools": tools, "session": schemas.session_kind(), "sandboxed": sandbox.active(),
+            "sandbox_folder": sandbox.folder(create=False) if sandbox.active() else None,
+            "tools_tokens": sum(e["tokens"] for e in tools if e["on"]),
+            "parts_tokens": sum(p["tokens"] for p in parts)}
+
+
 def _summarize(text: str) -> str | None:
     reply = llm.model_json(context_compress.SUMMARIZER_PROMPT, text, max_tokens=1400)
     return context_compress.parse_summary(reply)

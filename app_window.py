@@ -201,6 +201,22 @@ def style_window(hwnd, opacity: float, click_through: bool) -> None:
     _user32.SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_QUIET)
 
 
+WS_EX_TOPMOST = 0x00000008
+
+
+def keep_on_top(title: str) -> bool:
+    """The desktop app's mini window on top of everything. Electron's setAlwaysOnTop doesn't stick on Windows (the
+    SWP_NOOWNERZORDER case above), so the server pins it - only when it isn't topmost already."""
+    if not WINDOWS:
+        return False
+    for hwnd, t in _windows():
+        if t == title:
+            if not _user32.GetWindowLongW(hwnd, GWL_EXSTYLE) & WS_EX_TOPMOST:
+                _user32.SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_QUIET)
+            return True
+    return False
+
+
 class _Overlay:
     """The overlay window: opened, kept on top and moved with Roblox Studio by one thread."""
 
@@ -290,12 +306,32 @@ def overlay_sync(settings: dict) -> None:
     if not WINDOWS:
         _overlay.state = "unsupported"
         return
+    if in_desktop_app():
+        # The desktop app draws the mini window itself (desktop/main.js reads /api/shell) - no Edge window. One
+        # left over from an older version is closed.
+        if _overlay.state != "off" or find_hud():
+            threading.Thread(target=_overlay.close, daemon=True, name="overlay-close").start()
+        return
     _overlay.settings = {"opacity": float(settings.get("overlay_opacity") or 0.88),
                          "click_through": bool(settings.get("overlay_clickthrough"))}
     if settings.get("overlay_window"):
         _overlay.start()
     elif _overlay.state != "off" or find_hud():
         threading.Thread(target=_overlay.close, daemon=True, name="overlay-close").start()
+
+
+def in_desktop_app() -> bool:
+    """Running under the desktop app (desktop/main.js starts the launcher with FX_SHELL=electron)."""
+    return os.environ.get("FX_SHELL") == "electron"
+
+
+def studio_rect() -> list | None:
+    """Roblox Studio's window [left, top, right, bottom], for the mini window to sit over and follow."""
+    if not WINDOWS:
+        return None
+    hwnd = find_studio()
+    r = _rect(hwnd) if hwnd else None
+    return list(r) if r else None
 
 
 def overlay_close() -> None:

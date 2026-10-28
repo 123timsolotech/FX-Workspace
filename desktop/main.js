@@ -9,7 +9,7 @@
 // Python side has Windows-only features - see docs/DESKTOP.md).
 'use strict';
 
-const { app, BrowserWindow, Tray, Menu, shell, session, dialog, nativeImage, ipcMain } = require('electron');
+const { app, BrowserWindow, Tray, Menu, shell, session, dialog, nativeImage, ipcMain, Notification, screen } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const http = require('http');
@@ -34,6 +34,11 @@ let win = null;
 let tray = null;
 let server = null;                           // the launcher, when this app started it
 let quitting = false;
+let mini = null;                             // the mini window (mini_window.py): always on top, the ?hud=1 page
+let shellState = { close_to_tray: true, mini: { open: false } };   // GET /api/shell, read about once a second
+const MINI_SIZE = { width: 360, height: 460 };
+const START_HIDDEN = process.argv.includes('--hidden');   // the sign-in start (setLoginItemSettings below)
+let loginKey = null;
 
 // ---- where the app is --------------------------------------------------------------------------------
 // FX_ROOT, else the first folder up from here (or the installed exe) that has launcher.pyw.
@@ -134,13 +139,27 @@ function createWindow() {
     // No white system title bar: the app's own top bar is the title bar (it marks itself draggable), and the
     // window buttons are drawn over its right end in the theme's colours (the page sends them: fx-titlebar).
     titleBarStyle: 'hidden', titleBarOverlay: { color: '#1f1e1c', symbolColor: '#ece9e2', height: TITLEBAR_H },
-    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: true,
+    // backgroundThrottling off: hidden in the tray, the page still follows a reply and says when it is done.
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: true, backgroundThrottling: false,
                       preload: path.join(__dirname, 'preload.js') },
   });
   if (b.maximized) win.maximize();
-  win.once('ready-to-show', () => win.show());
-  win.on('close', saveBounds);
-  win.on('closed', () => { win = null; });
+  // Started at sign-in with "start hidden" (Settings > Appearance): straight to the tray, no window.
+  win.once('ready-to-show', () => { if (!START_HIDDEN) win.show(); });
+  // Hidden or minimised and unused for a while, the model leaves the GPU (idle_unload.py).
+  for (const [ev, visible] of [['hide', false], ['minimize', false], ['show', true], ['restore', true]]) {
+    win.on(ev, () => postJSON('/api/shell/window', { visible }));
+  }
+  // Closing the window keeps the app running in the tray (Settings > Appearance, close_to_tray): a reply, routines
+  // and the model carry on. Quit is in the tray menu. The first time, a note says where it went.
+  win.on('close', e => {
+    saveBounds();
+    if (quitting || shellState.close_to_tray === false) return;
+    e.preventDefault();
+    win.hide();
+    firstHideNote();
+  });
+  win.on('closed', () => { win = null; if (!quitting) { quitting = true; app.quit(); } });
 
   // Links to other sites open in the user's own browser; the app's own pop-ups (an image, a preview) stay here.
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -170,12 +189,160 @@ function createTray() {
     tray = new Tray(nativeImage.createFromPath(asset(IS_WIN ? 'icon.ico' : 'tray.png')));
   } catch (e) { return; }                    // some Linux desktops have no tray
   tray.setToolTip(TITLE);
+  updateTrayMenu();
+  tray.on('click', showWindow);
+}
+
+function updateTrayMenu() {
+  if (!tray) return;
+  const m = shellState.mini || {};
   tray.setContextMenu(Menu.buildFromTemplate([
     { label: 'Show FX Workspace', click: showWindow },
+    { label: 'Mini window', type: 'checkbox', checked: !!m.open, click: () => miniAction({ action: m.open ? 'close' : 'open' }) },
+    { label: 'Clicks pass through the mini window', type: 'checkbox', checked: !!m.click_through, enabled: !!m.open,
+      click: () => miniAction({ action: 'set', click_through: !m.click_through }) },
     { type: 'separator' },
-    { label: 'Quit', click: () => { quitting = true; app.quit(); } },
+    { label: 'Quit FX Workspace', click: () => { quitting = true; app.quit(); } },
   ]));
-  tray.on('click', showWindow);
+}
+
+// ---- talking to the server (JSON over the local port) ----------------------------------------------------
+function getJSON(p) {
+  return new Promise(resolve => {
+    const req = http.get(APP_URL + p, { timeout: 2500 }, res => {
+      let body = ''; res.setEncoding('utf8'); res.on('data', c => { body += c; });
+      res.on('end', () => { try { resolve(JSON.parse(body)); } catch (e) { resolve(null); } });
+    });
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+  });
+}
+function postJSON(p, data) {
+  return new Promise(resolve => {
+    const body = JSON.stringify(data || {});
+    const req = http.request(APP_URL + p, { method: 'POST', timeout: 4000, headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) } }, res => {
+      let out = ''; res.setEncoding('utf8'); res.on('data', c => { out += c; });
+      res.on('end', () => { try { resolve(JSON.parse(out)); } catch (e) { resolve(null); } });
+    });
+    req.on('error', () => resolve(null));
+    req.on('timeout', () => { req.destroy(); resolve(null); });
+    req.end(body);
+  });
+}
+async function miniAction(body) {
+  await postJSON('/api/mini-window', body);
+  await pollShell();
+}
+
+// ---- the first close: where the app went -------------------------------------------------------------------
+function firstHideNote() {
+  const f = path.join(app.getPath('userData'), 'tray-note.json');
+  if (fs.existsSync(f)) return;
+  try { fs.writeFileSync(f, '{"shown":true}'); } catch (e) { /* not important */ }
+  if (Notification.isSupported()) {
+    const n = new Notification({ title: 'FX Workspace is still running', icon: asset(IS_WIN ? 'icon.ico' : 'icon.png'),
+      body: 'It keeps working in the tray - a reply in progress finishes. Quit from the tray icon, or turn this off in Settings › Appearance.' });
+    n.on('click', showWindow);
+    n.show();
+  }
+}
+
+// ---- the mini window ------------------------------------------------------------------------------------------
+// Placed by the server's settings: over Roblox Studio (moving with it), a corner of the screen, or where you dragged
+// it. setOpacity and setIgnoreMouseEvents are real window options here - the Edge window needed Win32 calls.
+let miniPlacing = false, lastStudio = null, lastPlace = null;
+function miniBoundsFile() { return path.join(app.getPath('userData'), 'mini.json'); }
+function placeMini(m, studio) {
+  if (!mini) return;
+  const [w, h] = mini.getSize();
+  let x = null, y = null;
+  if (m.place === 'studio' && studio) {
+    const key = studio.join(',');
+    if (key === lastStudio && lastPlace === 'studio') return;          // Studio didn't move
+    x = studio[2] - w - 24; y = studio[1] + 120;
+    lastStudio = key;
+  } else if (m.place === 'free') {
+    if (lastPlace === 'free') return;
+    try { const b = JSON.parse(fs.readFileSync(miniBoundsFile(), 'utf8')); x = b.x; y = b.y; } catch (e) { return; }
+  } else {
+    if (lastPlace === m.place) return;
+    const wa = screen.getPrimaryDisplay().workArea, pad = 16, corner = m.place === 'studio' ? 'tr' : m.place;
+    x = corner.endsWith('r') ? wa.x + wa.width - w - pad : wa.x + pad;
+    y = corner.startsWith('b') ? wa.y + wa.height - h - pad : wa.y + pad;
+  }
+  lastPlace = m.place === 'studio' && !studio ? 'tr' : m.place;
+  if (x == null) return;
+  miniPlacing = true;
+  mini.setPosition(Math.round(x), Math.round(y));
+  setTimeout(() => { miniPlacing = false; }, 300);
+}
+function applyMini(m, studio) {
+  if (!m || !m.open) {
+    if (mini) { const w = mini; mini = null; w.destroy(); }
+    lastStudio = null; lastPlace = null;
+    return;
+  }
+  if (!mini) {
+    mini = new BrowserWindow({
+      ...MINI_SIZE, minWidth: 260, minHeight: 200, frame: false, alwaysOnTop: true, skipTaskbar: true,
+      minimizable: false, maximizable: false, fullscreenable: false, show: false, title: `${TITLE} mini`,
+      backgroundColor: '#1f1e1c', icon: asset(IS_WIN ? 'icon.ico' : 'icon.png'),
+      webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, backgroundThrottling: false,
+                        preload: path.join(__dirname, 'preload.js') },
+    });
+    mini.setAlwaysOnTop(true, 'floating');
+    // Keep "FX Workspace mini": the page's own title is the old Edge HUD's, which the server closes on sight.
+    mini.on('page-title-updated', e => e.preventDefault());
+    mini.loadURL(APP_URL + '/?hud=1');
+    mini.once('ready-to-show', () => {
+      if (!mini) return;
+      mini.showInactive();                                                  // never steals focus from your game or Studio
+      mini.moveTop();          // on Windows "always on top" doesn't stick from here: the server pins it (keep_on_top)
+    });
+    mini.on('moved', () => {
+      if (miniPlacing || !mini) return;
+      try { fs.writeFileSync(miniBoundsFile(), JSON.stringify(mini.getBounds())); } catch (e) { /* not important */ }
+      if ((shellState.mini || {}).place !== 'free') postJSON('/api/mini-window', { action: 'set', place: 'free' });
+      lastPlace = 'free';
+    });
+    mini.on('closed', () => { if (mini) { mini = null; if (!quitting) postJSON('/api/mini-window', { action: 'close' }); } });
+  }
+  mini.setOpacity(Math.max(0.3, Math.min(1, Number(m.opacity) || 0.88)));
+  mini.setIgnoreMouseEvents(!!m.click_through, { forward: true });
+  placeMini(m, studio);
+}
+
+// ---- starting with Windows (Settings > Appearance): Windows' own login item, only for the installed app ----------
+function applyLogin(login) {
+  if (!login || !app.isPackaged) return;
+  const key = JSON.stringify(login);
+  if (key === loginKey) return;
+  loginKey = key;
+  try {
+    app.setLoginItemSettings({ openAtLogin: !!login.start_with_windows, args: login.start_hidden ? ['--hidden'] : [] });
+  } catch (e) { /* not supported here */ }
+}
+
+// ---- the shell state: the server's settings for this window, about once a second ---------------------------------
+async function pollShell() {
+  const st = await getJSON('/api/shell');
+  if (!st) return;
+  const before = JSON.stringify(shellState.mini);
+  shellState = st;
+  try {
+    applyLogin(st.login);
+    applyMini(st.mini, st.studio_rect);
+    if (JSON.stringify(st.mini) !== before) updateTrayMenu();
+  } catch (e) { console.error('[mini window]', e); }
+}
+
+// ---- notifications: a reply is ready, or waits for your approval, while the app isn't in front ---------------
+function notify({ title, body, chatId } = {}) {
+  if (!Notification.isSupported()) return;
+  if (win && win.isVisible() && win.isFocused()) return;              // you're looking at it already
+  const n = new Notification({ title: title || TITLE, body: body || '', icon: asset(IS_WIN ? 'icon.ico' : 'icon.png') });
+  n.on('click', () => { showWindow(); if (chatId && win) win.webContents.send('fx-open-chat', chatId); });
+  n.show();
 }
 
 function showWindow() {
@@ -211,6 +378,8 @@ if (!app.requestSingleInstanceLock()) {
       try { w.setTitleBarOverlay({ color: bg, symbolColor: fg, height: Math.max(28, Math.min(64, Math.round(height) || TITLEBAR_H)) }); } catch (err) { /* not supported here */ }
     }
   });
+  ipcMain.on('fx-show-main', showWindow);
+  ipcMain.on('fx-notify', (_e, data) => notify(data));
   app.setAppUserModelId('com.fuxion.fxworkspace');
   app.whenReady().then(async () => {
     Menu.setApplicationMenu(null);
@@ -225,8 +394,12 @@ if (!app.requestSingleInstanceLock()) {
       return;
     }
     if (win) win.loadURL(APP_URL);
+    if (START_HIDDEN) postJSON('/api/shell/window', { visible: false });
+    await pollShell();
+    setInterval(pollShell, 1000);
   });
-  // Closing the window closes the app (and with it the server and the model), as the browser window did.
-  app.on('window-all-closed', () => { quitting = true; app.quit(); });
+  // The main window closing for good (close-to-tray off) quits from its 'closed' handler; the mini window alone
+  // closing never quits the app.
+  app.on('window-all-closed', () => { if (!win) { quitting = true; app.quit(); } });
   app.on('before-quit', () => { quitting = true; saveBounds(); stopServer(); });
 }

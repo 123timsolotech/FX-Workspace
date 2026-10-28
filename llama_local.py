@@ -497,7 +497,7 @@ def update_model_config(name: str, **fields) -> None:
 
 # Preset keys diagnostics.py may set (llama-server option names without the dashes).
 OPTION_KEYS = {"ctx-size", "ngl", "batch-size", "ubatch-size", "threads", "flash-attn", "cache-type-k", "cache-type-v",
-               "n-cpu-moe", "fit", "fit-target", "load-mode"}
+               "n-cpu-moe", "fit", "fit-target", "load-mode", "moe-cache-mib"}   # moe-cache-mib: moe_test.py
 
 
 @serialized_ini

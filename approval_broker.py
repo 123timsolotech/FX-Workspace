@@ -60,6 +60,8 @@ class ApprovalBroker:
         # How the last request was answered: "once", or "request" - "Allow all like this for this
         # request" (the caller then lets the same tools run unasked until the request ends).
         self.last_scope = "once"
+        # Set by api/server: True while the running turn came from your phone or a channel (remote_access, channels).
+        self.remote_turn = lambda: False
 
     # ------------------------------------------------------------- browser
     def heartbeat(self, focused: bool):
@@ -124,8 +126,10 @@ class ApprovalBroker:
         Stop) the card is withdrawn and the request counts as declined."""
         cancelled = cancelled or (lambda: False)
         self.last_scope = "once"                    # the desktop popup and a withdrawn card allow once at most
-        native_ok = bool(self.native_available())
-        if not self.web_available() and (native_ok or not self._tab_alive()):
+        # A turn from your phone or a channel: the card (answered there, or on the PC) - never a popup on a PC
+        # nobody may be sitting at.
+        native_ok = bool(self.native_available()) and not self.remote_turn()
+        if not self.remote_turn() and not self.web_available() and (native_ok or not self._tab_alive()):
             return bool(self._native(actions, context_line, cancelled))
         event = threading.Event()
         entry = {"id": uuid.uuid4().hex[:10], "actions": _public_actions(actions), "context": context_line,

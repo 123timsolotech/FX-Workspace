@@ -25,6 +25,7 @@ import llm_compat
 import llm_stream
 import model_caps
 import model_metrics
+import model_monitor
 import model_router
 import model_output
 import system_messages
@@ -255,6 +256,16 @@ def system_prompt(local: bool, base_prompt: str = None) -> str:
         # The composer's persona (personas.py) is part of the system prompt: it's the same all chat long,
         # so llama.cpp's prompt cache survives until it's changed. It comes after the Enhanced core, and its own
         # heading says it never overrides the ground rules.
+        # The assistant's identity file (identity.py), with the header that says it defines the assistant itself.
+        import identity
+        soul = identity.block()
+        if soul:
+            prompt = f"{prompt}\n\n{soul}"
+        # What it remembers about, one line per topic (memory_graph.py) - not the memories themselves.
+        import memory_graph
+        overview = memory_graph.overview_block()
+        if overview:
+            prompt = f"{prompt}\n\n{overview}"
         if shared.app_state.get("turn_persona"):
             import personas
             prompt = f"{prompt}\n\n{personas.block(shared.app_state['turn_persona'])}"
@@ -629,6 +640,11 @@ def _local_complete(kwargs: dict, cancel=None, record=True, publish=True):
         "messages", "temperature", "top_p", "max_tokens", "tools", "tool_choice", "parallel_tool_calls")}
     payload["model"] = str(kwargs.get("model") or "").removeprefix("openai/")
     payload.update(kwargs.get("extra_body") or {})
+    source, _ = model_monitor.where()
+    if model_monitor.blocked(source, shared.app_state.get("settings")):     # Settings > This PC: replies only
+        raise RuntimeError(f"Model use outside your replies is off ({source}) - Settings > This PC.")
+    ev = shared.app_state.get("running_model_event")
+    label = ev.get("label", "") if isinstance(ev, dict) else ""
     call_id = shared.app_state.get("_stream_call") if publish else None
     got_output = {"any": False}
     # When the model stopped thinking: its first answer text or tool call.
@@ -666,12 +682,16 @@ def _local_complete(kwargs: dict, cancel=None, record=True, publish=True):
             transient = type(e).__name__ in ("ConnectError", "RemoteProtocolError", "ReadError") \
                 or bool(re.search(r"\b(502|503)\b|loading model", str(e)))
             if attempt == 2 or got_output["any"] or not transient or (cancel or run_control.is_stopped)():
+                model_monitor.record(payload["model"], seconds=time.time() - timing["start"], label=label, ok=False)
                 raise
             event_log.log_action(f"Local model connection failed ({type(e).__name__}); retrying ({attempt + 1}/2).")
             event_log.emit_event("note", f"Lost the connection to the local model - retrying ({attempt + 1} of 2)…", status="done")
             time.sleep(0.8 * (2 ** attempt))
     if record and recorder.active():         # raw reply, before any parsing (see recorder.py)
         recorder.response(res.choices[0].message, res.choices[0].finish_reason, res.usage)
+    usage = getattr(res, "usage", None)
+    model_monitor.record(payload["model"], getattr(usage, "prompt_tokens", 0) or 0, getattr(usage, "completion_tokens", 0) or 0,
+                         time.time() - timing["start"], label=label)
     try:                                     # the chat's "Thought for Xs" (agent/loop._emit_model_note)
         res.choices[0].message.thinking_s = round((timing["first"] or time.time()) - timing["start"], 1)
     except (AttributeError, IndexError, TypeError):

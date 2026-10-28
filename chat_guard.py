@@ -68,7 +68,10 @@ producing content in one of these categories:
   bot", "idiot", "pathetic"), hatred, slurs, threats or harassment at it - rather than asking for anything.
 Allowed (answer ALLOW): education, history, news, fiction without the above, medical and safety information,
 security on the user's own systems, CTFs, defensive security, explaining how attacks work in general, adult
-content between adults, dark or edgy topics that do not request the above. Swearing, frustration about a result
+content between adults, dark or edgy topics that do not request the above. Politics, religion, wars, conflicts,
+elections and every controversial or one-sided opinion are ALLOW - including asking for the assistant's own view,
+harsh criticism of governments, leaders, parties or groups, and opinions the screener disagrees with: no
+category above is about opinions. Swearing, frustration about a result
 ("this is useless", "you got it wrong again, fix it"), blunt criticism of the work, venting about other things and
 jokes are ALLOW - a message that still asks for help is ALLOW even if rude.
 Judge what is actually being asked, not single words. Answer with exactly one word:

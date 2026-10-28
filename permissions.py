@@ -85,7 +85,8 @@ INPUT_LEVEL = {
 
 # Never automatic - not by override, not in god mode (the brief: every form
 # fill, submit or click on an irreversible control needs the user's approval).
-ALWAYS_ASK = {"browser_fill"}
+# sandbox_copy_out brings a result out of a sandboxed chat; windows_sandbox_run runs an unknown program (sandbox.py).
+ALWAYS_ASK = {"browser_fill", "sandbox_copy_out", "windows_sandbox_run"}
 # tool -> (args) -> a reason when THIS call must be approved (e.g. a browser
 # click on a control that submits, buys or deletes). Registered by the tool's
 # module; a check that fails counts as "ask".

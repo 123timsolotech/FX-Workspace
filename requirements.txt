@@ -22,3 +22,4 @@ phonikud-onnx==1.0.6
 piper-onnx==1.0.6     # Hebrew speech on CPU; models installed by Voice setup
 winrt-Windows.Media.Control[all]==3.2.1; sys_platform == "win32"
 sgp4==2.27            # osint: satellite positions from CelesTrak orbit data, computed on this PC
+segno==1.6.6           # remote_access.py: the QR code for your phone (pure Python)

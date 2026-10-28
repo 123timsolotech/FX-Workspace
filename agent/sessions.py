@@ -479,6 +479,10 @@ def open_chat(chat_id: str) -> dict | None:
     shared.app_state["active_chat"] = {k: chat.get(k) for k in ("id", "title", "project", "created", "updated", "transcript")}
     if chat.get("guard"):                                  # strikes / lock (chat_guard.py) stay with the chat
         shared.app_state["active_chat"]["guard"] = chat["guard"]
+    if chat.get("tools_off"):                              # tool groups switched off for this chat (tools/schemas)
+        shared.app_state["active_chat"]["tools_off"] = list(chat["tools_off"])
+    if chat.get("sandboxed"):                              # a sandboxed chat (sandbox.py)
+        shared.app_state["active_chat"]["sandboxed"] = True
     pid = chat.get("project")
     shared.app_state["active_project"] = shared.project_store.get(pid) if pid else None
     _save_session()

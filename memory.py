@@ -105,6 +105,16 @@ class MemoryStore:
             if same:
                 return same
             now = time.time()
+            # One subject, one value (1.4.2): "my GPU is a 4070" after "my GPU is a 3060" updates that memory
+            # instead of keeping both - a contradiction replaces the old value.
+            key = subject_key(text)
+            old = next((e for e in entries if key and subject_key(e["text"]) == key
+                        and (e.get("project") or None) == (project or None)), None)
+            if old:
+                old.update(text=text, updated=now, source=source, replaced=old.get("text"),
+                           topic=guess_topic(text), sensitive=is_sensitive(text))
+                self._save(entries)
+                return old
             entry = {"id": uuid.uuid4().hex[:12], "text": text, "pinned": False, "source": source,
                      "project": project or None, "created": now, "updated": now, "uses": 0, "last_used": None,
                      "topic": guess_topic(text), "sensitive": is_sensitive(text)}
@@ -220,6 +230,26 @@ class MemoryStore:
                     e["uses"] = int(e.get("uses") or 0) + 1
                     e["last_used"] = now
             self._save(entries)
+
+
+_SUBJECT_RX = (
+    (re.compile(r"^(?:my name is|i am called|i'm called|call me)\s+\S", re.I), "name"),
+    # "my GPU is ...", "the user's dog is called ...", "my favourite colour = ..."
+    (re.compile(r"^(?:the user'?s|user'?s|my)\s+((?:[a-z0-9'-]+\s+){0,3}?[a-z0-9'-]+)\s+(?:is|are|was|=|:)\s+\S", re.I), "my {}"),
+    (re.compile(r"^i(?: am|'m)\s+\d{1,3}\s+years? old", re.I), "age"),
+    (re.compile(r"^i (live|work|study)\s+(?:in|at|for)\s+\S", re.I), "i {} at"),
+)
+
+
+def subject_key(text: str) -> str | None:
+    """What a single-valued fact is about ("my gpu", "name", "i live at"), or None for anything else -
+    preferences and notes can sit side by side."""
+    t = re.sub(r"\s+", " ", str(text or "")).strip()
+    for rx, fmt in _SUBJECT_RX:
+        m = rx.match(t)
+        if m:
+            return fmt.format(*(g.lower() for g in m.groups())) if m.groups() else fmt
+    return None
 
 
 def _clean(text) -> str:

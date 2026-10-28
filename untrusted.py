@@ -57,15 +57,35 @@ def _hit(line: str) -> bool:
     return False
 
 
+# Disguises that fool a plain match (2026-10-27): zero-width and invisible characters inside words, look-alike
+# letters from other alphabets (Cyrillic "о" in "ignоre"), full-width or styled letters, a phrase split across lines.
+_INVISIBLE_RE = re.compile("[­͏؜ᅟᅠ឴឵᠎​-‏‪-‮⁠-⁯﻿]")
+_LOOKALIKE = str.maketrans("аеорсухіјѕԁԛԝАВЕКМНОРСТХІЈЅαεοτνκρΑΒΕΗΙΚΜΝΟΡΤΧΥΖ",
+                           "aeopcyxijsdqwABEKMHOPCTXIJSaeotvkpABEHIKMNOPTXYZ")
+
+
+def _plain(text: str) -> str:
+    import unicodedata
+    return unicodedata.normalize("NFKC", _INVISIBLE_RE.sub("", str(text or ""))).translate(_LOOKALIKE)
+
+
 def find_instructions(text: str, limit: int = 5) -> list:
-    """Snippets (a line each, trimmed) that try to direct the agent."""
+    """Snippets (a line each, trimmed) that try to direct the agent - read through invisible characters and
+    look-alike letters, and across line breaks."""
     out = []
-    for line in str(text or "").splitlines():
+    plain = _plain(text)
+    for line in plain.splitlines():
         if _hit(line):
             snippet = re.sub(r"\s+", " ", line).strip()
             if snippet and snippet not in out:
                 out.append(snippet[:220])
             if len(out) >= limit:
+                break
+    if not out:                                 # a phrase broken over lines: "ignore all previous\ninstructions"
+        joined = re.sub(r"\s+", " ", plain)
+        for m in _RE.finditer(joined):
+            if _hit(joined[max(0, m.start() - 40):m.end()]):
+                out.append(joined[max(0, m.start() - 60):m.end() + 100].strip()[:220])
                 break
     return out
 

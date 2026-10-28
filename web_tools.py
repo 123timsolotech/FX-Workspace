@@ -385,6 +385,12 @@ class _Readable(HTMLParser):
     FURNITURE_CLASS_RE = re.compile(r"(?:^|[\s_-])(?:dropdown|navbox|sidebar|breadcrumbs?|cookie|skip-link|"
                                     r"mw-editsection)(?:$|[\s_-])", re.I)
     MAX_LINKS = 60
+    # Text a reader can't see is where prompt injections hide (2026-10-27): display:none, visibility:hidden, zero
+    # size or opacity, clipped away, or pushed far off-screen. The model reads what the user would see.
+    HIDDEN_STYLE_RE = re.compile(
+        r"(?<![\w-])(?:display\s*:\s*none|visibility\s*:\s*(?:hidden|collapse)|opacity\s*:\s*0(?:\.0+)?\s*(?:;|!|$)"
+        r"|font-size\s*:\s*0(?:\.0+)?(?:px|em|rem|pt|%)?\s*(?:;|!|$)|(?:max-)?(?:height|width)\s*:\s*0(?:px)?\s*(?:;|!|$)"
+        r"|clip(?:-path)?\s*:\s*(?:rect\(\s*0|inset\(\s*(?:50|100)%)|(?:left|top|text-indent)\s*:\s*-\d{4,})", re.I)
 
     def __init__(self, base: str, only_main: bool = False):
         super().__init__(convert_charrefs=True)
@@ -420,7 +426,8 @@ class _Readable(HTMLParser):
             if self._furniture is None and not self.skip and (
                     (a.get("role") or "").lower() in self.FURNITURE_ROLES or "hidden" in a
                     or (a.get("aria-hidden") or "").lower() == "true"
-                    or self.FURNITURE_CLASS_RE.search(a.get("class") or "")):
+                    or self.FURNITURE_CLASS_RE.search(a.get("class") or "")
+                    or self.HIDDEN_STYLE_RE.search(a.get("style") or "")):
                 self._furniture = [tag, 1]
             if self.only_main and self._main is None and not self._main_seen and (
                     tag == "main" or (a.get("role") or "").lower() == "main"):
