@@ -41,6 +41,16 @@ class LiveSweepTests(unittest.TestCase):
         self.assertGreaterEqual(tray_sweep.sweep(), 1)
 
 
+class ReleaseNotesTests(unittest.TestCase):
+    def test_notes_are_not_hard_wrapped(self):
+        # What's new shows each line break as a break: a paragraph wrapped by hand came out cut mid-sentence (1.4.4).
+        v = open(os.path.join(HERE, "VERSION"), encoding="utf-8").read().strip()
+        lines = open(os.path.join(HERE, "docs", "releases", f"{v}.md"), encoding="utf-8").read().split("\n")
+        for a, b in zip(lines, lines[1:]):
+            if a.strip() and b.strip() and not a.startswith("#"):
+                self.assertRegex(b, r"^(#|- |\d+\. |\|)", f"a wrapped line after: {a[:60]}")
+
+
 class SweepTests(unittest.TestCase):
     def test_does_nothing_where_there_is_no_tray(self):
         if sys.platform != "win32":
