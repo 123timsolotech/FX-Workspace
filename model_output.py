@@ -25,6 +25,45 @@ _OPEN_RE = re.compile(r"<\s*(%s)\s*>" % "|".join(_TAGS), re.I)
 _CLOSE_RE = re.compile(r"<\s*/\s*(%s)\s*>" % "|".join(_TAGS), re.I)
 
 
+# 1.4.4: small models sometimes open a reply with their own planning, outside any <think> tag - "The user said
+# something vague, I should clarify. ..." - and only then talk to the user. Those opening sentences go; the
+# reply's own words stay. Only at the very start, only while every sentence is about the user's message or the
+# plan for answering, and never when nothing would be left.
+_SELF_TALK_RE = re.compile(
+    r"^(?:okay,?\s+|ok,?\s+|alright,?\s+|so,?\s+|hmm,?\s+)?(?:"
+    r"(?:the|this) user (?:just |has |simply |only )?(?:said|says|sent|wrote|typed|asked|asks|wants|wanted|greeted|"
+    r"started|opened|replied|responded|seems|appears|is (?:just |simply )?(?:asking|saying|greeting|testing|sending|"
+    r"starting|being|probably|likely|not))\b|"                                    # "The user said / wants / is asking"
+    r"(?:the|this) user's (?:message|input|request|reply|question|prompt)\b|"
+    r"(?:since|as|because) the user (?:said|wrote|sent|asked|only|just|hasn't|didn't)\b|"
+    r"(?:the|this|their) (?:message|input|request|prompt|query) (?:is|was|seems|appears|looks|reads|just)\b|"
+    r"(?:it|this) (?:seems|appears|looks) (?:like )?(?:the user|they)\b|"
+    r"(?:i'll|we'll|i'm going to|(?:i|we) (?:should|need to|must|will|am going to|want to)) (?:ask|clarify|respond|reply|answer|greet|keep|"
+    r"acknowledge|prompt|invite|check what|find out|figure out|be (?:brief|concise|friendly|helpful))\b|"
+    r"let me (?:ask|clarify|respond|reply|greet|acknowledge|keep it)\b|"
+    r"my (?:response|reply|answer) (?:should|will)\b|"
+    # Talking about the message to the user's face (Ornith 9B, 29 Oct 2026): "Nothing to do yet - your message was
+    # just "okay"", "\"hm\" on its own isn't a task I can act on".
+    r"nothing to do (?:yet|here)\b|"
+    r"your (?:message|input|request) (?:was|is) (?:just|only|simply)\b|"
+    r"(?:\"[^\"\n]{1,24}\"|'[^'\n]{1,24}'|that|this) (?:on its own |alone |by itself )?(?:isn't|is not|doesn't|does not|"
+    r"isn't really) (?:a |an |really a )?(?:task|request|question|instruction|clear request|something i can)\b)", re.I)
+_SENTENCE_RE = re.compile(r"[^.!?\n]+(?:[.!?]+[\"'”’)\]]*|\n+|$)\s*")      # a closing quote stays with it
+
+
+def strip_self_talk(text: str) -> str:
+    """The reply without opening sentences in which the model talks to itself about the user's message."""
+    if not text or not _SELF_TALK_RE.match(text.lstrip()):
+        return text
+    rest = text.lstrip()
+    while rest and _SELF_TALK_RE.match(rest):
+        m = _SENTENCE_RE.match(rest)
+        if not m or not m.group(0).strip():
+            break
+        rest = rest[m.end():].lstrip()
+    return rest if rest.strip() else text
+
+
 def split_reasoning(content: str) -> tuple[str, str]:
     """Return (answer, reasoning). Handles closed blocks, a reply cut off
     inside an unclosed <think> (everything after it is reasoning), and a

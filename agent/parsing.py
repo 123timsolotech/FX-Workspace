@@ -339,4 +339,7 @@ def parse_response(msg):
     if recovered:
         event_log.log_action(f"Recovered {len(recovered)} tool call(s) from plain text (local-model format).")
         return [(_ShimToolCall(n, json.dumps(a)), n, a) for n, a in recovered], leftover
-    return [], prose
+    answer = model_output.strip_self_talk(prose)          # the final reply: no "The user said..., I should..." (1.4.4)
+    if answer != prose:
+        event_log.log_action(f"Left out {len(prose) - len(answer)} chars where the model talked to itself about the message.")
+    return [], answer
