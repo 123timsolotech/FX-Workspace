@@ -80,4 +80,5 @@ B. WORKING MEMORY AND LIVE VIEW  (see context.py)
    blocked, identical consecutive tool batches are short-circuited, and each
    approved batch is followed by an observed before/after delta.
 """
-from api.server import app  # noqa: F401  (uvicorn main:app)
+import core.modpath  # noqa: F401  (the module folders on sys.path - first)
+from api.server import app  # noqa: F401,E402  (uvicorn main:app)

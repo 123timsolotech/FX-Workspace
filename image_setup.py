@@ -11,6 +11,7 @@ Sources and checksums were read from the publishers on 2026-10-01 (see FILES).
 """
 from __future__ import annotations
 
+import core.modpath  # noqa: F401  (the module folders on sys.path)
 import paths
 import hashlib
 import json

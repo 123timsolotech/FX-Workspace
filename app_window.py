@@ -29,7 +29,9 @@ import threading
 import time
 import urllib.request
 
-APP_URL = os.environ.get("AGENTIC_APP_URL", "http://127.0.0.1:8000")
+import core.modpath  # noqa: F401  (the module folders on sys.path)
+
+APP_URL =os.environ.get("AGENTIC_APP_URL", "http://127.0.0.1:8000")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PROFILE = os.path.join(BASE_DIR, "data", "app-window-profile")
 # The overlay window has a profile of its own: in the main window's profile Edge opens it in the

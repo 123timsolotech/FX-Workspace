@@ -113,10 +113,17 @@ what was sent where.
 | `desktop/` | the desktop app window (Electron) |
 | `installer/` | the setup wizard (Inno Setup; `installer\build.ps1`) |
 | `install.bat`, `install.ps1` | first-time setup |
-| `main.py`, `api/`, `agent/` | the server and the assistant |
+| `main.py`, `api/`, `agent/`, `core/`, `tools/`, `routing/` | the server, the agent loop and the tool runtime |
 | `index.html` | the whole interface (copied to `static/` on start) |
 | `models.example.ini` | template for `models.ini` (your model list) |
-| `paths.py`, `model_scan.py` | where models and engines live, and adding models |
+| `base/` | paths, version, data files, the event log |
+| `chat/` | the assistant: context, turns, effort, memory, personas, safety |
+| `workspace/` | Notes, Docs, Knowledge, Projects, Routines, Compare |
+| `llm/` | llama.cpp, the models, model scan and finder, speed tests and benchmarks |
+| `media/`, `speech/` | images, video and music; voice in and out |
+| `web/`, `connect/` | search, pages, the network layer and Tor; MCP, connectors, channels, mail |
+| `pc/` | Windows control, approvals, permissions, undo |
+| `roblox/`, `fxlabs/`, `workers/` | Roblox Studio; Fx Labs; jobs that run in their own Python |
 | `docs/FEATURES.md`, `ARCHITECTURE.md` | detailed features and design notes |
 | `tests/` | the tests: `.venv\Scripts\python.exe -m unittest discover -s tests -t .` |
 

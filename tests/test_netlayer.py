@@ -146,11 +146,11 @@ class EveryClientGoesThroughTheLayerTests(unittest.TestCase):
                           r"urlopen\(|aiohttp\.ClientSession\(|socket\.create_connection\(|http\.client\.HTTPS?Connection\(|"
                           r"\bOpenAI\(")
     LOOPBACK_ONLY = {
-        "llama_local.py": "requests to LLAMA_SERVER_BASE - llama-server on 127.0.0.1 (checked below)",
-        "llm_compat.py": "OpenAI() only in the _is_local branch - llama-server on this PC",
-        "sys_tools.py": "port_check: gated by _not_through_route and the socket guard",
-        "netlayer.py": "the layer itself",
-        "tor_service.py": "socket.create_connection only to the built-in Tor's control port on 127.0.0.1",
+        "llm/llama_local.py": "requests to LLAMA_SERVER_BASE - llama-server on 127.0.0.1 (checked below)",
+        "llm/llm_compat.py": "OpenAI() only in the _is_local branch - llama-server on this PC",
+        "pc/sys_tools.py": "port_check: gated by _not_through_route and the socket guard",
+        "web/netlayer.py": "the layer itself",
+        "web/tor_service.py": "socket.create_connection only to the built-in Tor's control port on 127.0.0.1",
     }
 
     def test_no_stray_direct_clients(self):

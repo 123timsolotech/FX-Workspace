@@ -25,7 +25,9 @@ import time
 import traceback
 import urllib.request
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+import core.modpath  # noqa: F401  (the module folders on sys.path)
+
+BASE =os.path.dirname(os.path.abspath(__file__))
 if BASE not in sys.path:
     sys.path.insert(0, BASE)
 LOGS = os.path.join(BASE, "data", "logs")

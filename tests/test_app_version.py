@@ -90,7 +90,7 @@ class UpdateNowTests(unittest.TestCase):
         import hashlib
         import os
         import tempfile
-        self.tmp = tempfile.mkdtemp(dir=os.path.join(os.path.dirname(app_version.__file__), "data"))
+        self.tmp = tempfile.mkdtemp(dir=os.path.join(app_version.ROOT, "data"))
         self.addCleanup(__import__("shutil").rmtree, self.tmp, True)
         self.data = b"MZ fake installer" * 1000
         self.sha = hashlib.sha256(self.data).hexdigest()
@@ -168,7 +168,7 @@ class SetupFilesTests(unittest.TestCase):
     @staticmethod
     def read(*parts):
         import os
-        with open(os.path.join(os.path.dirname(app_version.__file__), *parts), encoding="utf-8") as f:
+        with open(os.path.join(app_version.ROOT, *parts), encoding="utf-8") as f:
             return f.read()
 
     def test_the_wizard_runs_setup_hidden_and_reopens_after_update_now(self):

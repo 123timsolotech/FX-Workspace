@@ -30,8 +30,7 @@ class RuleValidationTests(unittest.TestCase):
         drive = os.path.splitdrive(self.tmp)[0] + "\\"
         refused = [drive, os.path.expanduser("~"), os.path.dirname(os.path.expanduser("~")),
                    os.environ.get("SystemRoot", r"C:\Windows"), os.path.join(os.environ.get("SystemRoot", r"C:\Windows"), "System32"),
-                   os.path.dirname(os.path.abspath(permissions.__file__)),
-                   os.path.join(os.path.dirname(os.path.abspath(permissions.__file__)), "data"),
+                   permissions._APP_DIR, os.path.join(permissions._APP_DIR, "data"),
                    "relative\\folder", r"\\server\share\x", os.path.join(self.tmp, "missing"), "", None]
         for path in refused:
             self.assertIsNotNone(permissions.folder_rule_problem(path), path)

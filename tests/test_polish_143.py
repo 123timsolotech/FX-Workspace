@@ -1,4 +1,4 @@
-﻿"""1.4.3's polish of what 1.4.2 added: notifications held back by Windows (focus_assist.py), and the rest of part 4
+"""1.4.3's polish of what 1.4.2 added: notifications held back by Windows (focus_assist.py), and the rest of part 4
 of docs/plans/1.4.3.md."""
 import unittest
 from pathlib import Path
@@ -168,7 +168,7 @@ class NcmWorkerTests(unittest.TestCase):
         # Found in 1.4.3's live check: HazyResearch's current TinyStories config has neither predict_level0 nor
         # query_level0, so generate(None, ...) asserted. Like the repo's own eval script, the first code is drawn
         # from generation.level0_unigram.
-        src = (ROOT / "labs_ncm_worker.py").read_text(encoding="utf-8")
+        src = (ROOT / "workers" / "labs_ncm_worker.py").read_text(encoding="utf-8")
         self.assertIn('getattr(net, "predict_level0", False) or getattr(net, "query_level0", False)', src)
         self.assertIn("torch.multinomial(p, tk.vqvae.vq.levels[0], replacement=True)", src)
         self.assertIn("codes = net.generate(l0, x,", src)
