@@ -4,6 +4,16 @@ What changed in each version of FX Workspace, newest first. Each version links t
 
 Parts marked **Beta** work, but are still being finished.
 
+## 1.4.4 - 2026-10-29
+
+[Full notes](docs/releases/1.4.4.md)
+
+- **Tor, built in:** "Search through Tor" in one switch, with its status, new identity and bridges; never sent direct by accident.
+- **Search reaches forums and Q&A sites:** Hacker News, Stack Exchange, Discourse forums, Lemmy, GitHub issues, Wikipedia and arXiv, ranked together with the web.
+- **Settings › Data and files:** sizes, Open in File Explorer, and Clear (to the Recycle Bin or for good) - chats, images, logs and more.
+- **A clear Quit** (power button in the sidebar) and no more stray tray icons from force-closed copies.
+- **Calmer:** one moving signal at a time; "Loading <model>" while a model loads; no model swaps for old images; replies don't comment on your message.
+
 ## 1.4.3 - 2026-10-28
 
 [Full notes](docs/releases/1.4.3.md)

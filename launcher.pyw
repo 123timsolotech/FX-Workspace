@@ -318,6 +318,14 @@ def main() -> int:
     sys.stdout = sys.stderr = out
     print(f"FX Workspace - {time.strftime('%Y-%m-%d %H:%M:%S')}", flush=True)
     quiet_children()
+    # Tray icons left by copies that were closed by force (an installer, Task Manager) go now, not when the mouse
+    # happens to pass over them - they read as dozens of servers (1.4.4, tray_sweep.py).
+    try:
+        import threading
+        import tray_sweep
+        threading.Thread(target=tray_sweep.sweep, daemon=True, name="tray-sweep").start()
+    except Exception:
+        pass
     if answers(f"{APP_URL}/api/settings"):              # a server started some other way (run.bat console)
         if not shell_mode():
             import app_window

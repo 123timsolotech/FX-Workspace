@@ -886,6 +886,14 @@ html.chat-locked .composer { opacity: .6; }
 .sb-spacer { flex: 1; }
 .sb-user { display: flex; align-items: center; gap: 10px; padding: 9px 10px; margin: 6px 8px 10px; border-radius: 10px; text-align: left; }
 .sb-user:hover { background: var(--hover); }
+/* Quit (1.4.4): beside the Settings row, desktop app only. */
+.sb-foot { display: flex; align-items: center; }
+.sb-foot > .sb-user { flex: 1; min-width: 0; }
+.sb-quit { display: none; }
+html.fx-desktop .sb-quit { display: inline-flex; flex-shrink: 0; width: 30px; height: 30px; margin: 0 8px 4px -4px;
+  align-items: center; justify-content: center; border-radius: 8px; color: var(--muted); }
+html.fx-desktop .sb-quit:hover { background: var(--hover); color: var(--danger-text); }
+.app.sidebar-collapsed .sb-quit, :root[data-look="operator"] .sb-quit { display: none !important; }
 .sb-user > .icon { margin-left: auto; color: var(--muted); }
 .avatar { width: 30px; height: 30px; border-radius: 50%; background: var(--text-2); color: var(--bg); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
 .sb-user-text { min-width: 0; line-height: 1.25; }
@@ -1429,6 +1437,7 @@ html.chat-locked .composer { opacity: .6; }
 .iv-filter button { gap: 5px; font-size: 12.5px; }
 .iv-search { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 10px; border: 1px solid var(--border); border-radius: 9px; color: var(--muted); width: min(240px, 100%); }
 .iv-search input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font-size: 13px; color: var(--text); }
+.iv-search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }   /* the box shows focus (1.4.4) */
 .iv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; outline: none; }
 .iv-grid:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 6px; }
 .iv-grid > .place-empty { grid-column: 1 / -1; }
@@ -5450,6 +5459,10 @@ html.voice-on .idle-screen { display: none !important; }
 :root[data-ui][data-skin="clay"] .thinking-label > .tp { background-image: linear-gradient(120deg, var(--muted) 37.5%, color-mix(in srgb, var(--muted) 30%, #fff) 45%, color-mix(in srgb, var(--muted) 30%, #fff) 55%, var(--muted) 62.5%);
   background-size: 400% 100%; animation: clay-shimmer 3s linear infinite; }
 :root[data-ui][data-skin="clay"][data-tone="light"] .thinking-label > .tp { background-image: linear-gradient(120deg, var(--muted) 37.5%, color-mix(in srgb, var(--text) 20%, #fff) 45%, color-mix(in srgb, var(--text) 20%, #fff) 55%, var(--muted) 62.5%); }
+/* 1.4.4: the message box shows keyboard focus in the Claude, ChatGPT and Gemini looks too - a quiet one-pixel ring
+   inside its edge (Claude's own box darkens its border the same way); before, focusing it changed nothing. */
+:root[data-ui]:is([data-skin="clay"], [data-skin="mono"], [data-skin="prism"]) .composer:focus-within {
+  outline: 1px solid color-mix(in srgb, var(--text) 30%, transparent); outline-offset: -1px; }
 </style>
 <link rel="stylesheet" href="/fonts/fonts.css">
 </head>
@@ -5474,6 +5487,7 @@ html.voice-on .idle-screen { display: none !important; }
     <symbol id="i-feed" viewBox="0 0 24 24"><circle cx="6" cy="6" r="2"/><circle cx="6" cy="18" r="2"/><path d="M6 8v8"/><path class="ip-lines" pathLength="1" d="M11 6h9M11 12h6M11 18h9"/></symbol>
     <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path class="ip-lines" pathLength="1" d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></symbol>
     <symbol id="i-cube" viewBox="0 0 24 24"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path class="ip-meridian" d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24"><path class="ip-press" d="M12 3v8"/><path d="M6.4 6.6a8 8 0 1 0 11.2 0"/></symbol>
     <symbol id="i-gear" viewBox="0 0 24 24"><g class="ip-spin"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></g></symbol>
     <symbol id="i-arrow-up" viewBox="0 0 24 24"><path class="ip-launch" d="M12 19V5M5 12l7-7 7 7"/></symbol>
     <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle class="ip-sun" cx="9" cy="10" r="1.8"/><path class="ip-hill" d="M21 16l-5.5-5.5L6 20"/></symbol>
@@ -5619,11 +5633,15 @@ html.voice-on .idle-screen { display: none !important; }
       </nav>
     </div>
     <div class="sb-spacer"></div>
+    <div class="sb-foot">
     <button class="sb-user" onclick="openSettings('appearance')" title="Settings">
       <span class="avatar" id="avatar">·</span>
       <span class="sb-user-text"><div id="user-name">You</div><small>Settings</small></span>
       <svg class="icon sm"><use href="#i-gear"/></svg>
     </button>
+    <!-- 1.4.4: a plain way to turn it all off - closing the window only hides it in the tray. Desktop app only. -->
+    <button class="sb-quit" onclick="quitApp()" title="Quit FX Workspace - stops the server and the model" aria-label="Quit FX Workspace"><svg class="icon sm"><use href="#i-power"/></svg></button>
+    </div>
   </aside>
 
   <!-- ================= Main: the conversation ================= -->
@@ -14378,6 +14396,7 @@ const Palette = (() => {
     const add = (kind, label, sub, ic, run, keys = '') => out.push({ kind, label, sub, icon: ic, run, keys, hay: `${label} ${sub} ${kind}`.toLowerCase() });
     add('Action', 'New chat', 'Start a new conversation', 'i-plus', () => newChat(), 'Ctrl+Shift+O');
     add('Action', 'Home', 'The dashboard', 'i-home', () => goHome());
+    if (window.fxDesktop) add('Action', 'Quit FX Workspace', 'Stop the server and the model, close the app', 'i-power', () => quitApp());
     add('Action', 'Find in this chat', 'Search the open conversation', 'i-search', () => Find.open(), 'Ctrl+F');
     add('Action', 'Search all chats', 'The sidebar search', 'i-search', () => { if ($('app').classList.contains('drawer')) toggleSidebar(true); $('sb-q').focus(); }, 'Ctrl+Shift+F');
     add('Action', 'Export this chat', 'Markdown, HTML or PDF', 'i-download', () => openExportMenu($('more-btn')), 'Ctrl+Shift+E');
@@ -14831,7 +14850,8 @@ function renderAppearance() {
         seg([['studio', 'Over Studio'], ['tr', 'Top right'], ['br', 'Bottom right'], ['tl', 'Top left'], ['bl', 'Bottom left'], ['free', 'Where I put it']], s.mini_place || 'studio', "(v=>saveSettings({mini_place:v}).then(renderAppearance))")) : ''}
     </div>
     ${window.fxDesktop ? `<div class="set-group"><div class="gt">The window</div>
-      ${rowHtml('Keep running when I close the window', 'Closing hides it in the tray - a reply in progress finishes, routines run, and you get a notification when something is ready. Quit from the tray icon.', sw(s.close_to_tray !== false, `saveSettings({close_to_tray:${s.close_to_tray === false}}).then(renderAppearance)`))}
+      ${rowHtml('Keep running when I close the window', 'Closing hides it in the tray - a reply in progress finishes, routines run, and you get a notification when something is ready. To turn it all off, use Quit: the power button at the bottom of the sidebar, or the tray icon.', sw(s.close_to_tray !== false, `saveSettings({close_to_tray:${s.close_to_tray === false}}).then(renderAppearance)`))}
+      ${window.fxDesktop ? rowHtml('Quit FX Workspace', 'Stops the server and the model and closes the app, tray icon included.', `<button class="btn danger" onclick="quitApp()">${icon('i-power', 'xs')}Quit now</button>`) : ''}
       ${rowHtml('Start with Windows', 'Starts when you sign in, ready for Roblox Studio, routines and your phone.', sw(!!s.start_with_windows, `saveSettings({start_with_windows:${!s.start_with_windows}}).then(renderAppearance)`))}
       ${s.start_with_windows ? rowHtml('Start hidden in the tray', 'No window at sign-in - click the tray icon when you want it.', sw(s.start_hidden !== false, `saveSettings({start_hidden:${s.start_hidden === false}}).then(renderAppearance)`)) : ''}
       ${rowHtml('Free the GPU when hidden', 'Hidden in the tray and unused this long, the model unloads so a game has the graphics memory. The next message loads it again.',
@@ -16152,6 +16172,13 @@ async function renderNetwork() {
 /* ---- Settings > Data and files (data_files.py, 1.4.4) ------------------------------------------------------------
    Everything this app keeps on this PC, kind by kind: its size, Open (File Explorer - to look, back up or change files
    by hand) and Clear (to the Recycle Bin, or for good). Chats can keep the pinned ones. */
+// Quit for good (1.4.4): the desktop app sees the request on its next poll (about a second), quits and removes its tray
+// icon; the launcher then stops the server and llama-server. Closing the window only hides it in the tray.
+async function quitApp() {
+  if ((S.busy || (S.live && S.live.serverBusy)) && !confirm('A reply is still running. Quit anyway? It stops where it is.')) return;
+  try { await api('/api/shell/quit', {}); toast('Closing FX Workspace - the server and the model stop too.'); }
+  catch (e) { toast(`Couldn't quit: ${e.message}`); }
+}
 async function renderDataFiles() {
   const body = $('settings-body');
   let d;

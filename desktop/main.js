@@ -202,7 +202,7 @@ function updateTrayMenu() {
     { label: 'Clicks pass through the mini window', type: 'checkbox', checked: !!m.click_through, enabled: !!m.open,
       click: () => miniAction({ action: 'set', click_through: !m.click_through }) },
     { type: 'separator' },
-    { label: 'Quit FX Workspace', click: () => { quitting = true; app.quit(); } },
+    { label: 'Quit FX Workspace (stops the server and the model)', click: () => { quitting = true; app.quit(); } },
   ]));
 }
 
@@ -241,7 +241,7 @@ function firstHideNote() {
   try { fs.writeFileSync(f, '{"shown":true}'); } catch (e) { /* not important */ }
   if (Notification.isSupported()) {
     const n = new Notification({ title: 'FX Workspace is still running', icon: asset(IS_WIN ? 'icon.ico' : 'icon.png'),
-      body: 'It keeps working in the tray - a reply in progress finishes. Quit from the tray icon, or turn this off in Settings › Appearance.' });
+      body: 'It keeps working in the tray - a reply in progress finishes. To turn it off, use Quit: the power button at the bottom of the sidebar, or the tray icon.' });
     n.on('click', showWindow);
     n.show();
   }
@@ -403,5 +403,6 @@ if (!app.requestSingleInstanceLock()) {
   // The main window closing for good (close-to-tray off) quits from its 'closed' handler; the mini window alone
   // closing never quits the app.
   app.on('window-all-closed', () => { if (!win) { quitting = true; app.quit(); } });
-  app.on('before-quit', () => { quitting = true; saveBounds(); stopServer(); });
+  // The tray icon goes with the app, right away (1.4.4): an icon left behind reads as another copy still running.
+  app.on('before-quit', () => { quitting = true; saveBounds(); stopServer(); if (tray) { tray.destroy(); tray = null; } });
 }

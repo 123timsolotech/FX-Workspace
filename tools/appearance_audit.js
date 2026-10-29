@@ -153,6 +153,15 @@ function focusCheck() {
   const ring = cs.outlineStyle !== 'none' && parseFloat(cs.outlineWidth) > 0 ? cs.outlineColor
     : cs.boxShadow !== 'none' ? (cs.boxShadow.match(/rgba?\([^)]+\)|color\([^)]+\)/) || [null])[0] : null;
   const t = (el.textContent || el.getAttribute('aria-label') || el.placeholder || '').trim().slice(0, 30);
+  // A text box often shows focus on the frame around it (the composer's border and glow, :focus-within). That counts
+  // only if the frame really changes when the box takes focus: measured focused and blurred (1.4.4).
+  if (!ring && /^(INPUT|TEXTAREA)$/.test(el.tagName)) {
+    const frames = []; for (let a = el.parentElement, i = 0; a && i < 4; a = a.parentElement, i++) frames.push(a);
+    const look = a => { const s = getComputedStyle(a); return [s.borderColor, s.boxShadow, s.outlineStyle, s.outlineColor].join('|'); };
+    const on = frames.map(look); el.blur(); const off = frames.map(look); el.focus({ preventScroll: true });
+    const i = on.findIndex((v, k) => v !== off[k]);
+    if (i >= 0) return { what: `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''} "${t}"`, ring: 'frame', outline: 'frame', shadow: on[i] };
+  }
   return { what: `${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''}.${[...el.classList].slice(0, 2).join('.')} "${t}"`, ring, outline: cs.outlineStyle + ' ' + cs.outlineWidth, shadow: cs.boxShadow };
 }
 

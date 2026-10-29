@@ -8,14 +8,14 @@ Everything runs on this PC by default. Nothing is sent anywhere unless you use a
 
 **[Download the latest installer](https://github.com/fuxion64-ctrl/FX-Workspace/releases/latest)** · [What's new in each version](CHANGELOG.md) · [All releases](https://github.com/fuxion64-ctrl/FX-Workspace/releases)
 
-## What's new in 1.4.3
+## What's new in 1.4.4
 
-- Orbs: a thinking mark that moves with each kind of work, dressed for every appearance.
-- Every appearance checked screen by screen; the Claude, ChatGPT, Grok and Gemini looks are out of Beta.
-- A short welcome for new installs, with a chat model that suits your PC in one click.
-- What's new after an update, Settings search that goes to the setting, and a calmer Settings.
+- Tor built in: one switch sends web searches through it - nothing else to install.
+- Searches also reach forums and Q&A sites (Hacker News, Stack Exchange, Discourse forums, GitHub issues and more).
+- Settings › Data and files: see, open and clear everything the app keeps - all your chats at once, for example.
+- A power button to quit it all, no stray tray icons, and a calmer app: one moving thing at a time.
 
-See the [changelog](CHANGELOG.md) for every version, or the [full 1.4.3 notes](docs/releases/1.4.3.md).
+See the [changelog](CHANGELOG.md) for every version, or the [full 1.4.4 notes](docs/releases/1.4.4.md).
 
 ## Features
 
