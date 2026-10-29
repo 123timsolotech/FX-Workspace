@@ -43,7 +43,7 @@ $new = @(& $Git -C $Root ls-files -o --exclude-standard)
 # static/ ships whole: besides the page copy (rewritten at start) it holds scripts the page loads (system-messages.js)
 # The test suite stays in the source only (1.4.2): ~120 files the app never runs. An update removes the ones older
 # installs put there (.fx-manifest). So does the appearance audit (tools/appearance_audit.js, a developer's check).
-$skip = '^(installer/|desktop/node_modules/|desktop/dist/|data/|local/|\.venv/|test_[\w]+\.py$|smoke_test\.py$|tools/appearance_audit\.js$|tools/search_eval\.(py|json)$)'
+$skip = '^(installer/|desktop/node_modules/|desktop/dist/|data/|local/|\.venv/|tests/|tools/appearance_audit\.js$|tools/search_eval\.(py|json)$)'
 $n = 0
 foreach ($f in ($tracked + $new | Sort-Object -Unique)) {
     if ($f -match $skip) { continue }

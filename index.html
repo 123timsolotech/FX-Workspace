@@ -1468,6 +1468,11 @@ html.fx-desktop .sb-quit:hover { background: var(--hover); color: var(--danger-t
 .iv-acts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .iv-acts .btn { justify-content: flex-start; text-decoration: none; color: var(--text); }
 .iv-acts2 { display: flex; align-items: center; gap: 6px; margin-top: auto; }
+/* Expand (1.4.5): sides, how much, optional words - under the actions. */
+.iv-expand { display: flex; flex-direction: column; gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
+.iv-expand-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: space-between; font-size: 12.5px; }
+.iv-expand .seg { flex-wrap: wrap; flex-shrink: 1; min-width: 0; }
+.iv-expand .seg button { font-size: 12px; padding: 4px 8px; }
 .iv-acts2 .grow { flex: 1; }
 .iv-acts2 .btn.on { color: #c9971f; }
 .iv-acts2 .btn.on .icon { fill: currentColor; }
@@ -7036,11 +7041,13 @@ const ImagesView = (() => {
           <button type="button" class="btn sm" onclick="ImagesView.again('${jsArg(i.id)}')">${icon('i-retry', 'xs')}Again</button>
           <button type="button" class="btn sm" onclick="ImagesView.again('${jsArg(i.id)}', true)">${icon('i-variations', 'xs')}Variations</button>
           <button type="button" class="btn sm" onclick="ImagesView.edit('${jsArg(i.id)}')">${icon('i-edit', 'xs')}Edit</button>
+          <button type="button" class="btn sm${st.expand === i.id ? ' on' : ''}" aria-expanded="${st.expand === i.id}" onclick="ImagesView.expandOpen('${jsArg(i.id)}')">${icon('i-expand', 'xs')}Expand…</button>
           <button type="button" class="btn sm" onclick="ImagesView.copy('${jsArg(i.id)}')">${icon('i-copy', 'xs')}Copy prompt</button>
           <button type="button" class="btn sm" onclick="ImagesView.toChat('${jsArg(i.id)}')">${icon('i-message', 'xs')}Use in chat</button>
           <button type="button" class="btn sm" onclick="VideosView.useImage('${jsArg(i.id)}','${jsArg(i.url)}')">${icon('i-film', 'xs')}Make a video</button>
           <a class="btn sm" href="${esc(i.url)}" download="${esc(i.id)}.png">${icon('i-download', 'xs')}Save as…</a>
         </div>
+        ${st.expand === i.id ? expandPanel(i) : ''}
         <div class="iv-acts2"><button type="button" class="btn sm ghost${i.fav ? ' on' : ''}" onclick="ImagesView.fav('${jsArg(i.id)}')" aria-pressed="${!!i.fav}">${icon('i-star', 'xs')}${i.fav ? 'Favourite' : 'Add to favourites'}</button><span class="grow"></span><button type="button" class="btn sm ghost danger" onclick="ImagesView.trash('${jsArg(i.id)}')">${icon('i-trash', 'xs')}Move to trash</button></div>`}`);
   }
   // The pictures of i's sequence for the inspector strip: the open folder, or fetched once and kept.
@@ -7114,6 +7121,32 @@ const ImagesView = (() => {
     let r; try { r = await api(`/api/images/${encodeURIComponent(id)}/again`, { mode: variations ? 'variations' : 'again' }); } catch (e) { r = { ok: false, message: e.message }; }
     st.busy = false;
     if (r.ok) { st.sel = (r.image.images ? r.image.images[0] : r.image).id; st.error = null; } else st.error = { message: r.message, code: r.code };
+    paintGen(); paintRun(); await load();
+  }
+  // Expand (1.4.5, image_gen.expand): more of the scene around the picture, drawn by its own model - a new image.
+  const EXPAND_SIDES = [['all', 'All sides', ['left', 'right', 'top', 'bottom']], ['lr', 'Left and right', ['left', 'right']],
+    ['tb', 'Top and bottom', ['top', 'bottom']], ['left', 'Left', ['left']], ['right', 'Right', ['right']], ['top', 'Top', ['top']], ['bottom', 'Bottom', ['bottom']]];
+  function expandPanel(i) {
+    const ex = st.expandOpts || (st.expandOpts = { sides: 'lr', amount: 0.5 });
+    const sideSeg = EXPAND_SIDES.map(([k, l]) => `<button type="button" class="${ex.sides === k ? 'on' : ''}" onclick="ImagesView.expandSet('sides','${k}')">${l}</button>`).join('');
+    const amtSeg = [[0.25, '25%'], [0.5, '50%'], [1, '100%']].map(([v, l]) => `<button type="button" class="${ex.amount === v ? 'on' : ''}" onclick="ImagesView.expandSet('amount',${v})">${l}</button>`).join('');
+    return `<div class="iv-expand" role="group" aria-label="Expand the picture">
+      <div class="iv-expand-row"><span class="muted">Which sides</span><div class="seg">${sideSeg}</div></div>
+      <div class="iv-expand-row"><span class="muted">How much more</span><div class="seg">${amtSeg}</div></div>
+      <input class="input" id="iv-expand-prompt" placeholder="Optional: what the new area shows (else the picture's own prompt)" aria-label="What the new area shows" value="${esc(ex.prompt || '')}" oninput="ImagesView.expandSet('prompt', this.value, true)">
+      <div class="iv-expand-row"><span class="muted">${esc(i.model)} draws the new area; the picture itself stays exactly as it is. A new image - the original stays.</span>
+        <button type="button" class="btn primary sm" ${st.busy ? 'disabled' : ''} onclick="ImagesView.expandGo('${jsArg(i.id)}')">${icon('i-expand', 'xs')}Expand</button></div></div>`;
+  }
+  function expandOpen(id) { st.expand = st.expand === id ? null : id; paintInspector(); }
+  function expandSet(k, v, quiet) { st.expandOpts = { ...(st.expandOpts || { sides: 'lr', amount: 0.5 }), [k]: v }; if (!quiet) paintInspector(); }
+  async function expandGo(id) {
+    const ex = st.expandOpts || { sides: 'lr', amount: 0.5 };
+    toast('Expanding the picture…');
+    st.busy = true; paintGen(); poll();
+    let r; try { r = await api(`/api/images/${encodeURIComponent(id)}/expand`, { sides: (EXPAND_SIDES.find(s => s[0] === ex.sides) || EXPAND_SIDES[0])[2], amount: ex.amount, prompt: ex.prompt || '' }); }
+    catch (e) { r = { ok: false, message: e.message }; }
+    st.busy = false;
+    if (r.ok) { st.sel = (r.image.images ? r.image.images[0] : r.image).id; st.expand = null; st.error = null; } else st.error = { message: r.message, code: r.code };
     paintGen(); paintRun(); await load();
   }
   function edit(id) {
@@ -7215,7 +7248,7 @@ const ImagesView = (() => {
   function search(q) { st.q = q.trim(); clearTimeout(qT); qT = setTimeout(load, 220); }
   async function stop() { try { await api('/api/images/stop', {}); toast('Stopping…'); } catch (e) { toast(e.message); } poll(); }
   async function unload() { try { await api('/api/images/unload', {}); toast('The image engine let go of its memory.'); } catch (e) { toast(e.message); } poll(); }
-  return { render, poll, load, reload: load, make, again, edit, clearRef, pickRef, improve, fav, trash, restore, purge, emptyTrash, copy, useSeed, toChat, select, view, filterBy, search, stop, unload, set,
+  return { render, poll, load, reload: load, make, again, edit, expandOpen, expandSet, expandGo, clearRef, pickRef, improve, fav, trash, restore, purge, emptyTrash, copy, useSeed, toChat, select, view, filterBy, search, stop, unload, set,
     openSeq, closeSeq, variants,
     style: id => { st.styles.has(id) ? st.styles.delete(id) : st.styles.add(id); paintGen(); },
     toggleNeg: () => { st.showNeg = !st.showNeg; paintGen(); if (st.showNeg) setTimeout(() => $('iv-negative') && $('iv-negative').focus(), 0); },
@@ -14756,6 +14789,7 @@ function renderAbout() {
       <div id="about-update"></div>
       ${rowHtml('Created by', '<span class="fx-sign">Fuxion</span>', '<a class="btn sm" href="mailto:fuxion64@gmail.com">fuxion64@gmail.com</a>')}
       <p class="set-note">If you want to support the project or have suggestions, email me.</p>
+      <!-- DONATE: the PayPal button goes here (a rowHtml('Support', ...) with the link) - waiting for the link. -->
       <button type="button" class="af-link" onclick="FirstRun.show(true)">Show the welcome again</button></div>
     <div class="set-group"><div class="gt">Contributors <small>· thank you</small></div>
       ${CONTRIBUTORS.map(c => rowHtml(esc(c.name), esc(c.for), `<a class="btn sm" href="${esc(c.url)}" target="_blank" rel="noopener">GitHub</a>`)).join('')}
@@ -14971,7 +15005,7 @@ async function renderModelsTab() {
   S.modelConfigs = (cfg && cfg.models) || []; S.modelDefaults = (cfg && cfg.defaults) || {};
   if (S.settingsTab !== 'models') return;
   renderModelsCached();
-  renderMoeTest();
+  renderMoeTest(); renderSpeedTune();
   // The context limits come after (the first read of every model's header is slow); the page is usable meanwhile.
   if (!S.ctxInfo) api('/api/local-models/ctx-info').then(d => {
     S.ctxInfo = (d && d.models) || {};
@@ -15007,6 +15041,29 @@ const NcmLab = (() => {
   return { paint, setup: () => act('/api/labs/ncm/setup'), write: () => act('/api/labs/ncm/write'),
            compare: btn => { btn.disabled = true; btn.textContent = 'Asking your chat model…'; act('/api/labs/ncm/compare'); } };
 })();
+// "Tune speed" (speed_tune.py, 1.4.5): prompt-reading batch sizes for any model, and the GPU split for
+// mixture-of-experts models - measured, kept only when clearly faster. One picker, one button, then the results.
+async function renderSpeedTune() {
+  let d;
+  try { d = await api('/api/speed-tune'); } catch (_) { return; }
+  const body = $('settings-body');
+  if (S.settingsTab !== 'models' || !body || !d.models.length) return;
+  let box = $('speed-tune');
+  if (!box) { box = document.createElement('div'); box.id = 'speed-tune'; box.className = 'set-group'; const moe = $('moe-test'); moe ? moe.before(box) : body.appendChild(box); }
+  const res = d.results || {}, run = d.state.running, sp = v => v == null ? '–' : `${Math.round(v)} tok/s`;
+  const pick = S.speedPick && d.models.some(m => m.name === S.speedPick) ? S.speedPick : (d.models.find(m => m.moe) || d.models[0]).name;
+  const tuned = d.models.filter(m => res[m.name]);
+  box.innerHTML = `<div class="gt">Tune speed <small>· measured, never assumed</small></div>
+    <p class="muted">Tries bigger prompt-reading batches, and for mixture-of-experts models how many layers' experts stay in system RAM, reloading the model for each and timing a long prompt. A setting is kept only if it is clearly faster and fits the GPU without spilling. 10-20 minutes per model; chats wait meanwhile.</p>
+    <div class="set-row"><select class="input" style="max-width:320px" aria-label="Model to tune" onchange="S.speedPick=this.value" ${run ? 'disabled' : ''}>${d.models.map(m => `<option value="${esc(m.name)}"${m.name === pick ? ' selected' : ''}>${esc(m.name)}${m.moe ? ' · experts' : ''}</option>`).join('')}</select>
+      <button class="btn sm" ${run ? 'disabled' : ''} onclick="api('/api/speed-tune',{model:S.speedPick||'${jsArg(pick)}'}).then(r=>{toast(r.message);renderSpeedTune();})">${run ? esc(`${run}: ${d.state.progress || 'Tuning…'}`) : 'Tune speed'}</button></div>
+    ${tuned.map(m => { const r = res[m.name], pf = r.prefill, sl = r.split;
+      return `<div class="set-row"><div class="grow"><b>${esc(m.name)}</b><div class="muted">${esc(r.why || '')}${r.minutes ? ` · ${esc(r.minutes)} min` : ''}</div>
+        ${pf ? `<div class="muted mono">as it was (${pf.base.batch}/${pf.base.ubatch}): prompt ${sp(pf.base.prompt_tps)}, writing ${sp(pf.base.gen_tps)}${pf.tried.map(t => ` · ${t.batch}/${t.ubatch}: ${t.error ? 'didn\'t load' : t.spilled ? 'spilled' : `prompt ${sp(t.prompt_tps)}`}`).join('')}</div>` : ''}
+        ${sl ? `<div class="muted mono">split ${sl.base.n_cpu_moe}: writing ${sp(sl.base.gen_tps)}${sl.tried.map(t => ` · ${t.n_cpu_moe}: ${t.error ? 'didn\'t load' : t.spilled ? 'spilled' : `writing ${sp(t.gen_tps)}`}`).join('')}</div>` : ''}</div></div>`; }).join('')}
+    ${d.state.error ? `<p class="muted">Last tune: ${esc(d.state.error)}</p>` : ''}`;
+  if (run) setTimeout(() => { if (S.settingsTab === 'models') renderSpeedTune(); }, 5000);
+}
 // "Test the MoE cache" (moe_test.py): for mixture-of-experts models only; keeps a cache size only if it measured faster.
 async function renderMoeTest() {
   let d;

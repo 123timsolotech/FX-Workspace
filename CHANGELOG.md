@@ -4,6 +4,13 @@ What changed in each version of FX Workspace, newest first. Each version links t
 
 Parts marked **Beta** work, but are still being finished.
 
+## 1.4.5 - 2026-10-29
+
+[Full notes](docs/releases/1.4.5.md)
+
+- **Tune speed** (Settings › Models): measures bigger prompt batches and, for mixture-of-experts models, the CPU/GPU split on this PC, and keeps a setting only if it's clearly faster - never one that spills into shared GPU memory.
+- **Expand a picture** (Images › Expand…): more of the scene on the sides you pick, drawn by the picture's own model; the original's pixels stay exactly, with no seam, as a new picture.
+- **Tidier source:** the tests moved into `tests/`.
 ## 1.4.4 - 2026-10-29
 
 [Full notes](docs/releases/1.4.4.md)

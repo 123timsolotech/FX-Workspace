@@ -987,6 +987,24 @@ def hook_result(run_id: str, body: HookResult, request: Request):
     return channels.hook_result(run_id)
 
 
+# ---- Tune speed: prompt-reading batches and the GPU split, measured (speed_tune.py, 1.4.5) -----------------------
+@app.get("/api/speed-tune")
+def speed_tune_get():
+    import speed_tune
+    return speed_tune.results()
+
+
+@app.post("/api/speed-tune")
+def speed_tune_start(body: MoeTestBody):
+    import moe_test
+    import speed_tune
+    if tasks.turns.running():
+        return {"ok": False, "message": "Wait for the reply to finish first."}
+    if moe_test.state["running"]:
+        return {"ok": False, "message": f"The MoE cache test is running ({moe_test.state['running']}) - wait for it."}
+    return speed_tune.start(body.model)
+
+
 # ---- The MoE cache speed test (moe_test.py) -----------------------------------------------------------------------
 @app.get("/api/moe-test")
 def moe_test_get():
@@ -1001,8 +1019,11 @@ class MoeTestBody(BaseModel):
 @app.post("/api/moe-test")
 def moe_test_start(body: MoeTestBody):
     import moe_test
+    import speed_tune
     if tasks.turns.running():
         return {"ok": False, "message": "Wait for the reply to finish first."}
+    if speed_tune.state["running"]:
+        return {"ok": False, "message": f"Tune speed is running ({speed_tune.state['running']}) - wait for it."}
     return moe_test.start(body.model)
 
 
@@ -3234,6 +3255,24 @@ def images_again(iid: str, body: ImageAction):
 @app.post("/api/images/{iid}/edit")
 def images_edit(iid: str, body: ImageAction):
     return _image_call(lambda **kw: image_gen.edit(iid, body.prompt, **kw))
+
+
+class ExpandBody(BaseModel):
+    sides: list[str] = ["left", "right", "top", "bottom"]
+    amount: float = 0.5
+    prompt: str = ""
+    quality: str | None = None
+    strength: float = image_gen.EXPAND_STRENGTH
+
+
+@app.post("/api/images/{iid}/expand")
+def images_expand(iid: str, body: ExpandBody):
+    """More of the scene around a picture (outpainting, 1.4.5), as a new image."""
+    r = _image_call(lambda **kw: image_gen.expand(iid, body.sides, body.amount, body.prompt, body.quality,
+                                                  max(0.3, min(1.0, body.strength)), **kw))
+    if isinstance(r, dict):
+        r["drift"] = getattr(image_gen.expand, "last_drift", None)
+    return r
 
 
 @app.post("/api/images/{iid}/fav")

@@ -9,7 +9,7 @@ Resume point for any session: read **Progress** first, then **Decisions**.
   Since 2026-09-24 `run.bat` prefers PrismML's llama.cpp fork in `E:\ClankerLocalCpp\prism\` when it is
   installed (needed for Ternary Bonsai 2), and no longer passes a global `--ctx-size` (D29).
   GPU: RTX 3060 Ti, 8 GB, driver 610.74.
-- Tests: `.venv\Scripts\python.exe -m unittest <every test_*.py module> smoke_test` (no pytest).
+- Tests: `.venv\Scripts\python.exe -m unittest discover -s tests -t .` from the repo root (no pytest; `tests/` since 1.4.5).
   JS syntax: extract the last `<script>` of `index.html` and `node --check` it.
 - `index.html` is the source; it is copied to `static/index.html` at startup (keep both in sync).
 - Packages available without downloads: httpx, requests, websockets, pywinauto, comtypes, openai, litellm.

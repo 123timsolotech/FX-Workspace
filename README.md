@@ -8,14 +8,13 @@ Everything runs on this PC by default. Nothing is sent anywhere unless you use a
 
 **[Download the latest installer](https://github.com/fuxion64-ctrl/FX-Workspace/releases/latest)** · [What's new in each version](CHANGELOG.md) · [All releases](https://github.com/fuxion64-ctrl/FX-Workspace/releases)
 
-## What's new in 1.4.4
+## What's new in 1.4.5
 
-- Tor built in: one switch sends web searches through it - nothing else to install.
-- Searches also reach forums and Q&A sites (Hacker News, Stack Exchange, Discourse forums, GitHub issues and more).
-- Settings › Data and files: see, open and clear everything the app keeps - all your chats at once, for example.
-- A power button to quit it all, no stray tray icons, and a calmer app: one moving thing at a time.
+- Tune speed: one button measures faster settings for a big model on this PC and keeps only a clear win.
+- Expand a picture: more of the scene on any side, the original kept exactly, no seam.
+- The tests now live in `tests/`.
 
-See the [changelog](CHANGELOG.md) for every version, or the [full 1.4.4 notes](docs/releases/1.4.4.md).
+See the [changelog](CHANGELOG.md) for every version, or the [full 1.4.5 notes](docs/releases/1.4.5.md).
 
 ## Features
 
@@ -119,7 +118,7 @@ what was sent where.
 | `models.example.ini` | template for `models.ini` (your model list) |
 | `paths.py`, `model_scan.py` | where models and engines live, and adding models |
 | `docs/FEATURES.md`, `ARCHITECTURE.md` | detailed features and design notes |
-| `test_*.py` | tests: `.venv\Scripts\python.exe -m unittest` |
+| `tests/` | the tests: `.venv\Scripts\python.exe -m unittest discover -s tests -t .` |
 
 ## License and credits
 
@@ -128,6 +127,7 @@ The engines and models it downloads have their own licenses, listed in [`THIRD_P
 of them (for example the MMAudio weights) are for non-commercial use only.
 
 Created by **Fuxion** - fuxion64@gmail.com. If you want to support the project or have suggestions, email me.
+<!-- DONATE: the PayPal link goes here - waiting for the link. -->
 
 ### Contributors
 

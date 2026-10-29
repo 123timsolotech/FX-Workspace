@@ -731,10 +731,10 @@ Set `AGENTIC_DISABLE_AWARENESS=1` to run without the background observer.
 ## Tests
 
 ```
-.venv\Scripts\python.exe -m unittest <every test_*.py module> smoke_test
+.venv\Scripts\python.exe -m unittest discover -s tests -t .
 ```
 
-PowerShell: `$m = (Get-ChildItem test_*.py).BaseName; .venv\Scripts\python.exe -m unittest @m smoke_test`
+One file: `.venv\Scripts\python.exe -m unittest tests.test_images`. Run them from the repo root.
 
 These mock Windows, media sessions, Studio and the models; `test_replay.py`
 replays recorded/reconstructed model replies through the real pipeline

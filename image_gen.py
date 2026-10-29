@@ -563,14 +563,16 @@ def _ran_out_of_memory(log_text: str) -> bool:
 def generate(prompt: str, quality: str | None = None, size=None, seed: int | None = None, negative: str = "",
              ref_image: bytes | str | None = None, should_cancel=None, progress=None, count: int = 1,
              wait_while=None, init_image: bytes | None = None, strength: float = 0.6,
-             extra_meta: dict | None = None) -> dict:
+             extra_meta: dict | None = None, mask_image: bytes | None = None, after=None) -> dict:
     """Make one image (or `count`, 1-4, of the same prompt with consecutive seeds). Returns the first:
     {"id", "path", "url", "prompt", "model", "quality", "seed", "width", "height", "steps", "seconds", ...} with
     "images": every one made. Raises ImageError with a reason the user can act on (and a .code).
     wait_while: a function that is true while something else needs the GPU (a chat turn running) - the request
     waits its turn instead of unloading a model mid-answer. Never passed from inside a turn.
     init_image: a picture to start from (img2img, any model) - `strength` 0..1 is how much may change.
-    extra_meta: saved into each picture's json (a plan, a sequence's place)."""
+    extra_meta: saved into each picture's json (a plan, a sequence's place).
+    mask_image: with init_image, only the mask's white part is drawn (inpainting, expand()); after(png) -> png runs on
+    each result before it's saved (expand() puts the original's pixels back)."""
     global _last_used, _last_error, _last_code, _job, _waiting
     prompt = str(prompt or "").strip()
     if not prompt:
@@ -630,7 +632,7 @@ def generate(prompt: str, quality: str | None = None, size=None, seed: int | Non
             for attempt in (1, 2):
                 try:
                     images = _render(key, prompt, negative, w, h, seed, count, ref_image, should_cancel, progress, cfg,
-                                     init_image=init_image, strength=strength)
+                                     init_image=init_image, strength=strength, mask_image=mask_image)
                     break
                 except _OutOfMemory:
                     if attempt == 2 or _proc_reserve >= 4.0:
@@ -644,6 +646,8 @@ def generate(prompt: str, quality: str | None = None, size=None, seed: int | Non
             os.makedirs(IMAGES_DIR, exist_ok=True)
             total = round(time.time() - t0, 1)
             for i, data in enumerate(images):
+                if after:
+                    data = after(data)
                 iid = time.strftime("%Y%m%d-%H%M%S-") + secrets.token_hex(3)
                 path = os.path.join(IMAGES_DIR, f"{iid}.png")
                 with open(path, "wb") as f:
@@ -674,7 +678,7 @@ class _OutOfMemory(Exception):
 
 
 def _render(key, prompt, negative, w, h, seed, count, ref_image, should_cancel, progress, cfg, init_image=None,
-            strength=0.6) -> list:
+            strength=0.6, mask_image=None) -> list:
     """Send one job to the running engine and wait for it, reporting progress from its log. Returns the PNG bytes
     of each picture. Raises _OutOfMemory when the engine couldn't find room on the GPU."""
     m = MODELS[key]
@@ -697,6 +701,8 @@ def _render(key, prompt, negative, w, h, seed, count, ref_image, should_cancel, 
     if init_image is not None:                    # img2img: start from this picture (sd-server's init_image)
         body["init_image"] = "data:image/png;base64," + base64.b64encode(init_image).decode()
         body["strength"] = max(0.05, min(1.0, float(strength)))
+        if mask_image is not None:                # inpainting: only the mask's white part is drawn (sd-server mask_image)
+            body["mask_image"] = "data:image/png;base64," + base64.b64encode(mask_image).decode()
     offset = _log_offset()
     r = httpx.post(f"{BASE}/sdcpp/v1/img_gen", json=body, timeout=30)
     if r.status_code not in (200, 202):
@@ -1125,6 +1131,126 @@ def sequence(seq_id: str) -> list:
             if meta and (meta.get("seq") or {}).get("id") == seq_id:
                 out.append({**meta, "trashed": trashed, **_urls(meta, trashed)})
     return sorted(out, key=lambda m: m["seq"]["index"])
+
+
+# ---- Expand: draw past a picture's edges (outpainting, 1.4.5) ----------------------------------------------------
+EXPAND_SIDES = ("left", "right", "top", "bottom")
+EXPAND_MAX_SIDE = 1536            # px: what the models here draw well in 8 GB (measured at 1024-1216 for every model)
+EXPAND_MAX_PIXELS = 1536 * 1024
+# px the new area reaches into the old one. Measured live (29 Oct 2026): the engine keeps the unmasked picture almost
+# exactly (mean change 1.8-2.5 of 255 on Balanced and Fast, 7.6 on DreamShaper), so the model continues from the real
+# edge. A wide band (48-112 px) given back to the model got NEW things drawn in it - a second cabin, a ghost tree - and
+# blending them with the original made the seam. So only a few pixels are redrawn, enough to hide the engine's edge.
+FEATHER = 12
+
+
+def expand_plan(w: int, h: int, sides, amount: float) -> dict:
+    """The new canvas: {"w", "h", "left", "top", "scale"} - each chosen side grows by `amount` of the picture's size,
+    the result rounded to 64 px and scaled down (picture included) to stay within what the models draw well."""
+    sides = [s for s in EXPAND_SIDES if s in (sides or [])] or list(EXPAND_SIDES)
+    amount = max(0.1, min(1.0, float(amount)))
+    add_w, add_h = int(w * amount), int(h * amount)
+    left = add_w if "left" in sides else 0
+    top = add_h if "top" in sides else 0
+    nw = w + left + (add_w if "right" in sides else 0)
+    nh = h + top + (add_h if "bottom" in sides else 0)
+    scale = min(1.0, EXPAND_MAX_SIDE / max(nw, nh), (EXPAND_MAX_PIXELS / (nw * nh)) ** .5)
+    W, H = max(256, int(nw * scale) // 64 * 64), max(256, int(nh * scale) // 64 * 64)
+    return {"w": W, "h": H, "left": round(left * W / nw), "top": round(top * H / nh), "scale": W / nw,
+            "pw": round(w * W / nw), "ph": round(h * H / nh), "sides": sides}
+
+
+def _expand_images(png: bytes, plan: dict) -> tuple:
+    """(start picture, mask, the original placed on the canvas, its alpha) for expand()."""
+    import io
+    from PIL import Image, ImageFilter
+    src = Image.open(io.BytesIO(png)).convert("RGB").resize((plan["pw"], plan["ph"]), Image.LANCZOS)
+    W, H, x, y = plan["w"], plan["h"], plan["left"], plan["top"]
+    # The start: the picture's own edges stretched outward and blurred - colours and light to continue from, not noise.
+    canvas = src.resize((W, H), Image.BILINEAR).filter(ImageFilter.GaussianBlur(32))
+    canvas.paste(src, (x, y))
+    # The mask: white = draw. The new area, reaching FEATHER px into the picture, softened.
+    f = min(FEATHER, plan["pw"] // 6, plan["ph"] // 6)
+    mask = Image.new("L", (W, H), 255)
+    keep = Image.new("L", (W, H), 0)
+    inner = (x + (f if x else 0), y + (f if y else 0),
+             x + plan["pw"] - (f if x + plan["pw"] < W else 0), y + plan["ph"] - (f if y + plan["ph"] < H else 0))
+    mask.paste(0, inner)
+    keep.paste(255, (x, y, x + plan["pw"], y + plan["ph"]))
+    mask = mask.filter(ImageFilter.GaussianBlur(f / 4))
+    # Where the original's pixels go back after drawing: all of it, faded out across the feather - a wide fade, so
+    # the eye can't find the line.
+    alpha = Image.new("L", (W, H), 0)
+    alpha.paste(255, inner)
+    alpha = alpha.filter(ImageFilter.GaussianBlur(f / 2))
+    alpha = Image.composite(alpha, Image.new("L", (W, H), 0), keep)
+    placed = Image.new("RGB", (W, H)); placed.paste(src, (x, y))
+
+    def to_png(im):
+        b = io.BytesIO(); im.save(b, "PNG"); return b.getvalue()
+    return to_png(canvas), to_png(mask), placed, alpha
+
+
+def match_colors(drawn, original, plan: dict):
+    """The drawn canvas with its colours matched to the original's, per channel (mean and spread), measured on the
+    band of the picture next to the new area - where both exist. Fixes the slight relighting that made seams."""
+    import numpy as np
+    from PIL import Image
+    d = np.asarray(drawn, dtype=np.float32)
+    o = np.asarray(original, dtype=np.float32)
+    x, y, pw, ph, W, H = plan["left"], plan["top"], plan["pw"], plan["ph"], plan["w"], plan["h"]
+    band = np.zeros(d.shape[:2], bool)
+    b = min(2 * FEATHER, pw // 3, ph // 3)
+    if x:
+        band[y:y + ph, x:x + b] = True
+    if x + pw < W:
+        band[y:y + ph, x + pw - b:x + pw] = True
+    if y:
+        band[y:y + b, x:x + pw] = True
+    if y + ph < H:
+        band[y + ph - b:y + ph, x:x + pw] = True
+    if band.sum() < 1000:
+        return drawn
+    dm, ds = d[band].mean(0), d[band].std(0) + 1e-3
+    om, os_ = o[band].mean(0), o[band].std(0) + 1e-3
+    gain = np.clip(os_ / ds, 0.7, 1.4)                       # never a wild change
+    fixed = np.clip((d - dm) * gain + om, 0, 255).astype(np.uint8)
+    return Image.fromarray(fixed)
+
+
+EXPAND_STRENGTH = 0.75     # live test: 1.0 relit the new area (a lighter band at the join); 0.75 keeps the start's colours
+
+
+def expand(iid: str, sides=None, amount: float = 0.5, prompt: str = "", quality: str | None = None,
+           strength: float = EXPAND_STRENGTH, **kw) -> dict:
+    """The picture with more of the scene around it, as a new image (the original stays). The new area is drawn by
+    the picture's own model from its own prompt (plus `prompt`, if given); the original's pixels are put back
+    exactly, blended across a narrow seam."""
+    import io
+    from PIL import Image
+    got = find(iid)
+    if not got:
+        raise ImageError("No such image.", "missing")
+    meta = got[0]
+    plan = expand_plan(int(meta["width"]), int(meta["height"]), sides, amount)
+    start, mask, placed, alpha = _expand_images(image_bytes(iid), plan)
+
+    def put_back(png: bytes) -> bytes:
+        out = Image.open(io.BytesIO(png)).convert("RGB")
+        if out.size != placed.size:
+            out = out.resize(placed.size, Image.LANCZOS)
+        import numpy as np
+        a = np.asarray(alpha) > 250                              # deep inside the original: the engine should keep it
+        drift = float(np.abs(np.asarray(out, np.float32)[a] - np.asarray(placed, np.float32)[a]).mean()) if a.any() else 0.0
+        expand.last_drift = round(drift, 1)                      # 0 = kept the picture; ~40+ = redrew it all
+        out = match_colors(out, placed, plan)
+        out = Image.composite(placed, out, alpha)
+        b = io.BytesIO(); out.save(b, "PNG"); return b.getvalue()
+    text = ", ".join(p for p in (str(prompt or "").strip(), meta.get("prompt") or "") if p) or "the same scene, continued"
+    quality = quality if quality in MODELS else meta.get("quality") if meta.get("quality") in MODELS else None
+    extra = {"expanded_from": iid, "expand": {"sides": plan["sides"], "amount": amount}}
+    return generate(text, quality, f"{plan['w']}x{plan['h']}", None, meta.get("negative", ""), init_image=start,
+                    strength=strength, mask_image=mask, after=put_back, extra_meta=extra, **kw)
 
 
 def edit(iid: str, prompt: str, **kw) -> dict:
