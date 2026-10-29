@@ -187,5 +187,28 @@ class ToolTests(unittest.TestCase):
             self.assertFalse(ds.called)                                    # the switch off: only the web
 
 
+class UnreachableDuckDuckGoTests(unittest.TestCase):
+    def test_one_timeout_pauses_it_instead_of_every_search_waiting(self):
+        import web_tools
+        web_tools.reset_search_state()
+        search_engine._paused_until.clear()
+        self.addCleanup(web_tools.reset_search_state)
+        self.addCleanup(search_engine._paused_until.clear)
+        with patch.object(web_tools, "fetch", side_effect=httpx.ConnectTimeout("timed out")) as f:
+            got, why = search_engine._run_provider("duckduckgo", "x", 8, "any", "", "", {}, search_engine.KEYS, False, lambda: False)
+            self.assertIn("could not be reached", why)
+            got, why = search_engine._run_provider("duckduckgo", "y", 8, "any", "", "", {}, search_engine.KEYS, False, lambda: False)
+            self.assertIn("paused", why)                       # no second 20 s wait
+            self.assertEqual(f.call_count, 1)
+        self.assertIn("paused", search_engine._run_provider("ddg_instant", "y", 8, "any", "", "", {}, search_engine.KEYS,
+                                                            False, lambda: False)[1])
+
+    def test_web_and_source_lists_weigh_as_set(self):
+        a = [{"url": "https://w.com/1", "title": "W"}]
+        b = [{"url": "https://f.com/1", "title": "F"}]
+        self.assertEqual(search_engine.fuse([a, b], weights=[1.0, .5])[0]["url"], "https://w.com/1")
+        self.assertEqual(search_engine.fuse([a, b], weights=[.5, 1.0])[0]["url"], "https://f.com/1")
+
+
 if __name__ == "__main__":
     unittest.main()

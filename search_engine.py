@@ -56,6 +56,7 @@ NAMES = {"brave": "Brave", "tavily": "Tavily", "searxng": "SearXNG", "duckduckgo
          "ddg_instant": "DuckDuckGo Instant Answers"}
 _GAP = {"brave": 1.1, "tavily": 0.4, "searxng": 0.3, "ddg_instant": 1.0}      # seconds between two calls
 _RATE_PAUSE = 60.0                                                          # after a 429
+DDG_UNREACHABLE_PAUSE = 60.0                                                # after DuckDuckGo timed out
 
 # DuckDuckGo region codes (kl); anything already like "us-en" passes through.
 _REGIONS = {"us": "us-en", "gb": "uk-en", "uk": "uk-en", "ca": "ca-en", "au": "au-en", "in": "in-en", "ie": "ie-en",
@@ -256,6 +257,13 @@ def authority(url: str, queries: list) -> float:
 # Deep search (1.4.4, part B): more phrasings, more kinds of source, one fused ranking
 # ==============================================================================
 RRF_K = 60                      # reciprocal rank fusion's constant (the common choice in the literature)
+# Web searches per Deep round: DuckDuckGo refused (and then dropped this PC's address for hours) when an evaluation
+# sent six in a row per question, even over Tor (29 Oct 2026). More phrasings go to the forum APIs, which don't.
+DEEP_WEB_QUERIES = 3
+# A forum / Q&A source list's vote against a web list's. Tuned on tools/search_eval (18 questions, 29 Oct 2026): at 1.0
+# the six-odd source lists crowded good web results out of the top 10 (7.4 -> 5.2 matching); at 0.35 every question had
+# an answer in the top 5 and Deep the most matching results (7.4) - lower changed nothing.
+SOURCE_WEIGHT = 0.35
 EXTRA_FIELDS = ("kind", "source", "points", "answered", "comments", "site")
 _STOP = set("a an the of to in on for and or is are was were be been do does did how what why when where which who "
             "can could should would will my me i you it this that with from by at as about any anyone there their "
@@ -297,12 +305,13 @@ def fanout(question: str, queries: list | None = None, limit: int = 6) -> list:
     return uniq[:limit]
 
 
-def fuse(lists: list, k: int = RRF_K) -> list:
-    """Reciprocal rank fusion: every ranked list (one per query and source) votes 1/(k + rank) for each result; a
-    page several searches agree on rises. Mirrors fold together (sources.canonical). Returns the merged results in
-    fused order, each with "rrf" and "hits" (how many lists found it)."""
+def fuse(lists: list, k: int = RRF_K, weights: list | None = None) -> list:
+    """Reciprocal rank fusion: every ranked list (one per query and source) votes weight/(k + rank) for each result;
+    a page several searches agree on rises. weights: one per list (default 1). Mirrors fold together
+    (sources.canonical). Returns the merged results in fused order, each with "rrf" and "hits" (lists that found it)."""
     merged: dict = {}
-    for lst in lists:
+    for li, lst in enumerate(lists):
+        w = weights[li] if weights and li < len(weights) else 1.0
         for rank_i, r in enumerate(lst or []):
             url = str(r.get("url") or "").strip()
             if not web_tools.is_web_url(url):
@@ -319,7 +328,7 @@ def fuse(lists: list, k: int = RRF_K) -> list:
                 for f in EXTRA_FIELDS:                      # a forum source knows what a web result didn't
                     if r.get(f) not in (None, "") and f not in m:
                         m[f] = r[f]
-            m["rrf"] += 1.0 / (k + rank_i + 1)
+            m["rrf"] += w / (k + rank_i + 1)
             m["hits"] += 1
             m["date"] = m["date"] or r.get("date") or ""
     return sorted(merged.values(), key=lambda m: m["rrf"], reverse=True)
@@ -614,6 +623,10 @@ def _run_provider(provider: str, query: str, n: int, recency: str, site: str, re
             raise                                    # the kill switch: no provider may go around it
         except Exception as e:                       # httpx errors: DuckDuckGo unreachable
             results, why = [], f"DuckDuckGo could not be reached ({str(e)[:120]})"
+            # Unreachable is how a block often looks (it drops the connection): skip it for a minute instead of
+            # every search waiting ~20 s for it to time out again (1.4.4) - its Instant Answers too.
+            web_tools._ddg["until"] = max(web_tools._ddg["until"], time.monotonic() + DDG_UNREACHABLE_PAUSE)
+            _paused_until["ddg_instant"] = time.monotonic() + DDG_UNREACHABLE_PAUSE
         if not results and why and browser_fallback and not should_cancel():
             found, engine, trouble = web_tools._browser_search(q)
             if found:
@@ -754,7 +767,8 @@ def search(query: str = "", *, queries: list | None = None, num_results: int = 8
         providers.append(used)
     # Every query's list - and every forum or Q&A source's (deep_sources) - fused by reciprocal rank (1.4.4): a page
     # several of them found rises; each list's best still comes early.
-    merged = fuse(per_query + list(extra_lists or []))
+    extra_lists = list(extra_lists or [])
+    merged = fuse(per_query + extra_lists, weights=[1.0] * len(per_query) + [SOURCE_WEIGHT] * len(extra_lists))
     ranked = rank(merged, qs, sensitive, site)
     lists = len(qs) + len(extra_lists or [])
     limit = min(MAX_RESULTS, n if lists == 1 else max(n, min(MAX_RESULTS, n + 2 * (lists - 1))))
@@ -1030,7 +1044,7 @@ def web_search_tool(args: dict, settings: dict, keys: KeyStore | None = None, br
     fallback = browser_fallback and mode == "standard"
     deep = bool(args.get("deep"))
     if deep:                                         # Deep search: more phrasings of different kinds (B2)
-        queries = fanout(queries[0], queries[1:], limit=6)
+        queries = fanout(queries[0], queries[1:], limit=DEEP_WEB_QUERIES)
     kwargs = dict(num_results=args.get("num_results") or args.get("limit") or 8, recency=args.get("recency") or "auto",
                   site=args.get("site") or "", region=args.get("region") or "", settings=settings, keys=keys,
                   browser_fallback=fallback, should_cancel=should_cancel, progress=progress)
@@ -1055,7 +1069,7 @@ def web_search_tool(args: dict, settings: dict, keys: KeyStore | None = None, br
             finally:
                 pool.shutdown(wait=False)
         got = search(queries[0], queries=queries[1:], mode=mode, extra_lists=(extra or {}).get("lists"),
-                     max_queries=6 if deep else MAX_QUERIES, **kwargs)
+                     max_queries=DEEP_WEB_QUERIES if deep else MAX_QUERIES, **kwargs)
         if extra:
             got["providers"] = sorted(set(got["providers"]) | set(extra["used"]))
             got["why"] = got["why"] + [w for w in extra["why"] if w not in got["why"]]
