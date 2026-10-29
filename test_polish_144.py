@@ -78,6 +78,19 @@ class CalmMotionTests(unittest.TestCase):
         self.assertIn("el._want = act; clearTimeout(el._wantT);", self.page)      # a change must last 0.6 s
         self.assertNotIn("(i + t / 1.2) % 3", self.page)                          # no colour cycling
 
+    def test_one_moving_signal_at_a_time(self):
+        # Measured live in every appearance (harness anim.js, 29 Oct 2026): during a reply only the thinking mark moves
+        # (plus the Claude look's shimmer); these used to loop alongside it.
+        p = self.page
+        self.assertNotIn("animation: if-float 3.6s", p)                       # the incognito ghost's loops
+        self.assertNotIn("animation: ml-pulse", p)                            # the model line's dot
+        self.assertNotIn("'<span class=\"spinner\"></span>' : icon({ waiting", p)  # the top bar chip's spinner
+        self.assertNotIn('[data-state="working"] .halo { opacity: .8; animation: halo-breathe', p)
+        self.assertNotIn("animation: corona 9s linear infinite running", p)
+        self.assertIn("SPEED = { idle: 1, working: 1, waiting: 1", p)          # Aurora's sky isn't a status light
+        self.assertNotIn("skin === 'terminal' && state === 'working' ? 'scan'", p)
+        self.assertIn("animation: clay-shimmer 3s linear infinite", p)         # the Claude look keeps its shimmer
+
     def test_icon_less_sites_get_a_coloured_tile(self):
         self.assertIn('style="--fh:${hue}"', self.page)
         self.assertIn("background: hsl(var(--fh, 220) 38% 44%)", self.page)
