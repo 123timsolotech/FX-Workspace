@@ -487,6 +487,7 @@ class SettingsUpdate(BaseModel):
     # Web Search privacy, Network, the Studio Overlay, secret themes (core/config.clean_privacy_settings)
     search_mode: str | None = None
     search_preview: bool | None = None
+    search_sources: bool | None = None
     search_cache_minutes: int | None = None
     search_history: bool | None = None
     search_history_days: int | None = None

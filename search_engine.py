@@ -252,6 +252,127 @@ def authority(url: str, queries: list) -> float:
     return score
 
 
+# ==============================================================================
+# Deep search (1.4.4, part B): more phrasings, more kinds of source, one fused ranking
+# ==============================================================================
+RRF_K = 60                      # reciprocal rank fusion's constant (the common choice in the literature)
+EXTRA_FIELDS = ("kind", "source", "points", "answered", "comments", "site")
+_STOP = set("a an the of to in on for and or is are was were be been do does did how what why when where which who "
+            "can could should would will my me i you it this that with from by at as about any anyone there their "
+            "get got have has had not no yes so if than then into out up".split())
+_QUOTE_RE = re.compile(r'"([^"]{4,120})"|\'([^\']{8,120})\'')
+_ERRORISH_RE = re.compile(r"((?:[A-Z]\w+(?:Error|Exception))[:\s][^.\n]{0,100}|error[:\s][^.\n]{4,100}|0x[0-9a-fA-F]{6,}|"
+                          r"E\d{3,5}\b[^.\n]{0,60})")
+
+
+def keywords(text: str, n: int = 8) -> str:
+    """A question as search keywords: its meaningful words, in order."""
+    words = [w for w in re.findall(r"[\w.+#/-]+", text or "") if w.lower() not in _STOP and len(w) > 1]
+    return " ".join(words[:n])
+
+
+def fanout(question: str, queries: list | None = None, limit: int = 6) -> list:
+    """The searches for one question, of different kinds (docs/plans/1.4.4.md, B2): the model's own phrasings, the
+    question as keywords, the exact phrase (an error message, a quoted line), and - for experience and error
+    questions - the forum-shaped searches where fixes are written up."""
+    import deep_sources
+    q = re.sub(r"\s+", " ", question or "").strip()
+    out = [x for x in [q] + list(queries or []) if x]
+    core = keywords(q)
+    if core and core.lower() != q.lower() and len(q.split()) > 6:      # a short question is its own keywords
+        out.append(core)
+    m = _QUOTE_RE.search(q) or _ERRORISH_RE.search(q)
+    if m:
+        phrase = (m.group(1) or (m.group(2) if m.lastindex and m.lastindex >= 2 else "") or m.group(0)).strip(" :.")
+        if phrase:
+            out.append(f'"{phrase[:100]}"')
+    if deep_sources._ERROR_RE.search(q) or deep_sources._EXPERIENCE_RE.search(q):
+        short = keywords(q, 6)
+        out += [f"{short} forum", f"{short} solved" if deep_sources._ERROR_RE.search(q) else f"{short} reddit"]
+    seen, uniq = set(), []
+    for x in out:
+        if x.lower() not in seen:
+            seen.add(x.lower())
+            uniq.append(x)
+    return uniq[:limit]
+
+
+def fuse(lists: list, k: int = RRF_K) -> list:
+    """Reciprocal rank fusion: every ranked list (one per query and source) votes 1/(k + rank) for each result; a
+    page several searches agree on rises. Mirrors fold together (sources.canonical). Returns the merged results in
+    fused order, each with "rrf" and "hits" (how many lists found it)."""
+    merged: dict = {}
+    for lst in lists:
+        for rank_i, r in enumerate(lst or []):
+            url = str(r.get("url") or "").strip()
+            if not web_tools.is_web_url(url):
+                continue
+            key = sources.canonical(url)
+            m = merged.get(key)
+            if m is None:
+                m = merged[key] = {"title": r.get("title") or url, "url": url, "snippet": r.get("snippet") or "",
+                                   "date": r.get("date") or "", "rrf": 0.0, "hits": 0,
+                                   **{f: r[f] for f in EXTRA_FIELDS if r.get(f) not in (None, "")}}
+            else:
+                if len(r.get("snippet") or "") > len(m["snippet"]):
+                    m["snippet"] = r.get("snippet") or ""
+                for f in EXTRA_FIELDS:                      # a forum source knows what a web result didn't
+                    if r.get(f) not in (None, "") and f not in m:
+                        m[f] = r[f]
+            m["rrf"] += 1.0 / (k + rank_i + 1)
+            m["hits"] += 1
+            m["date"] = m["date"] or r.get("date") or ""
+    return sorted(merged.values(), key=lambda m: m["rrf"], reverse=True)
+
+
+RERANK_SYSTEM = ("You rank search results for a question. Given the question and numbered results (title, site, "
+                 "kind, snippet), return JSON {\"order\": [numbers]} - the results most likely to contain a correct, "
+                 "specific answer first. Prefer: the page that answers this exact question; primary sources and "
+                 "official docs; forum or Q&A threads where someone reports the same problem fixed; recent pages for "
+                 "time-sensitive questions. Push down: generic listicles, SEO pages, pages about something else. "
+                 "Include every number once.")
+
+
+def rerank(question: str, results: list, ask=None, top: int = 30, batch: int = 15) -> list:
+    """The fused list's top results re-ordered by the model, in batches (B4). ask(system, user) -> dict or None; when
+    the model doesn't answer, the order stays as it was. The rest keep their place after the re-ranked ones."""
+    if ask is None:
+        from agent import models as llm
+        ask = lambda s, u: llm.model_json(s, u, max_tokens=300)            # noqa: E731
+    head, tail = results[:top], results[top:]
+    out = []
+    for i in range(0, len(head), batch):
+        part = head[i:i + batch]
+        listing = "\n".join(f"[{j + 1}] {r['title']} - {sources.domain(r['url'])}" + (f" · {r['kind']}" if r.get("kind") else "")
+                            + (f"\n    {r['snippet'][:220]}" if r.get("snippet") else "") for j, r in enumerate(part))
+        got = None
+        try:
+            got = ask(RERANK_SYSTEM, f"Question: {question}\n\nResults:\n{listing}")
+        except Exception:
+            got = None
+        order = [int(x) - 1 for x in (got or {}).get("order") or [] if str(x).isdigit() and 0 < int(x) <= len(part)]
+        order = list(dict.fromkeys(order)) + [j for j in range(len(part)) if j not in order]
+        out += [part[j] for j in order]
+    return out + tail
+
+
+_KIND_WORDS = {"forum": "forum thread", "q&a": "Q&A", "issue": "issue tracker", "paper": "paper", "reference": "encyclopedia"}
+
+
+def _thread_note(r: dict) -> str:
+    """" · Q&A · accepted answer · score 42" - what a forum or Q&A result is, so the model can weigh it (B6)."""
+    if r.get("kind") not in _KIND_WORDS:
+        return ""
+    bits = [_KIND_WORDS[r["kind"]]]
+    if r.get("answered"):
+        bits.append("closed" if r["kind"] == "issue" else "accepted answer" if r["kind"] == "q&a" else "solved")
+    if r.get("points"):
+        bits.append(f"score {r['points']}")
+    if r.get("comments"):
+        bits.append(f"{r['comments']} {'answers' if r['kind'] == 'q&a' else 'replies'}")
+    return " · " + " · ".join(bits)
+
+
 def rank(results: list, queries: list, sensitive: bool, site: str = "", today: date | None = None) -> list:
     """Merge mirrors and rank: position, repeated hits across queries, authority,
     low-quality and SEO-bait penalties, and freshness for time-sensitive questions."""
@@ -264,13 +385,14 @@ def rank(results: list, queries: list, sensitive: bool, site: str = "", today: d
         key = sources.canonical(url)
         if key in merged:
             m = merged[key]
-            m["hits"] += 1
+            m["hits"] += r.get("hits") or 1
             if len(r.get("snippet") or "") > len(m["snippet"]):
                 m["snippet"] = r.get("snippet") or ""
             m["date"] = m["date"] or r.get("date") or ""
             continue
         merged[key] = {"title": r.get("title") or url, "url": url, "snippet": r.get("snippet") or "",
-                       "date": r.get("date") or "", "domain": sources.domain(url), "pos": pos, "hits": 1}
+                       "date": r.get("date") or "", "domain": sources.domain(url), "pos": pos, "hits": r.get("hits") or 1,
+                       **{f: r[f] for f in EXTRA_FIELDS if r.get(f) not in (None, "")}}
     # The same title on the same site (print / mobile / localized copies) is one result.
     seen_titles: dict = {}
     for key, m in list(merged.items()):
@@ -285,7 +407,7 @@ def rank(results: list, queries: list, sensitive: bool, site: str = "", today: d
     for m in merged.values():
         d = parse_date(m["date"] or m["snippet"][:40], today)
         m["date"] = d.isoformat() if d else ""
-        score = 1.0 / (1 + .12 * m["pos"]) + .15 * (m["hits"] - 1) + authority(m["url"], queries)
+        score = 1.0 / (1 + .12 * m["pos"]) + .15 * min(m["hits"] - 1, 4) + authority(m["url"], queries)
         if _SEO_TITLE_RE.search(m["title"]):
             score -= .15
         if site and not (m["domain"] == site or m["domain"].endswith("." + site)):
@@ -558,7 +680,8 @@ def cache_ttl(settings: dict, mode: str) -> float:
 
 def search(query: str = "", *, queries: list | None = None, num_results: int = 8, recency: str = "auto",
            site: str = "", region: str = "", settings: dict | None = None, keys: KeyStore | None = None,
-           browser_fallback: bool = False, should_cancel=None, progress=None, mode: str = "standard") -> dict:
+           browser_fallback: bool = False, should_cancel=None, progress=None, mode: str = "standard",
+           extra_lists: list | None = None, max_queries: int = MAX_QUERIES) -> dict:
     """Up to MAX_QUERIES queries through the provider chain of a privacy mode,
     merged and ranked. Local Only searches this PC (local_search); a request the
     network layer blocked (kill switch, no VPN) stops the search - nothing goes
@@ -573,7 +696,7 @@ def search(query: str = "", *, queries: list | None = None, num_results: int = 8
         q = re.sub(r"\s+", " ", str(q or "")).strip()[:300]
         if q and q.lower() not in {x.lower() for x in qs}:
             qs.append(q)
-    qs = qs[:MAX_QUERIES]
+    qs = qs[:max(1, min(int(max_queries or MAX_QUERIES), 8))]
     n = max(1, min(int(num_results or 8), MAX_RESULTS))
     site, region = clean_site(site), clean_region(region)
     sensitive = any(time_sensitive(q) for q in qs)
@@ -629,10 +752,12 @@ def search(query: str = "", *, queries: list | None = None, num_results: int = 8
             history.record_search(q, got, used, settings, mode)
         per_query.append(got)
         providers.append(used)
-    # Interleave the queries' results by rank, so each query's best comes first.
-    merged = [r for i in range(max((len(r) for r in per_query), default=0)) for r in (x[i] for x in per_query if i < len(x))]
+    # Every query's list - and every forum or Q&A source's (deep_sources) - fused by reciprocal rank (1.4.4): a page
+    # several of them found rises; each list's best still comes early.
+    merged = fuse(per_query + list(extra_lists or []))
     ranked = rank(merged, qs, sensitive, site)
-    limit = min(MAX_RESULTS, n if len(qs) == 1 else max(n, min(MAX_RESULTS, n + 2 * (len(qs) - 1))))
+    lists = len(qs) + len(extra_lists or [])
+    limit = min(MAX_RESULTS, n if lists == 1 else max(n, min(MAX_RESULTS, n + 2 * (lists - 1))))
     return {"results": ranked[:limit], "queries": qs, "providers": sorted({p for p in providers if p}),
             "recency": recency, "sensitive": sensitive, "why": list(dict.fromkeys(why)), "cached": cached,
             "blocked": blocked, "mode": mode}
@@ -903,11 +1028,39 @@ def web_search_tool(args: dict, settings: dict, keys: KeyStore | None = None, br
         queries = edited[:MAX_QUERIES] or queries
     # Private and Maximum Privacy never use the assistant's browser: it keeps cookies and a history.
     fallback = browser_fallback and mode == "standard"
+    deep = bool(args.get("deep"))
+    if deep:                                         # Deep search: more phrasings of different kinds (B2)
+        queries = fanout(queries[0], queries[1:], limit=6)
     kwargs = dict(num_results=args.get("num_results") or args.get("limit") or 8, recency=args.get("recency") or "auto",
                   site=args.get("site") or "", region=args.get("region") or "", settings=settings, keys=keys,
                   browser_fallback=fallback, should_cancel=should_cancel, progress=progress)
+    # Forums, Q&A sites, issue trackers and papers (deep_sources, 1.4.4), searched alongside the web when the
+    # question fits them - Standard mode only (Private and Maximum Privacy send the words to fewer places).
+    sourced, pool = None, None
+    # (On only when the setting says so: the app's settings always carry it - on by default, core/config.)
+    if mode == "standard" and settings.get("search_sources") is True and not args.get("site"):
+        import concurrent.futures
+        import deep_sources
+        pool = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        sourced = pool.submit(privacy.wrap(deep_sources.search), queries[0], queries[1:2], 6, None, should_cancel)
     with scope(mode):
-        got = search(queries[0], queries=queries[1:], mode=mode, **kwargs)
+        extra = None
+        if sourced is not None:
+            try:
+                extra = sourced.result(timeout=40)
+            except netlayer.RouteBlocked:
+                raise
+            except Exception:
+                extra = None
+            finally:
+                pool.shutdown(wait=False)
+        got = search(queries[0], queries=queries[1:], mode=mode, extra_lists=(extra or {}).get("lists"),
+                     max_queries=6 if deep else MAX_QUERIES, **kwargs)
+        if extra:
+            got["providers"] = sorted(set(got["providers"]) | set(extra["used"]))
+            got["why"] = got["why"] + [w for w in extra["why"] if w not in got["why"]]
+        if deep and got["results"]:                  # the model re-ranks the fused top (B4)
+            got["results"] = rerank(queries[0], got["results"])
     used_mode, note, route_label = mode, "", route.label
     if mode == "max" and not got["results"] and (got["why"] or got["blocked"]):
         choice = ask_fallback(got, settings, should_cancel)
@@ -954,6 +1107,7 @@ def web_search_tool(args: dict, settings: dict, keys: KeyStore | None = None, br
     kinds = "biascheck" in (shared.app_state.get("turn_tools") or ())      # Bias check: say what kind of source each is
     for r in listed:
         rows.append(f"[{r['n']}] {r['title']} - {r['domain']}" + (f" · {source_kind(r['url'])}" if kinds else "")
+                    + _thread_note(r)
                     + (f" · {r['date']}" if r["date"] else "")
                     + f"\n    {r['url']}" + (f"\n    {r['snippet']}" if r["snippet"] else ""))
     lines += rows

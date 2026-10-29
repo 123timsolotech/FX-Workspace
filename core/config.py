@@ -125,6 +125,7 @@ DEFAULT_SETTINGS = {
     # Web Search privacy (search_engine.MODES): standard | private | max | local | disabled
     "search_mode": "standard",
     "search_preview": False,            # show each search query to edit or cancel before it's sent
+    "search_sources": True,             # also forums, Q&A sites, issues, papers (deep_sources.py, 1.4.4) in Standard mode
     "search_cache_minutes": 15,         # reuse a search's results for this long (0: never; never in Max Privacy)
     "search_history": False,            # keep searches and pages read on disk (search_history.py) - opt-in
     "search_history_days": 30,
@@ -293,7 +294,7 @@ def clean_privacy_settings(s: dict) -> dict:
     out = {"search_mode": s.get("search_mode") if s.get("search_mode") in SEARCH_MODES else "standard"}
     for key, default in (("search_preview", False), ("search_history", False), ("overlay_clickthrough", False),
                          ("overlay_window", False), ("close_to_tray", True), ("start_with_windows", False),
-                         ("start_hidden", True)):
+                         ("start_hidden", True), ("search_sources", True)):
         out[key] = s.get(key) if isinstance(s.get(key), bool) else default
     out["mini_place"] = s.get("mini_place") if s.get("mini_place") in MINI_PLACES else "studio"
     out["idle_unload"] = str(s.get("idle_unload")) if str(s.get("idle_unload")) in IDLE_UNLOAD else "15"

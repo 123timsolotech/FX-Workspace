@@ -15848,6 +15848,8 @@ async function renderWebSearch() {
     </div>
     <div class="set-group"><div class="gt">Providers <small>· in Standard mode</small></div>
       ${rowHtml('Search with first', 'DuckDuckGo needs no key and is always the fallback.', seg([['duckduckgo', 'DuckDuckGo'], ['brave', 'Brave'], ['tavily', 'Tavily'], ['searxng', 'SearXNG']], s.web_search_provider || 'duckduckgo', "(v=>saveSettings({web_search_provider:v}).then(()=>{S.searchModes=null;renderWebSearch()}))"))}
+      ${rowHtml('Forums and Q&A sites too', 'Also searches Hacker News, Stack Exchange, Discourse forums, Lemmy, GitHub issues, Wikipedia and arXiv when a question fits them - where fixes and first-hand answers are. Each sees the search words.',
+        sw(s.search_sources !== false, `saveSettings({search_sources:${s.search_sources === false}}).then(renderWebSearch)`))}
       ${rowHtml('SearXNG address', 'Your own instance (JSON API on). Maximum Privacy uses only this.', `<input class="input" style="max-width:240px" value="${esc(s.searxng_url || '')}" placeholder="http://127.0.0.1:8888" aria-label="SearXNG address" onchange="saveSettings({searxng_url:this.value}).then(()=>{S.searchModes=null;renderWebSearch()})">`)}
       ${rowHtml('Test connection', 'One real search, through the route.', `<button class="btn" id="ws-test" onclick="testSearch(this)">${icon('i-activity', 'xs')}Test</button>`)}
       <div id="ws-test-out"></div>

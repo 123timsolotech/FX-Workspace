@@ -1,0 +1,23 @@
+{
+  "about": "Deep search evaluation (docs/plans/1.4.4.md, B10). Each question has a pattern a result answering it matches (title, snippet or address, any case). 'forum': answered mainly in forums and Q&A threads. Run: python tools/search_eval.py",
+  "questions": [
+    {"q": "llama.cpp vulkan out of memory error on AMD GPU", "expect": "vulkan.*(memory|oom|vram)|ErrorOutOfDeviceMemory|(memory|oom).*vulkan", "forum": true},
+    {"q": "Windows 11 explorer.exe high CPU usage after update fix", "expect": "explorer.*cpu|cpu.*explorer", "forum": true},
+    {"q": "Activate.ps1 cannot be loaded because running scripts is disabled on this system", "expect": "execution.?polic|running scripts is disabled", "forum": true},
+    {"q": "git push rejected non-fast-forward", "expect": "non-fast-forward|fetch first|pull --rebase|updates were rejected", "forum": false},
+    {"q": "Roblox Studio HttpService is not allowed to access ROBLOX resources error", "expect": "http ?(service|requests?).*(enable|allow)|httpenabled|not allowed to access", "forum": true},
+    {"q": "is the RTX 3090 still worth it for local LLMs", "expect": "3090.*(llm|vram|24 ?gb|local)|(llm|local).*3090", "forum": true},
+    {"q": "Steam Deck fan noise loud fix", "expect": "fan.*(noise|loud|curve)|(noise|loud).*fan", "forum": true},
+    {"q": "Home Assistant zigbee devices unavailable after restart", "expect": "zigbee.*unavailable|unavailable.*zigbee|zha.*(unavailable|restart)", "forum": true},
+    {"q": "Minecraft Fabric mod crash Mixin apply failed", "expect": "mixin.*(apply|fail)", "forum": true},
+    {"q": "nvlddmkm event 153 display driver stopped responding", "expect": "nvlddmkm|event (id )?153|tdr", "forum": true},
+    {"q": "electron app shows blank white screen after packaging", "expect": "(white|blank) (screen|window|page)", "forum": true},
+    {"q": "how does reciprocal rank fusion work", "expect": "reciprocal rank fusion|\\brrf\\b", "forum": false},
+    {"q": "Qwen3 8B context length", "expect": "qwen3.*(context|32k|128k|32,768|131,072|tokens)", "forum": false},
+    {"q": "how to run the tor expert bundle as a client on windows", "expect": "tor.*(expert bundle|torrc|socksport)|expert bundle", "forum": false},
+    {"q": "docker desktop wsl2 vmmem using too much memory", "expect": "vmmem|\\.wslconfig|wsl.*memory", "forum": true},
+    {"q": "obsidian sync conflicts between devices", "expect": "obsidian.*(sync|conflict)", "forum": true},
+    {"q": "pytorch cuda out of memory but nvidia-smi shows free memory", "expect": "out of memory|empty_cache|fragment|memory.*(free|reserved)", "forum": true},
+    {"q": "best self hosted alternative to google photos", "expect": "immich|photoprism|ente|nextcloud memories|lychee", "forum": true}
+  ]
+}
