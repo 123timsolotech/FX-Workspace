@@ -25,8 +25,9 @@ Two layers ("rules + model check"):
      except a `minors` rule hit, which is refused (fail closed for that one category).
 
 A refusal never reaches the model's conversation; the chat shows the message and a short refusal. Each counts as a
-strike on that chat; `strike_limit` strikes (default 3) - or one `minors` refusal - lock it: it can still be read,
-but nothing more can be sent, edited, retried or branched from it. A new chat starts clean.
+strike on that chat; `strike_limit` strikes (default 3) - or one `minors` refusal the model confirmed - lock it: it
+can still be read, but nothing more can be sent, edited, retried or branched from it. A new chat starts clean. A
+`minors` refusal by the rules alone is refused but doesn't lock (ordinary words can match: "child process").
 
 Settings > Permissions > Privacy > More options changes the limits (the abuse check is under Advanced there).
 A closed chat reopens with a hidden gesture - double-click the lock icon on its banner - except one closed for
@@ -58,7 +59,8 @@ _ACK_WORDS = {"ok", "okay", "thanks", "thank", "you", "ty", "yes", "yeah", "yep"
 # allowed, so a small local model doesn't refuse fiction, history, security work on your own systems or news.
 _POLICY = """You screen one chat message for a personal assistant app. Decide if answering it would require
 producing content in one of these categories:
-- minors: any sexual or sexualised content involving a minor (under 18), in any form, including fiction.
+- minors: any sexual or sexualised content involving a minor (under 18), in any form, including fiction. Minors
+  are often named by slang or abbreviations: jailbait, u18, loli, shota, "13yo", "12 y.o.", "8th grader".
 - mass_harm: real, actionable help creating, acquiring or deploying weapons capable of mass casualties
   (biological, chemical, nuclear, radiological) or planning a mass-casualty attack.
 - malware: working malicious code or step-by-step attacks against systems, accounts or people the user does
@@ -87,6 +89,7 @@ LOCKED_ABUSE = ("This chat has been closed because it stayed abusive. "
                 "You can still read it - start a new chat to continue.")
 LOCKED_SEVERE = ("This chat has been closed: it asked for sexual content involving minors, which is never "
                  "allowed here. You can still read it - start a new chat to continue.")
+CLOSED = "This chat was closed for going past the chat limits. Start a new chat to continue."   # a message sent to it
 CARE_NOTE = ("The user may be thinking about harming themselves. Respond with warmth and care: acknowledge how "
              "they feel, do not give any method or means, gently encourage reaching out to someone they trust or a "
              "crisis line (findahelpline.com lists free, confidential lines by country; in an emergency, the local "
@@ -175,15 +178,31 @@ def _rule_minors(text: str) -> bool:
     return bool(image_gen._SEXUAL.search(text) and image_gen._MINOR.search(text))
 
 
+_MARKED = re.compile(r"\b(?:answer|verdict|classification|category|label)\s*[:=-]\s*\**\s*([A-Za-z_]{4,})", re.I)
+
+
+def _label(word: str) -> str | None:
+    w = word.lower()
+    return "allow" if w == "allow" else w if w in CATEGORIES else None
+
+
 def parse_verdict(text: str) -> str | None:
-    """The model's one-word answer -> a category id, "allow", or None when it said something else."""
-    words = re.findall(r"[A-Z_]{4,}", str(text or "").upper())
-    for w in words:
-        if w == "ALLOW":
-            return "allow"
-        if w.lower() in CATEGORIES:
-            return w.lower()
-    return None
+    """The model's one-word answer -> a category id, "allow", or None when it said something else.
+    Small models often explain instead ("I checked for MALWARE or ABUSE. It is safe, so ALLOW."), naming categories
+    on the way to the answer, so the first label found isn't the verdict. In order: a marked answer ("Answer: X"),
+    a reply that opens with a label (the one word asked for, perhaps explained after), else the last label given -
+    preferring the capitalised ones the model was asked for over words in its prose."""
+    text = str(text or "")
+    marked = [m for m in map(_label, _MARKED.findall(text)) if m]
+    if marked:
+        return marked[-1]
+    words = re.findall(r"[A-Za-z_]+", text)
+    if len(words) == 1:                                 # the one word asked for, in any case
+        return _label(words[0])
+    if words and words[0].isupper() and _label(words[0]):
+        return _label(words[0])
+    caps = [m for m in (_label(w) for w in words if w.isupper()) if m]
+    return caps[-1] if caps else None
 
 
 def screen(message: str, previous: str = "", ask_model=None) -> dict:
@@ -201,21 +220,43 @@ def screen(message: str, previous: str = "", ask_model=None) -> dict:
     import intent_router
     if not rule_hit and intent_router.is_greeting(text):
         return allow
-    verdict = None
+    verdicts = []
     if ask_model is not None:
-        user = (f"Previous user message (context only): {previous[:400]}\n\n" if previous else "") + \
-               f"Message to screen: {text[:3000]}"
-        try:
-            verdict = parse_verdict(ask_model(_POLICY, user))
-        except Exception:
-            verdict = None
-    if verdict is None:                                 # no usable check: the rules decide
+        context = f"Previous user message (context only): {previous[:400]}\n\n" if previous else ""
+        for part in _windows(text):                     # a long message is checked whole, not just its start
+            try:
+                verdicts.append(parse_verdict(ask_model(_POLICY, context + f"Message to screen: {part}")))
+            except Exception:
+                verdicts.append(None)
+            if verdicts[-1] == "minors" and "minors" in enabled:
+                break                                   # nothing outranks it
+    refused = [v for v in verdicts if v in enabled and v not in ("allow", "self_harm")]
+    if refused:
+        return {"action": "refuse", "category": min(refused, key=_SEVERITY.index), "via": "model"}
+    if "self_harm" in verdicts and "self_harm" in enabled:
+        return {"action": "care", "category": "self_harm", "via": "model"}
+    if not verdicts or None in verdicts:                # no usable check (of a part): the rules decide
         return {"action": "refuse", "category": "minors", "via": "rules"} if rule_hit else allow
-    if verdict == "allow" or verdict not in enabled:
-        return allow
-    if verdict == "self_harm":
-        return {"action": "care", "category": verdict, "via": "model"}
-    return {"action": "refuse", "category": verdict, "via": "model"}
+    return allow
+
+
+# The model reads WINDOW_CHARS at a time. A longer message is read in windows that overlap, so a request cut by a
+# boundary is whole in one of them; past MAX_WINDOWS, evenly spaced windows from start to end (each one is a model
+# call - about 0.15 s on a 9B model, several seconds on a large one partly on the CPU).
+WINDOW_CHARS, WINDOW_OVERLAP, MAX_WINDOWS = 3000, 300, 8
+_SEVERITY = ["minors", "mass_harm", "malware", "abuse"]   # which refusal counts when windows disagree
+
+
+def _windows(text: str) -> list:
+    parts, start = [], 0
+    while True:
+        parts.append(text[start:start + WINDOW_CHARS])
+        if start + WINDOW_CHARS >= len(text):
+            break
+        start += WINDOW_CHARS - WINDOW_OVERLAP
+    if len(parts) > MAX_WINDOWS:
+        parts = [parts[round(i * (len(parts) - 1) / (MAX_WINDOWS - 1))] for i in range(MAX_WINDOWS)]
+    return parts
 
 
 # ---- strikes and locks (on the chat dict itself, saved with the chat) ------------------------------------
@@ -236,11 +277,17 @@ def strike_total(g: dict) -> int:
     return sum(_counts(g or {}).values())
 
 
-def record_refusal(chat: dict, category: str) -> dict:
+def record_refusal(chat: dict, category: str, via: str = "model") -> dict:
     """Count a refusal in its own category; lock the chat at that category's limit (at once - and for good - for
-    `minors`). Returns the chat's guard state."""
+    `minors` the model confirmed). A `minors` refusal by the rules alone (the check couldn't run or gave no readable
+    answer) is refused and logged but doesn't lock: the words can be ordinary ones ("strip the child nodes")
+    and nothing confirmed them. Returns the chat's guard state."""
     cfg = load()
     g = dict(chat.get("guard") or {})
+    if category == "minors" and via == "rules":
+        g["log"] = (list(g.get("log") or []) + [{"c": category, "via": via, "at": time.time()}])[-20:]
+        chat["guard"] = g
+        return g
     counts = _counts(g)
     counts[category] = counts.get(category, 0) + 1
     g.update(strikes=counts, clean=0)

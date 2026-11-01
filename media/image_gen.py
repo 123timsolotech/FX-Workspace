@@ -221,16 +221,45 @@ def _cfg() -> dict:
 
 
 # ---- the prompt filter ------------------------------------------------------------------------------
+def _he(words: str) -> str:
+    """Hebrew words as whole words: Python's \\b doesn't separate them, and without it "מיני" (sexual) matched inside
+    "מינימלי" (minimal) and "מיניאטורי" (miniature), "נער" (boy) inside "נערך" (was held). Allows the one-letter
+    prefixes (ו ה ב ל מ ש כ, up to three: "ושהילד")."""
+    return r"(?<![א-ת])[והבלמשכ]{0,3}(?:" + words + r")(?![א-ת])"
+
+
+# Words with an everyday or programming sense only count in their sexual one: "explicit" next to what it describes
+# (not "an explicit cast"), "strip" as a stripper or stripping naked (not stripping whitespace), "sex" not as in
+# "the baby's sex" or sex education. Chat screening shares these (chat_guard), where coding questions are common.
 _SEXUAL = re.compile(
-    r"\b(?:nude|nudes|naked|nsfw|porn\w*|sex|sexy|sexual\w*|erotic\w*|hentai|lingerie|topless|bottomless|undress\w*|"
-    r"genital\w*|breasts?|nipples?|orgasm|explicit|xxx|lewd|seductive|stripp\w*)\b"
-    r"|עירום|עירומה|ערום|ערומה|סקס|מיני|פורנו|ארוטי|הלבשה תחתונה|"
+    r"\b(?:nude|nudes|naked|nsfw|porn\w*|sexy|sexual\w*|erotic\w*|hentai|lingerie|topless|bottomless|undress\w*|"
+    r"genital\w*|breasts?|nipples?|orgasm|lewd|seductive|smut\w*|r34|rule ?34|"
+    r"(?<!biological )(?<!baby's )(?<!babys )sex(?! of\b| ed\b| education\b| chromosomes?\b| determination\b| ratio\b)|"
+    r"sexually explicit|explicit (?:sex\w*|images?|photos?|pics?|pictures?|content|scenes?|videos?|stor(?:y|ies)|"
+    r"roleplay|rp|fanfic\w*|acts?|material|drawings?|art)|"
+    r"xxx (?:videos?|movies?|sites?|content|pics?)|strippers?|striptease|strip (?:club|tease|show)|"
+    r"strip(?:ped|ping)? (?:naked|nude|down|off (?:her|his|their) clothes))\b"
+    # "כל מיני" is "all kinds of", not "sexual"
+    "|" + _he(r"עירום|עירומה|עירומים|עירומות|ערום|ערומה|ערומים|ערומות|סקס|סקסי|סקסית|סקסיים|סקסיות|(?<!כל )מיני|"
+              r"מינית|מיניים|מיניות|פורנו|פורנוגרפ[א-ת]*|ארוטי|ארוטית|ארוטיים|ארוטיות|ארוטיקה|הלבשה תחתונה") + "|"
     r"голая|голый|обнаж\w*|порн\w*|секс\w*|эрот\w*|нижнее бельё", re.I)
+# Programming senses don't count: child/children/kid processes, nodes, elements and themes, CSS's nth-child,
+# node.children, a minor version or bug. Ages and school years count however they're written ("13yo", "12 y.o.",
+# "14 yr old", "u18", "middle schooler").
+_TECH_NOUN = (r"(?:process|node|element|class|theme|component|window|table|record|row|object|widget|item|thread|"
+              r"pid|dir|director(?:y|ie)|folder|selector|view|frame|entit(?:y|ie)|key|span|task|route|shell|"
+              r"instance|module|package|branch|commit|repo|logger|tag|array|field|query)s?")
 _MINOR = re.compile(
-    r"\b(?:child|children|kid|kids|minor|minors|underage|under-age|preteen|pre-teen|teen|teens|teenage\w*|schoolgirl|"
-    r"schoolboy|loli|lolita|shota|toddler|infant|baby|babies|young (?:girl|boy)|little (?:girl|boy)|"
-    r"(?:1[0-7]|[1-9])[- ]?(?:yo|y/o|years?[- ]old))\b"
-    r"|ילד|ילדה|ילדים|קטין|קטינה|נער|נערה|תינוק|"
+    r"(?<![-:.#])\b(?:child|children|kids?)\b(?![-_(]|\s+" + _TECH_NOUN + r"\b| you not\b)"
+    r"|\bminor\b(?!\s+(?:bugs?|issues?|versions?|releases?|changes?|fix(?:es)?|updates?|tweaks?|details?|keys?|"
+    r"scales?|chords?|edits?|errors?|typos?|improvements?|things?|problems?|glitch(?:es)?|refactors?|bump|league)\b)"
+    r"|\bbab(?:y|ies)\b(?!\s+steps?\b)"
+    r"|\b(?:minors|child-?like|child-?sized|kiddie|kiddy|underage|under-age|under ?18|under eighteen|u18|preteens?|pre-teens?|teens?|teenage\w*|tweens?|"
+    r"schoolgirls?|schoolboys?|jailbait|loli|lolita|shota|toddlers?|infants?|young (?:girl|boy)s?|little (?:girl|boy)s?|"
+    r"(?:middle|high|elementary|primary|grade) ?school(?:ers?)?|(?:[1-9]|1[0-2])(?:st|nd|rd|th) grader?s?|"
+    r"(?:1[0-7]|[1-9])[- ]?(?:yo|y/o|y\.o\.?|yrs?[- ]?old|years?[- ]old|years? of age)|(?:age|aged) (?:1[0-7]|[1-9]))(?!\w)"
+    "|" + _he(r"ילד|ילדה|ילדים|ילדות|קטין|קטינה|קטינים|קטינות|נער|נערה|נערים|נערות|תינוק|תינוקת|תינוקות|פעוט|"
+              r"פעוטה|פעוטות|(?:בת|בן) (?:1[0-7]|[1-9])(?![0-9])") + "|"
     r"ребён\w*|ребен\w*|девочк\w*|мальчик\w*|подрост\w*|несовершеннолет\w*", re.I)
 _VIOLENT_SEX = re.compile(r"\b(?:rape|raped|raping|non-?consensual|sexual assault|molest\w*)\b|אונס|изнасил\w*", re.I)
 _REAL_PERSON = re.compile(r"\b(?:celebrity|famous|actress|actor|singer|politician|president|prime minister|influencer|"

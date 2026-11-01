@@ -212,8 +212,7 @@ def start_chat(req: shared.ChatRequest, request: Request = None):
     open_temp = sessions.temporary_chat()
     if chat_guard.is_locked(shared.app_state.get("active_chat")):
         # Closed for pushing past the chat limits (chat_guard.py): readable, but nothing more is sent to it.
-        return {"status": "error", "locked": True, "chat": sessions.public_chat(),
-                "message": "This chat was closed for going past the chat limits. Start a new chat to continue."}
+        return {"status": "error", "locked": True, "chat": sessions.public_chat(), "message": chat_guard.CLOSED}
     if req.temporary_chat and (not open_temp or open_temp["id"] != req.temporary_chat):
         return {"status": "error", "temporary_ended": True, "message": (
             "That temporary chat has ended (the app restarted or it was closed) - nothing of it was kept. "
@@ -887,6 +886,12 @@ def _channel_turn(chat_id, message: str, origin: str, on_approval):
         if not (chat_id and shared.chat_store.load(chat_id) and sessions.open_chat(chat_id)):
             shared.app_state["active_project"] = None       # a channel's chat is an Assistant session, in no project
             sessions.new_chat()
+        if chat_guard.is_locked(shared.app_state.get("active_chat")):
+            # Closed for going past the chat limits: nothing is sent to it. The channel can't press New chat, so it
+            # forgets this chat (None) and its next message starts a new one - the same as New chat in the app.
+            _reopen_pc_chat(previous, previous_project)
+            return None, {"status": "error", "locked": True,
+                          "message": "This chat was closed for going past the chat limits. Your next message starts a new chat."}
     finally:
         shared.state_lock.release()
     shared.app_state["turn_origin"] = origin
@@ -912,14 +917,19 @@ def _channel_turn(chat_id, message: str, origin: str, on_approval):
     used = (shared.app_state.get("active_chat") or {}).get("id") or chat_id
     shared.app_state["turn_origin"] = "pc"
     if shared.state_lock.acquire(timeout=10):
-        try:                                            # back to what the PC had open
-            _reset_conversation_locked()
-            if not (previous and shared.chat_store.load(previous) and sessions.open_chat(previous)):
-                shared.app_state["active_project"] = previous_project
-                sessions.new_chat()
+        try:
+            _reopen_pc_chat(previous, previous_project)
         finally:
             shared.state_lock.release()
     return used, (done or {}).get("result") or {}
+
+
+def _reopen_pc_chat(previous, previous_project) -> None:
+    """Back to what the PC had open before a channel's turn (the caller holds shared.state_lock)."""
+    _reset_conversation_locked()
+    if not (previous and shared.chat_store.load(previous) and sessions.open_chat(previous)):
+        shared.app_state["active_project"] = previous_project
+        sessions.new_chat()
 
 
 import channels                                         # noqa: E402

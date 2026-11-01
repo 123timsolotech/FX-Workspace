@@ -972,6 +972,11 @@ def _run_turn_in_chat(req) -> dict:
     # ends the agent at its first checkpoint, with the usual "Stopped" reply.
     run_control.begin()
     try:
+        # A closed chat (chat_guard.py) takes nothing more, whichever way the message came: /api/chat checks before
+        # starting the turn, but channels (Slack, Discord, Telegram, the webhook) start turns directly. Nothing is
+        # saved to it. A routine is the user's own saved steps, not a message.
+        if not getattr(req, "routine_id", None) and chat_guard.is_locked(shared.app_state.get("active_chat")):
+            return {"status": "error", "locked": True, "message": chat_guard.CLOSED}
         start_seq = shared.app_state.get("event_seq", 0)
         _select_request_backend(req)                # before prep, effort/model resolution or Research
         shared.app_state.pop("last_run_usage", None)
@@ -1076,9 +1081,9 @@ def _screen(req, raw: bool) -> dict | None:
         shared.app_state["turn_instructions"] = (note + "\n\n" if note else "") + chat_guard.CARE_NOTE
         return None
     chat = sessions.ensure_chat(req)
-    guard = chat_guard.record_refusal(chat, verdict["category"])
+    guard = chat_guard.record_refusal(chat, verdict["category"], verdict["via"])
     category = verdict["category"]
-    state = "the chat is now closed" if guard.get("locked") else f"strike {guard['strikes'].get(category, 0)} for {category}"
+    state = "the chat is now closed" if guard.get("locked") else f"strike {(guard.get('strikes') or {}).get(category, 0)} for {category}"
     event_log.log_action(f"Chat limits: refused a message ({category}, by {verdict['via']}); {state}.")
     return {"status": "success", "message": chat_guard.refusal_text(category, guard),
             "guard": {"category": category, "strikes": chat_guard.strike_total(guard), "locked": bool(guard.get("locked"))}}

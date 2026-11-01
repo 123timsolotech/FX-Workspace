@@ -146,6 +146,13 @@ def _set_chat_id(kind: str, chat_id: str | None) -> None:
         _save(d)
 
 
+def _forget_chat_id(kind: str) -> None:
+    with _lock:
+        d = _load()
+        if (d.get(kind) or {}).pop("chat_id", None) is not None:
+            _save(d)
+
+
 def allowed(kind: str, user_id: str) -> bool:
     return str(user_id) in ((_load().get(kind) or {}).get("allow") or [])
 
@@ -225,7 +232,10 @@ def run_turn(kind: str, message: str, on_approval) -> tuple:
     if _runner is None:
         return None, {"status": "error", "message": "The app isn't ready yet."}
     chat_id, result = _runner(_chat_id(kind), message, kind, on_approval)
-    _set_chat_id(kind, chat_id)
+    if isinstance(result, dict) and (result.get("locked") or (result.get("guard") or {}).get("locked")):
+        _forget_chat_id(kind)                   # its chat is closed (chat_guard): the next message starts a new one
+    else:
+        _set_chat_id(kind, chat_id)
     return chat_id, result
 
 
